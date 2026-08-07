@@ -1,0 +1,34 @@
+{
+  "kernel": "vma2.kernel",
+  "segments": [
+    {
+      "segment": "__TEXT_EXEC",
+      "bytes": 42237952,
+      "words": 10559488
+    }
+  ],
+  "total_instructions": 10559488,
+  "categories": {
+    "pointer_auth": 422247,
+    "system_register": 10082,
+    "barrier": 1571,
+    "exception_model": 48,
+    "tlb_cache": 113
+  },
+  "mnemonics": {
+    "braa/blraa": 207979,
+    "pac/aut (hint form)": 130714,
+    "retaa/retab": 83554,
+    "mrs": 9770,
+    "dsb": 116,
+    "msr": 312,
+    "isb": 956,
+    "dmb": 499,
+    "hvc": 46,
+    "dc/ic": 89,
+    "eret": 1,
+    "tlbi": 24,
+    "svc": 1
+  },
+  "untranslatable": 434061
+}
