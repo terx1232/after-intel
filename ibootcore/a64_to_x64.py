@@ -42,19 +42,38 @@ import struct
 import sys
 from collections import Counter
 
-# arm64 register -> x86-64 register name, or None if spilled to memory
-XREG = ["rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp",
+# arm64 register -> x86-64 register, or a spill slot in the guest register file.
+#
+# Thirteen guest registers get host registers. rbp is deliberately NOT mapped:
+# it is the scratch register, because x86 cannot encode a memory-to-memory move
+# and any instruction with two spilled operands needs somewhere to stage one.
+# r15 holds the base of the register file; rsp stays the host stack.
+XREG = ["rax", "rbx", "rcx", "rdx", "rsi", "rdi",
         "r8", "r9", "r10", "r11", "r12", "r13", "r14"]
 SPILL_BASE = "r15"
+SCRATCH = "rbp"
 
 
 def hostreg(n: int) -> str:
     """Host location for arm64 register n."""
     if n == 31:
-        return "[r15+0xf8]"        # sp / xzr handled by caller
+        return f"[{SPILL_BASE}+0xf8]"   # sp / xzr, disambiguated by the caller
     if n < len(XREG):
         return XREG[n]
     return f"[{SPILL_BASE}+{n * 8:#x}]"
+
+
+def is_mem(loc: str) -> bool:
+    return loc.startswith("[")
+
+
+def move(dst: str, src: str) -> list:
+    """Emit a move, staging through the scratch register when both are memory."""
+    if dst == src:
+        return []
+    if is_mem(dst) and is_mem(src):
+        return [f"mov  {SCRATCH}, {src}", f"mov  {dst}, {SCRATCH}"]
+    return [f"mov  {dst}, {src}"]
 
 
 def sextract(value: int, lo: int, width: int) -> int:
@@ -123,10 +142,11 @@ def translate(w: int, pc: int) -> tuple:
         rn = (w >> 5) & 0x1F
         link = (w >> 21) & 1
         op = "call" if link else "jmp"
+        # Use the scratch register, not a mapped one: rdi now holds guest x5.
         return ("blraa" if link else "braa",
-                [f"mov  rdi, {hostreg(rn)}",
-                 "and  rdi, 0x0000ffffffffffff   ; strip PAC bits",
-                 f"{op} [guest_dispatch + rdi*8]  ; indirect via translation map"])
+                [f"mov  {SCRATCH}, {hostreg(rn)}",
+                 f"and  {SCRATCH}, 0x0000ffffffffffff   ; strip PAC bits",
+                 f"{op} [guest_dispatch + {SCRATCH}*8]  ; via translation map"])
 
     # ---- ordinary control flow -------------------------------------------
     if (w & 0xFC000000) == 0x14000000:
@@ -155,16 +175,16 @@ def translate(w: int, pc: int) -> tuple:
             imm <<= 12
         if rd == rn:
             return "add", [f"add  {hostreg(rd)}, {imm:#x}"]
-        return "add", [f"mov  {hostreg(rd)}, {hostreg(rn)}",
-                       f"add  {hostreg(rd)}, {imm:#x}"]
+        return "add", move(hostreg(rd), hostreg(rn)) + [
+            f"add  {hostreg(rd)}, {imm:#x}"]
     if (w & 0x7F800000) == 0x51000000:      # SUB (immediate)
         rd, rn, imm = w & 0x1F, (w >> 5) & 0x1F, (w >> 10) & 0xFFF
         if (w >> 22) & 1:
             imm <<= 12
         if rd == rn:
             return "sub", [f"sub  {hostreg(rd)}, {imm:#x}"]
-        return "sub", [f"mov  {hostreg(rd)}, {hostreg(rn)}",
-                       f"sub  {hostreg(rd)}, {imm:#x}"]
+        return "sub", move(hostreg(rd), hostreg(rn)) + [
+            f"sub  {hostreg(rd)}, {imm:#x}"]
     if (w & 0x7F800000) == 0x71000000:      # SUBS (immediate) == CMP
         rn, imm = (w >> 5) & 0x1F, (w >> 10) & 0xFFF
         return "cmp", [f"cmp  {hostreg(rn)}, {imm:#x}"]
@@ -184,20 +204,56 @@ def translate(w: int, pc: int) -> tuple:
     # ---- loads and stores -------------------------------------------------
     if (w & 0xFFC00000) == 0xF9400000:      # LDR (unsigned offset, 64-bit)
         rt, rn, imm = w & 0x1F, (w >> 5) & 0x1F, ((w >> 10) & 0xFFF) * 8
-        return "ldr", [f"mov  {hostreg(rt)}, [{hostreg(rn)}+{imm:#x}]"]
+        # x86 addresses memory through a register, so a spilled base has to be
+        # staged first, and a spilled destination staged back.
+        base, pre = hostreg(rn), []
+        if is_mem(base):
+            pre, base = [f"mov  {SCRATCH}, {base}"], SCRATCH
+        dst = hostreg(rt)
+        if is_mem(dst):
+            return "ldr", pre + [f"mov  {SCRATCH}, [{base}+{imm:#x}]",
+                                 f"mov  {dst}, {SCRATCH}"]
+        return "ldr", pre + [f"mov  {dst}, [{base}+{imm:#x}]"]
     if (w & 0xFFC00000) == 0xF9000000:      # STR (unsigned offset, 64-bit)
         rt, rn, imm = w & 0x1F, (w >> 5) & 0x1F, ((w >> 10) & 0xFFF) * 8
-        return "str", [f"mov  [{hostreg(rn)}+{imm:#x}], {hostreg(rt)}"]
+        base, pre = hostreg(rn), []
+        if is_mem(base):
+            pre, base = [f"mov  {SCRATCH}, {base}"], SCRATCH
+        src = hostreg(rt)
+        if is_mem(src):
+            return "str", pre + [f"mov  {SCRATCH}, {src}",
+                                 f"mov  [{base}+{imm:#x}], {SCRATCH}"]
+        return "str", pre + [f"mov  [{base}+{imm:#x}], {src}"]
     if (w & 0xFFC00000) == 0xA9800000 or (w & 0xFFC00000) == 0xA9000000:
         rt, rn, rt2 = w & 0x1F, (w >> 5) & 0x1F, (w >> 10) & 0x1F
         imm = sextract(w, 15, 7) * 8
-        return "stp", [f"mov  [{hostreg(rn)}+{imm:#x}], {hostreg(rt)}",
-                       f"mov  [{hostreg(rn)}+{imm + 8:#x}], {hostreg(rt2)}"]
+        base, out = hostreg(rn), []
+        if is_mem(base):
+            out.append(f"mov  {SCRATCH}, {base}")
+            base = SCRATCH
+        for slot, r in ((imm, rt), (imm + 8, rt2)):
+            src = hostreg(r)
+            if is_mem(src):
+                # base already occupies SCRATCH when it was spilled, so stage
+                # the value through the stack rather than clobbering it.
+                out += [f"push {src}", f"pop  qword [{base}+{slot:#x}]"]
+            else:
+                out.append(f"mov  [{base}+{slot:#x}], {src}")
+        return "stp", out
     if (w & 0xFFC00000) == 0xA9400000 or (w & 0xFFC00000) == 0xA8C00000:
         rt, rn, rt2 = w & 0x1F, (w >> 5) & 0x1F, (w >> 10) & 0x1F
         imm = sextract(w, 15, 7) * 8
-        return "ldp", [f"mov  {hostreg(rt)}, [{hostreg(rn)}+{imm:#x}]",
-                       f"mov  {hostreg(rt2)}, [{hostreg(rn)}+{imm + 8:#x}]"]
+        base, out = hostreg(rn), []
+        if is_mem(base):
+            out.append(f"mov  {SCRATCH}, {base}")
+            base = SCRATCH
+        for slot, r in ((imm, rt), (imm + 8, rt2)):
+            dst = hostreg(r)
+            if is_mem(dst):
+                out += [f"push qword [{base}+{slot:#x}]", f"pop  {dst}"]
+            else:
+                out.append(f"mov  {dst}, [{base}+{slot:#x}]")
+        return "ldp", out
 
     if w == 0:
         return "(zero)", ["; padding"]
