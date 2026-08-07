@@ -128,6 +128,9 @@ shader compiler, which is what applications actually call. See
 - [docs/05-metal-surface.md](docs/05-metal-surface.md) — how big Metal actually
   is, measured: 218 classes, 2 558 methods, and why that number decomposes into
   something bounded
+- [docs/06-metal-vulkan-divergence.md](docs/06-metal-vulkan-divergence.md) —
+  where the two execution models diverge, and why MoltenVK's existence is not
+  evidence that the reverse direction is comparable work
 
 Every claim is tagged **[measured]**, **[verified]**, **[literature]** or
 **[open]** so a reader can tell an experiment from a citation from a guess.

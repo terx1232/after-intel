@@ -30,13 +30,16 @@ of confident forum assertions.
 | 9 | iOS Simulator runtimes ship real `x86_64-simulator` slices; Apple built modern framework binaries for x86_64 well into the transition | [verified] |
 | 10 | Apple ships and supports an x86→ARM translator for Linux VMs; there is no ARM→x86 counterpart | [verified] |
 | 11 | The Metal graphics surface is 218 classes / 2 558 methods / 918 enum values; 46.5% of Metal's methods are descriptor property accessors, ~480 are load-bearing | [measured] `data/metal-surface.json` |
+| 12 | Metal tracks hazards automatically by default; Vulkan requires explicit barriers. Metal→Vulkan must therefore synthesise a per-resource tracker that the API surface count does not show — a subsystem independently reported as the hottest code in a comparable project | [literature] `docs/06-metal-vulkan-divergence.md` |
+| 13 | MoltenVK's documented limitations amount to four narrow bullets, so Vulkan→Metal is effectively solved — which is why citing it as evidence for the reverse is a category error | [verified] MoltenVK user guide |
 
 ## In progress
 
-- **Metal vs Vulkan semantic divergence inventory.** Where do the two execution
-  models actually differ — argument buffers, heap aliasing, residency, tile
-  shaders, memory model? This is the uncounted risk in finding #11 and the thing
-  that actually stalls such projects. Nobody has published it.
+- **Argument buffers, residency and heap aliasing.** Finding #12 left three
+  gaps marked [open]: how Metal's argument buffer tiers map onto Vulkan
+  descriptor sets and descriptor indexing, how residency interacts with
+  automatic tracking, and `MTLHeap` sub-allocation semantics. No solid public
+  analysis was located on the first pass.
 
 ## Queue
 
