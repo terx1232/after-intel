@@ -61,6 +61,16 @@ platform — the target described in
 [docs/09-emulation-path.md](09-emulation-path.md) via XNU's own `VMAPPLE.h`.
 Apple ships a kernel for it in the retail installer.
 
+All thirteen are **IM4P** (Image4 payload) containers, tag `krnl`, description
+`KernelManagement_host-514`, with the payload **LZFSE**-compressed (`bvx2`
+magic). The `vma2` cache is 23 085 654 bytes against roughly 32 MB for the real
+Mac platforms — consistent with a VM kernel needing fewer drivers.
+
+The architecture of the Mach-O *inside* those containers was **not** confirmed
+here: it needs LZFSE decompression, which the standard library does not provide.
+So finding #1 rests on platform naming and container inventory, not on a header
+read. Marked **[open]** and queued.
+
 ## Finding 2: every system image is named arm64e
 
 The payload proper, `AssetData/payloadv2/`, is 118 members and 13.96 GiB. The

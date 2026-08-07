@@ -55,10 +55,12 @@ of confident forum assertions.
   finding #21 rests on image *naming*, not on a binary census of the installed
   system. Establishing whether the containers are readable at all is the next
   step.
-- **Decode a kernelcache.** The 13 kernelcaches did not decode as bare Mach-O,
-  so they are IM4P-wrapped or LZSS-compressed. Confirming their architecture
-  directly would turn finding #20 from a naming argument into a header
-  measurement.
+- **Decode a kernelcache.** Format now identified: all 13 are IM4P (Image4)
+  containers, tag `krnl`, payload LZFSE-compressed (`bvx2`). `vma2` is
+  23 085 654 bytes against ~32 MB for real Mac platforms. Reading the Mach-O
+  inside needs an LZFSE decompressor, which the Python standard library does
+  not have — so the architecture *inside* the containers is still **[open]**
+  and finding #20 rests on naming plus inventory, not on a header read.
 
 ## Queue
 
