@@ -1,0 +1,158 @@
+#!/usr/bin/env python3
+"""
+build_image.py -- assemble a flat memory image for an arm64e kernel collection:
+kernel, device tree and boot_args placed at fixed physical addresses.
+
+Step six of IbootCore. Given a decompressed kernel collection, this lays out
+what a machine's RAM must contain at the moment control is handed over, and
+writes it as one flat file that an emulator can load at `--phys-base`.
+
+Layout produced:
+
+    phys_base + 0x00000000   kernel collection (77 MiB for vma2)
+    <aligned up to 1 MiB>    flattened device tree
+    <aligned up to 4 KiB>    boot_args (1152 bytes)
+
+At entry the CPU should have PC = the kernel's entry point and x0 = the
+physical address of the boot_args block. Both are printed.
+
+This ships no Apple code. It reads a kernel you already have and writes an
+image locally; nothing is redistributed.
+
+Usage:
+    python build_image.py vma2.kernel --out image.bin
+    python build_image.py vma2.kernel --out image.bin --fb 1024x768 --cmdline "-v"
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+import struct
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import bootargs
+import devicetree
+import loadmap
+
+
+def align(n: int, a: int) -> int:
+    return (n + a - 1) & ~(a - 1)
+
+
+def parse_fb(s: str):
+    if not s:
+        return None
+    w, _, h = s.lower().partition("x")
+    return int(w), int(h)
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("kernel", help="decompressed kernel collection")
+    ap.add_argument("--out", required=True)
+    ap.add_argument("--phys-base", default="0x800000000")
+    ap.add_argument("--mem-size", default="4G")
+    ap.add_argument("--cmdline", default="-v debug=0x8 serial=3")
+    ap.add_argument("--fb", default="", metavar="WxH",
+                    help="framebuffer geometry for the boot console, e.g. 1024x768")
+    ap.add_argument("--fb-addr", default="0x900000000")
+    ap.add_argument("--ncpus", type=int, default=1)
+    args = ap.parse_args(argv)
+
+    phys_base = int(args.phys_base, 0)
+    mem_size = bootargs.human_size(args.mem_size)
+
+    kern = open(args.kernel, "rb").read()
+    m = loadmap.parse(args.kernel)
+    virt_base = m["vm_low"]
+    entry = m.get("entry")
+
+    # The collection maps one to one, which build_image relies on. Verify it
+    # rather than assume it -- a collection that does not would need per-segment
+    # placement and this layout would be silently wrong.
+    if m["vm_span"] != len(kern):
+        print(f"error: virtual span {m['vm_span']} != file size {len(kern)};\n"
+              f"       this collection does not map 1:1 and needs per-segment "
+              f"placement.", file=sys.stderr)
+        return 2
+
+    fb = parse_fb(args.fb)
+    fb_addr = int(args.fb_addr, 0)
+
+    tree = devicetree.minimal_vmapple_tree(ram_base=phys_base,
+                                           ram_size=mem_size,
+                                           ncpus=args.ncpus)
+    if fb:
+        w, h = fb
+        node = devicetree.Node("framebuffer")
+        node.set_str("device_type", "display")
+        node.set_u64("address", fb_addr)
+        node.set_u32("width", w)
+        node.set_u32("height", h)
+        node.set_u32("depth", 32)
+        node.set_u32("stride", w * 4)
+        tree.children.append(node)
+    dt_blob = tree.serialise()
+
+    kern_end = align(len(kern), 1 << 20)
+    dt_off = kern_end
+    ba_off = align(dt_off + len(dt_blob), 1 << 12)
+    total = align(ba_off + bootargs.SIZEOF_BOOT_ARGS, 1 << 20)
+
+    dt_addr = phys_base + dt_off
+    ba_addr = phys_base + ba_off
+
+    video = (fb_addr, 1, w * 4, w, h, 32) if fb else (0, 0, 0, 0, 0, 0)
+
+    ba = bootargs.build(
+        virt_base=virt_base,
+        phys_base=phys_base,
+        mem_size=mem_size,
+        top_of_kernel_data=phys_base + total,
+        device_tree_p=dt_addr,
+        device_tree_length=len(dt_blob),
+        cmdline=args.cmdline,
+        video=video,
+    )
+
+    image = bytearray(total)
+    image[0:len(kern)] = kern
+    image[dt_off:dt_off + len(dt_blob)] = dt_blob
+    image[ba_off:ba_off + len(ba)] = ba
+    open(args.out, "wb").write(image)
+
+    print(f"\n=== memory image ===\n")
+    print(f"{'region':<18}{'phys addr':>20}{'offset':>14}{'size':>14}")
+    print("-" * 66)
+    print(f"{'kernel':<18}{phys_base:>#20x}{0:>14}{len(kern):>14,}")
+    print(f"{'device tree':<18}{dt_addr:>#20x}{dt_off:>14,}{len(dt_blob):>14,}")
+    print(f"{'boot_args':<18}{ba_addr:>#20x}{ba_off:>14,}"
+          f"{bootargs.SIZEOF_BOOT_ARGS:>14,}")
+    if fb:
+        print(f"{'framebuffer':<18}{fb_addr:>#20x}{'(separate)':>14}"
+              f"{w * h * 4:>14,}")
+    print("-" * 66)
+    print(f"{'image total':<18}{'':>20}{'':>14}{total:>14,}")
+
+    print(f"\nwrote {args.out} ({total / 2**20:.1f} MiB)")
+    print(f"\nCPU state required at handoff:")
+    print(f"  PC = {entry:#018x}   (kernel entry, virtual)")
+    print(f"  x0 = {ba_addr:#018x}   (physical address of boot_args)")
+    print(f"\n  virtBase {virt_base:#018x} -> physBase {phys_base:#018x}")
+    print(f"  so the loader must map that range before jumping.")
+
+    print("\nWhat this does NOT do, stated plainly:")
+    print("  - no page tables are built; the kernel is entered with whatever")
+    print("    MMU state the emulator provides")
+    print("  - device tree property values are placeholders, not a spec")
+    print("  - no Image4 chain, no trustcache, no signature handling")
+    print("  - this has never been executed; it is a correctly formatted")
+    print("    memory image, which is not the same as a bootable one")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
