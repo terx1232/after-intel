@@ -1,0 +1,1174 @@
+{
+  "file": "C:\\Users\\KIRILL~1\\AppData\\Local\\Temp\\claude\\D--macos\\2724adf8-b0d1-492d-80de-006aba9dbfe7\\scratchpad\\extracted\\vma2.kernel",
+  "file_size": 80871424,
+  "cputype": 16777228,
+  "cpusubtype": -1073741822,
+  "filetype": 12,
+  "ncmds": 227,
+  "segments": [
+    {
+      "name": "__TEXT",
+      "vmaddr": 18446741874803752960,
+      "vmsize": 16384,
+      "fileoff": 0,
+      "filesize": 16384,
+      "initprot": 1,
+      "maxprot": 1,
+      "prot": "r--",
+      "nsects": 0
+    },
+    {
+      "name": "__PRELINK_TEXT",
+      "vmaddr": 18446741874803769344,
+      "vmsize": 8421376,
+      "fileoff": 16384,
+      "filesize": 8421376,
+      "initprot": 1,
+      "maxprot": 1,
+      "prot": "r--",
+      "nsects": 1
+    },
+    {
+      "name": "__DATA_CONST",
+      "vmaddr": 18446741874812190720,
+      "vmsize": 7815168,
+      "fileoff": 8437760,
+      "filesize": 7815168,
+      "initprot": 1,
+      "maxprot": 1,
+      "prot": "r--",
+      "nsects": 0
+    },
+    {
+      "name": "__TEXT_EXEC",
+      "vmaddr": 18446741874820005888,
+      "vmsize": 42237952,
+      "fileoff": 16252928,
+      "filesize": 42237952,
+      "initprot": 5,
+      "maxprot": 5,
+      "prot": "r-x",
+      "nsects": 0
+    },
+    {
+      "name": "__PRELINK_INFO",
+      "vmaddr": 18446741874862243840,
+      "vmsize": 3129344,
+      "fileoff": 58490880,
+      "filesize": 3129344,
+      "initprot": 3,
+      "maxprot": 3,
+      "prot": "rw-",
+      "nsects": 1
+    },
+    {
+      "name": "__DATA",
+      "vmaddr": 18446741874865373184,
+      "vmsize": 2867200,
+      "fileoff": 61620224,
+      "filesize": 2867200,
+      "initprot": 3,
+      "maxprot": 3,
+      "prot": "rw-",
+      "nsects": 0
+    },
+    {
+      "name": "__LINKEDIT",
+      "vmaddr": 18446741874868240384,
+      "vmsize": 16384000,
+      "fileoff": 64487424,
+      "filesize": 16384000,
+      "initprot": 1,
+      "maxprot": 1,
+      "prot": "r--",
+      "nsects": 0
+    }
+  ],
+  "fileset_entries": [
+    {
+      "id": "com.apple.kernel",
+      "vmaddr": 18446741874803769344,
+      "fileoff": 16384
+    },
+    {
+      "id": "com.apple.kec.Libm",
+      "vmaddr": 18446741874804932608,
+      "fileoff": 1179648
+    },
+    {
+      "id": "com.apple.kec.pthread",
+      "vmaddr": 18446741874804961440,
+      "fileoff": 1208480
+    },
+    {
+      "id": "com.apple.driver.AFKHIDTBDevice",
+      "vmaddr": 18446741874804964960,
+      "fileoff": 1212000
+    },
+    {
+      "id": "com.apple.driver.AppleA7IOP",
+      "vmaddr": 18446741874804971632,
+      "fileoff": 1218672
+    },
+    {
+      "id": "com.apple.driver.AppleARMGIC",
+      "vmaddr": 18446741874804977216,
+      "fileoff": 1224256
+    },
+    {
+      "id": "com.apple.driver.AppleARMPMU",
+      "vmaddr": 18446741874804980272,
+      "fileoff": 1227312
+    },
+    {
+      "id": "com.apple.driver.AppleARMPlatform",
+      "vmaddr": 18446741874804993712,
+      "fileoff": 1240752
+    },
+    {
+      "id": "com.apple.driver.AppleActuatorDriver",
+      "vmaddr": 18446741874805061280,
+      "fileoff": 1308320
+    },
+    {
+      "id": "com.apple.driver.AppleAudioClockLibs",
+      "vmaddr": 18446741874805068496,
+      "fileoff": 1315536
+    },
+    {
+      "id": "com.apple.driver.AppleBCMWLANBusInterfacePCIe",
+      "vmaddr": 18446741874805070608,
+      "fileoff": 1317648
+    },
+    {
+      "id": "com.apple.driver.AppleBCMWLANCore",
+      "vmaddr": 18446741874805167392,
+      "fileoff": 1414432
+    },
+    {
+      "id": "com.apple.driver.AppleBSDKextStarter",
+      "vmaddr": 18446741874805667360,
+      "fileoff": 1914400
+    },
+    {
+      "id": "com.apple.driver.AppleBluetoothDebug",
+      "vmaddr": 18446741874805669040,
+      "fileoff": 1916080
+    },
+    {
+      "id": "com.apple.driver.AppleBluetoothDebugService",
+      "vmaddr": 18446741874805677184,
+      "fileoff": 1924224
+    },
+    {
+      "id": "com.apple.driver.AppleBluetoothModule",
+      "vmaddr": 18446741874805678736,
+      "fileoff": 1925776
+    },
+    {
+      "id": "com.apple.driver.AppleBluetoothMultitouch",
+      "vmaddr": 18446741874805690256,
+      "fileoff": 1937296
+    },
+    {
+      "id": "com.apple.driver.AppleBluetoothRemote",
+      "vmaddr": 18446741874805699792,
+      "fileoff": 1946832
+    },
+    {
+      "id": "com.apple.driver.AppleCallbackPowerSource",
+      "vmaddr": 18446741874805708752,
+      "fileoff": 1955792
+    },
+    {
+      "id": "com.apple.driver.AppleConvergedIPCOLYBTControl",
+      "vmaddr": 18446741874805714864,
+      "fileoff": 1961904
+    },
+    {
+      "id": "com.apple.driver.AppleConvergedPCI",
+      "vmaddr": 18446741874805748720,
+      "fileoff": 1995760
+    },
+    {
+      "id": "com.apple.driver.AppleDiagnosticDataAccessReadOnly",
+      "vmaddr": 18446741874805777520,
+      "fileoff": 2024560
+    },
+    {
+      "id": "com.apple.driver.AppleDiskImages2",
+      "vmaddr": 18446741874805779808,
+      "fileoff": 2026848
+    },
+    {
+      "id": "com.apple.driver.AppleEffaceableNOR",
+      "vmaddr": 18446741874805806000,
+      "fileoff": 2053040
+    },
+    {
+      "id": "com.apple.driver.AppleEffaceableStorage",
+      "vmaddr": 18446741874805807872,
+      "fileoff": 2054912
+    },
+    {
+      "id": "com.apple.driver.AppleEffaceableTDM",
+      "vmaddr": 18446741874805814800,
+      "fileoff": 2061840
+    },
+    {
+      "id": "com.apple.driver.AppleEmbeddedLightSensor",
+      "vmaddr": 18446741874805816480,
+      "fileoff": 2063520
+    },
+    {
+      "id": "com.apple.driver.AppleEmbeddedPCIE",
+      "vmaddr": 18446741874805828896,
+      "fileoff": 2075936
+    },
+    {
+      "id": "com.apple.driver.AppleEmbeddedTempSensor",
+      "vmaddr": 18446741874805873424,
+      "fileoff": 2120464
+    },
+    {
+      "id": "com.apple.driver.AppleEmbeddedUSBHost",
+      "vmaddr": 18446741874805886464,
+      "fileoff": 2133504
+    },
+    {
+      "id": "com.apple.kec.AppleEncryptedArchive",
+      "vmaddr": 18446741874805892560,
+      "fileoff": 2139600
+    },
+    {
+      "id": "com.apple.driver.AppleFDEKeyStore",
+      "vmaddr": 18446741874805893872,
+      "fileoff": 2140912
+    },
+    {
+      "id": "com.apple.AppleFSCompression.AppleFSCompressionTypeDataless",
+      "vmaddr": 18446741874805896528,
+      "fileoff": 2143568
+    },
+    {
+      "id": "com.apple.AppleFSCompression.AppleFSCompressionTypeZlib",
+      "vmaddr": 18446741874805899408,
+      "fileoff": 2146448
+    },
+    {
+      "id": "com.apple.driver.AppleFileSystemDriver",
+      "vmaddr": 18446741874805915824,
+      "fileoff": 2162864
+    },
+    {
+      "id": "com.apple.driver.AppleFirmwareKit",
+      "vmaddr": 18446741874805918032,
+      "fileoff": 2165072
+    },
+    {
+      "id": "com.apple.driver.AppleFirmwareUpdateKext",
+      "vmaddr": 18446741874805944416,
+      "fileoff": 2191456
+    },
+    {
+      "id": "com.apple.driver.AppleGameControllerPersonality",
+      "vmaddr": 18446741874805948192,
+      "fileoff": 2195232
+    },
+    {
+      "id": "com.apple.driver.AppleHIDKeyboard",
+      "vmaddr": 18446741874805950640,
+      "fileoff": 2197680
+    },
+    {
+      "id": "com.apple.driver.AppleBluetoothHIDKeyboard",
+      "vmaddr": 18446741874805956448,
+      "fileoff": 2203488
+    },
+    {
+      "id": "com.apple.driver.AppleHIDMouse",
+      "vmaddr": 18446741874805958224,
+      "fileoff": 2205264
+    },
+    {
+      "id": "com.apple.driver.AppleBluetoothHIDMouse",
+      "vmaddr": 18446741874805961616,
+      "fileoff": 2208656
+    },
+    {
+      "id": "com.apple.driver.AppleUSBHIDMouse",
+      "vmaddr": 18446741874805964512,
+      "fileoff": 2211552
+    },
+    {
+      "id": "com.apple.driver.AppleIISController",
+      "vmaddr": 18446741874805967392,
+      "fileoff": 2214432
+    },
+    {
+      "id": "com.apple.security.AppleImage4",
+      "vmaddr": 18446741874805972816,
+      "fileoff": 2219856
+    },
+    {
+      "id": "com.apple.driver.AppleInputDeviceSupport",
+      "vmaddr": 18446741874806062144,
+      "fileoff": 2309184
+    },
+    {
+      "id": "com.apple.driver.AppleLSIFusionMPT",
+      "vmaddr": 18446741874806079680,
+      "fileoff": 2326720
+    },
+    {
+      "id": "com.apple.driver.AppleM2ScalerCSCDriver",
+      "vmaddr": 18446741874806095344,
+      "fileoff": 2342384
+    },
+    {
+      "id": "com.apple.driver.AppleM68Buttons",
+      "vmaddr": 18446741874807048784,
+      "fileoff": 3295824
+    },
+    {
+      "id": "com.apple.kext.AppleMatch",
+      "vmaddr": 18446741874807073152,
+      "fileoff": 3320192
+    },
+    {
+      "id": "com.apple.driver.AppleMobileApNonce",
+      "vmaddr": 18446741874807074512,
+      "fileoff": 3321552
+    },
+    {
+      "id": "com.apple.driver.AppleMobileFileIntegrity",
+      "vmaddr": 18446741874807082784,
+      "fileoff": 3329824
+    },
+    {
+      "id": "com.apple.driver.AppleMultiFunctionManager",
+      "vmaddr": 18446741874807205568,
+      "fileoff": 3452608
+    },
+    {
+      "id": "com.apple.driver.AppleMultitouchDriver",
+      "vmaddr": 18446741874807217008,
+      "fileoff": 3464048
+    },
+    {
+      "id": "com.apple.driver.AppleNANDConfigAccess",
+      "vmaddr": 18446741874807240208,
+      "fileoff": 3487248
+    },
+    {
+      "id": "com.apple.driver.AppleOLYHAL",
+      "vmaddr": 18446741874807241776,
+      "fileoff": 3488816
+    },
+    {
+      "id": "com.apple.driver.AppleOnboardSerial",
+      "vmaddr": 18446741874807270464,
+      "fileoff": 3517504
+    },
+    {
+      "id": "com.apple.driver.ApplePIODMA",
+      "vmaddr": 18446741874807278880,
+      "fileoff": 3525920
+    },
+    {
+      "id": "com.apple.driver.ApplePVPanic",
+      "vmaddr": 18446741874807283024,
+      "fileoff": 3530064
+    },
+    {
+      "id": "com.apple.driver.AppleParavirtGPUIOGPUFamily",
+      "vmaddr": 18446741874807284640,
+      "fileoff": 3531680
+    },
+    {
+      "id": "com.apple.iokit.AppleParavirtIOSurface",
+      "vmaddr": 18446741874807314464,
+      "fileoff": 3561504
+    },
+    {
+      "id": "com.apple.driver.AppleRAID",
+      "vmaddr": 18446741874807330336,
+      "fileoff": 3577376
+    },
+    {
+      "id": "com.apple.driver.AppleRSMChannel",
+      "vmaddr": 18446741874807341008,
+      "fileoff": 3588048
+    },
+    {
+      "id": "com.apple.driver.AppleS8000AES",
+      "vmaddr": 18446741874807344240,
+      "fileoff": 3591280
+    },
+    {
+      "id": "com.apple.driver.AppleSDXC",
+      "vmaddr": 18446741874807351008,
+      "fileoff": 3598048
+    },
+    {
+      "id": "com.apple.driver.AppleSEPManager",
+      "vmaddr": 18446741874807372640,
+      "fileoff": 3619680
+    },
+    {
+      "id": "com.apple.driver.AppleSMC",
+      "vmaddr": 18446741874807430128,
+      "fileoff": 3677168
+    },
+    {
+      "id": "com.apple.driver.AppleSPU",
+      "vmaddr": 18446741874807470592,
+      "fileoff": 3717632
+    },
+    {
+      "id": "com.apple.driver.AppleSamsungSerial",
+      "vmaddr": 18446741874807495856,
+      "fileoff": 3742896
+    },
+    {
+      "id": "com.apple.driver.AppleSerialShim",
+      "vmaddr": 18446741874807497824,
+      "fileoff": 3744864
+    },
+    {
+      "id": "com.apple.driver.AppleUSBCardReader",
+      "vmaddr": 18446741874807499824,
+      "fileoff": 3746864
+    },
+    {
+      "id": "com.apple.driver.AppleUSBMassStorageInterfaceNub",
+      "vmaddr": 18446741874807506384,
+      "fileoff": 3753424
+    },
+    {
+      "id": "com.apple.driver.AppleUSBODD",
+      "vmaddr": 18446741874807508576,
+      "fileoff": 3755616
+    },
+    {
+      "id": "com.apple.driver.AppleUSBTDM",
+      "vmaddr": 18446741874807510544,
+      "fileoff": 3757584
+    },
+    {
+      "id": "com.apple.driver.AppleSyntheticGameController",
+      "vmaddr": 18446741874807514160,
+      "fileoff": 3761200
+    },
+    {
+      "id": "com.apple.AppleSystemPolicy",
+      "vmaddr": 18446741874807518656,
+      "fileoff": 3765696
+    },
+    {
+      "id": "com.apple.driver.AppleTopCaseHIDEventDriver",
+      "vmaddr": 18446741874807531264,
+      "fileoff": 3778304
+    },
+    {
+      "id": "com.apple.driver.AppleUSBTopCaseDriver",
+      "vmaddr": 18446741874807540624,
+      "fileoff": 3787664
+    },
+    {
+      "id": "com.apple.driver.AppleTypeCPhy",
+      "vmaddr": 18446741874807542640,
+      "fileoff": 3789680
+    },
+    {
+      "id": "com.apple.driver.AppleUIO",
+      "vmaddr": 18446741874807556032,
+      "fileoff": 3803072
+    },
+    {
+      "id": "com.apple.driver.AppleUSBAudio",
+      "vmaddr": 18446741874807561296,
+      "fileoff": 3808336
+    },
+    {
+      "id": "com.apple.driver.usb.cdc",
+      "vmaddr": 18446741874807575888,
+      "fileoff": 3822928
+    },
+    {
+      "id": "com.apple.driver.usb.AppleUSBCommon",
+      "vmaddr": 18446741874807578032,
+      "fileoff": 3825072
+    },
+    {
+      "id": "com.apple.driver.usb.AppleUSBVHCICommon",
+      "vmaddr": 18446741874807580992,
+      "fileoff": 3828032
+    },
+    {
+      "id": "com.apple.driver.usb.AppleUSBVHCICommonRSM",
+      "vmaddr": 18446741874807586064,
+      "fileoff": 3833104
+    },
+    {
+      "id": "com.apple.driver.AppleUSBDeviceMux",
+      "vmaddr": 18446741874807594800,
+      "fileoff": 3841840
+    },
+    {
+      "id": "com.apple.driver.AppleUSBDeviceNCM",
+      "vmaddr": 18446741874807601472,
+      "fileoff": 3848512
+    },
+    {
+      "id": "com.apple.driver.usb.cdc.ecm",
+      "vmaddr": 18446741874807607360,
+      "fileoff": 3854400
+    },
+    {
+      "id": "com.apple.driver.usb.ethernet.asix",
+      "vmaddr": 18446741874807609872,
+      "fileoff": 3856912
+    },
+    {
+      "id": "com.apple.macos.driver.AppleUSBEthernetHost",
+      "vmaddr": 18446741874807615712,
+      "fileoff": 3862752
+    },
+    {
+      "id": "com.apple.driver.usb.cdc.ncm",
+      "vmaddr": 18446741874807620304,
+      "fileoff": 3867344
+    },
+    {
+      "id": "com.apple.driver.usb.networking",
+      "vmaddr": 18446741874807631408,
+      "fileoff": 3878448
+    },
+    {
+      "id": "com.apple.driver.usb.realtek8153patcher",
+      "vmaddr": 18446741874807634544,
+      "fileoff": 3881584
+    },
+    {
+      "id": "com.apple.security.AppleVPBootPolicy",
+      "vmaddr": 18446741874807645040,
+      "fileoff": 3892080
+    },
+    {
+      "id": "com.apple.driver.AppleVPCredentialManager",
+      "vmaddr": 18446741874807735888,
+      "fileoff": 3982928
+    },
+    {
+      "id": "com.apple.driver.AppleVPKeyStore",
+      "vmaddr": 18446741874807852256,
+      "fileoff": 4099296
+    },
+    {
+      "id": "com.apple.driver.AppleVideoToolboxParavirtualization",
+      "vmaddr": 18446741874807961584,
+      "fileoff": 4208624
+    },
+    {
+      "id": "com.apple.driver.AppleVirtIO",
+      "vmaddr": 18446741874807966576,
+      "fileoff": 4213616
+    },
+    {
+      "id": "com.apple.iokit.AppleVirtIOStorage",
+      "vmaddr": 18446741874807976112,
+      "fileoff": 4223152
+    },
+    {
+      "id": "com.apple.driver.AppleVirtualPlatform",
+      "vmaddr": 18446741874807990928,
+      "fileoff": 4237968
+    },
+    {
+      "id": "com.apple.driver.AppleXsanScheme",
+      "vmaddr": 18446741874808024416,
+      "fileoff": 4271456
+    },
+    {
+      "id": "com.apple.driver.AvpFairPlayDriver",
+      "vmaddr": 18446741874808026976,
+      "fileoff": 4274016
+    },
+    {
+      "id": "com.apple.BootCache",
+      "vmaddr": 18446741874808029792,
+      "fileoff": 4276832
+    },
+    {
+      "id": "com.apple.kec.Compression",
+      "vmaddr": 18446741874808037696,
+      "fileoff": 4284736
+    },
+    {
+      "id": "com.apple.iokit.CoreAnalyticsFamily",
+      "vmaddr": 18446741874808038880,
+      "fileoff": 4285920
+    },
+    {
+      "id": "com.apple.driver.CoreStorage",
+      "vmaddr": 18446741874808054864,
+      "fileoff": 4301904
+    },
+    {
+      "id": "com.apple.driver.CoreStorageFsck",
+      "vmaddr": 18446741874808094176,
+      "fileoff": 4341216
+    },
+    {
+      "id": "com.apple.kext.CoreTrust",
+      "vmaddr": 18446741874808100720,
+      "fileoff": 4347760
+    },
+    {
+      "id": "com.apple.EXBrightCalibrationConsumer",
+      "vmaddr": 18446741874808129584,
+      "fileoff": 4376624
+    },
+    {
+      "id": "com.apple.iokit.EndpointSecurity",
+      "vmaddr": 18446741874808133280,
+      "fileoff": 4380320
+    },
+    {
+      "id": "com.apple.driver.FairPlayIOKit",
+      "vmaddr": 18446741874808194880,
+      "fileoff": 4441920
+    },
+    {
+      "id": "com.apple.filesystems.hfs.kext",
+      "vmaddr": 18446741874808455536,
+      "fileoff": 4702576
+    },
+    {
+      "id": "com.apple.iokit.IO80211Family",
+      "vmaddr": 18446741874808508112,
+      "fileoff": 4755152
+    },
+    {
+      "id": "com.apple.iokit.IOAVBFamily",
+      "vmaddr": 18446741874809355456,
+      "fileoff": 5602496
+    },
+    {
+      "id": "com.apple.plugin.IOAVBControlPlugin",
+      "vmaddr": 18446741874809407168,
+      "fileoff": 5654208
+    },
+    {
+      "id": "com.apple.plugin.IOAVBDiscoveryPlugin",
+      "vmaddr": 18446741874809418048,
+      "fileoff": 5665088
+    },
+    {
+      "id": "com.apple.plugin.IOAVBStreamingPlugin",
+      "vmaddr": 18446741874809428736,
+      "fileoff": 5675776
+    },
+    {
+      "id": "com.apple.plugin.IOMRPPlugin",
+      "vmaddr": 18446741874809459904,
+      "fileoff": 5706944
+    },
+    {
+      "id": "com.apple.iokit.IOAVFamily",
+      "vmaddr": 18446741874809484560,
+      "fileoff": 5731600
+    },
+    {
+      "id": "com.apple.iokit.IOAccessoryManager",
+      "vmaddr": 18446741874809636112,
+      "fileoff": 5883152
+    },
+    {
+      "id": "com.apple.iokit.IOAccessoryPortUSB",
+      "vmaddr": 18446741874809782528,
+      "fileoff": 6029568
+    },
+    {
+      "id": "com.apple.iokit.IOAudio2Family",
+      "vmaddr": 18446741874809785648,
+      "fileoff": 6032688
+    },
+    {
+      "id": "com.apple.iokit.IOAudioFamily",
+      "vmaddr": 18446741874809788192,
+      "fileoff": 6035232
+    },
+    {
+      "id": "com.apple.iokit.IOBDStorageFamily",
+      "vmaddr": 18446741874809813600,
+      "fileoff": 6060640
+    },
+    {
+      "id": "com.apple.iokit.IOBluetoothFamily",
+      "vmaddr": 18446741874809815696,
+      "fileoff": 6062736
+    },
+    {
+      "id": "com.apple.driver.IOBluetoothHIDDriver",
+      "vmaddr": 18446741874809876080,
+      "fileoff": 6123120
+    },
+    {
+      "id": "com.apple.iokit.IOBufferCopyEngineFamily",
+      "vmaddr": 18446741874809908400,
+      "fileoff": 6155440
+    },
+    {
+      "id": "com.apple.iokit.IOCDStorageFamily",
+      "vmaddr": 18446741874809912176,
+      "fileoff": 6159216
+    },
+    {
+      "id": "com.apple.iokit.IOCECFamily",
+      "vmaddr": 18446741874809914688,
+      "fileoff": 6161728
+    },
+    {
+      "id": "com.apple.iokit.IOCryptoAcceleratorFamily",
+      "vmaddr": 18446741874809917312,
+      "fileoff": 6164352
+    },
+    {
+      "id": "com.apple.driver.IODARTFamily",
+      "vmaddr": 18446741874809920320,
+      "fileoff": 6167360
+    },
+    {
+      "id": "com.apple.iokit.IODVDStorageFamily",
+      "vmaddr": 18446741874809929952,
+      "fileoff": 6176992
+    },
+    {
+      "id": "com.apple.iokit.IOGPUFamily",
+      "vmaddr": 18446741874809932016,
+      "fileoff": 6179056
+    },
+    {
+      "id": "com.apple.iokit.IOGameControllerFamily",
+      "vmaddr": 18446741874809983152,
+      "fileoff": 6230192
+    },
+    {
+      "id": "com.apple.iokit.IOGraphicsFamily",
+      "vmaddr": 18446741874809997424,
+      "fileoff": 6244464
+    },
+    {
+      "id": "com.apple.iokit.IOHDCPFamily",
+      "vmaddr": 18446741874810015904,
+      "fileoff": 6262944
+    },
+    {
+      "id": "com.apple.driver.DiskImages",
+      "vmaddr": 18446741874810041424,
+      "fileoff": 6288464
+    },
+    {
+      "id": "com.apple.driver.DiskImages.FileBackingStore",
+      "vmaddr": 18446741874810049984,
+      "fileoff": 6297024
+    },
+    {
+      "id": "com.apple.driver.DiskImages.KernelBacked",
+      "vmaddr": 18446741874810052160,
+      "fileoff": 6299200
+    },
+    {
+      "id": "com.apple.driver.DiskImages.RAMBackingStore",
+      "vmaddr": 18446741874810055568,
+      "fileoff": 6302608
+    },
+    {
+      "id": "com.apple.driver.DiskImages.ReadWriteDiskImage",
+      "vmaddr": 18446741874810057264,
+      "fileoff": 6304304
+    },
+    {
+      "id": "com.apple.driver.DiskImages.UDIFDiskImage",
+      "vmaddr": 18446741874810058832,
+      "fileoff": 6305872
+    },
+    {
+      "id": "com.apple.iokit.IOHIDFamily",
+      "vmaddr": 18446741874810073568,
+      "fileoff": 6320608
+    },
+    {
+      "id": "com.apple.driver.IOImageLoader",
+      "vmaddr": 18446741874810121648,
+      "fileoff": 6368688
+    },
+    {
+      "id": "com.apple.iokit.IOKitRegistryCompatibility",
+      "vmaddr": 18446741874810131296,
+      "fileoff": 6378336
+    },
+    {
+      "id": "com.apple.iokit.IOMobileGraphicsFamily",
+      "vmaddr": 18446741874810133008,
+      "fileoff": 6380048
+    },
+    {
+      "id": "com.apple.iokit.IONetworkingFamily",
+      "vmaddr": 18446741874810174640,
+      "fileoff": 6421680
+    },
+    {
+      "id": "com.apple.driver.mDNSOffloadUserClient",
+      "vmaddr": 18446741874810181072,
+      "fileoff": 6428112
+    },
+    {
+      "id": "com.apple.iokit.IOPCIFamily",
+      "vmaddr": 18446741874810187504,
+      "fileoff": 6434544
+    },
+    {
+      "id": "com.apple.iokit.IOPortFamily",
+      "vmaddr": 18446741874810244400,
+      "fileoff": 6491440
+    },
+    {
+      "id": "com.apple.iokit.IORSMFamily",
+      "vmaddr": 18446741874810260784,
+      "fileoff": 6507824
+    },
+    {
+      "id": "com.apple.iokit.IOReportFamily",
+      "vmaddr": 18446741874810262928,
+      "fileoff": 6509968
+    },
+    {
+      "id": "com.apple.iokit.IOSCSIArchitectureModelFamily",
+      "vmaddr": 18446741874810266432,
+      "fileoff": 6513472
+    },
+    {
+      "id": "com.apple.iokit.IOSCSIBlockCommandsDevice",
+      "vmaddr": 18446741874810276176,
+      "fileoff": 6523216
+    },
+    {
+      "id": "com.apple.iokit.IOSCSIMultimediaCommandsDevice",
+      "vmaddr": 18446741874810284720,
+      "fileoff": 6531760
+    },
+    {
+      "id": "com.apple.iokit.IOSCSIReducedBlockCommandsDevice",
+      "vmaddr": 18446741874810290656,
+      "fileoff": 6537696
+    },
+    {
+      "id": "com.apple.iokit.SCSITaskUserClient",
+      "vmaddr": 18446741874810293488,
+      "fileoff": 6540528
+    },
+    {
+      "id": "com.apple.iokit.IOSCSIParallelFamily",
+      "vmaddr": 18446741874810295696,
+      "fileoff": 6542736
+    },
+    {
+      "id": "com.apple.iokit.IOSerialFamily",
+      "vmaddr": 18446741874810301248,
+      "fileoff": 6548288
+    },
+    {
+      "id": "com.apple.iokit.IOSkywalkFamily",
+      "vmaddr": 18446741874810304784,
+      "fileoff": 6551824
+    },
+    {
+      "id": "com.apple.driver.IOSlaveProcessor",
+      "vmaddr": 18446741874810328880,
+      "fileoff": 6575920
+    },
+    {
+      "id": "com.apple.iokit.IOSlowAdaptiveClockingFamily",
+      "vmaddr": 18446741874810330688,
+      "fileoff": 6577728
+    },
+    {
+      "id": "com.apple.iokit.IOStorageFamily",
+      "vmaddr": 18446741874810333984,
+      "fileoff": 6581024
+    },
+    {
+      "id": "com.apple.iokit.IOStreamFamily",
+      "vmaddr": 18446741874810342448,
+      "fileoff": 6589488
+    },
+    {
+      "id": "com.apple.iokit.IOSurface",
+      "vmaddr": 18446741874810344496,
+      "fileoff": 6591536
+    },
+    {
+      "id": "com.apple.IOTextEncryptionFamily",
+      "vmaddr": 18446741874810372784,
+      "fileoff": 6619824
+    },
+    {
+      "id": "com.apple.iokit.IOTimeSyncFamily",
+      "vmaddr": 18446741874810374976,
+      "fileoff": 6622016
+    },
+    {
+      "id": "com.apple.plugin.IOgPTPPlugin",
+      "vmaddr": 18446741874810431328,
+      "fileoff": 6678368
+    },
+    {
+      "id": "com.apple.iokit.IOUSBDeviceFamily",
+      "vmaddr": 18446741874810579088,
+      "fileoff": 6826128
+    },
+    {
+      "id": "com.apple.iokit.IOUSBHostFamily",
+      "vmaddr": 18446741874810603648,
+      "fileoff": 6850688
+    },
+    {
+      "id": "com.apple.driver.usb.AppleEmbeddedUSBXHCIPCI",
+      "vmaddr": 18446741874810690288,
+      "fileoff": 6937328
+    },
+    {
+      "id": "com.apple.driver.usb.AppleSynopsysUSBXHCI",
+      "vmaddr": 18446741874810698256,
+      "fileoff": 6945296
+    },
+    {
+      "id": "com.apple.driver.usb.AppleUSBHostCompositeDevice",
+      "vmaddr": 18446741874810744640,
+      "fileoff": 6991680
+    },
+    {
+      "id": "com.apple.driver.usb.AppleUSBHostDeviceSupport",
+      "vmaddr": 18446741874810747824,
+      "fileoff": 6994864
+    },
+    {
+      "id": "com.apple.driver.AppleUSBHostMergeProperties",
+      "vmaddr": 18446741874810749712,
+      "fileoff": 6996752
+    },
+    {
+      "id": "com.apple.driver.usb.AppleUSBHostPacketFilter",
+      "vmaddr": 18446741874810751440,
+      "fileoff": 6998480
+    },
+    {
+      "id": "com.apple.driver.usb.AppleUSBHostiOSDevice",
+      "vmaddr": 18446741874810756032,
+      "fileoff": 7003072
+    },
+    {
+      "id": "com.apple.driver.usb.AppleUSBHub",
+      "vmaddr": 18446741874810759616,
+      "fileoff": 7006656
+    },
+    {
+      "id": "com.apple.driver.AppleUSBMergeNub",
+      "vmaddr": 18446741874810777376,
+      "fileoff": 7024416
+    },
+    {
+      "id": "com.apple.driver.usb.AppleUSBRecoveryHost",
+      "vmaddr": 18446741874810778944,
+      "fileoff": 7025984
+    },
+    {
+      "id": "com.apple.driver.usb.AppleUSBUserHCI",
+      "vmaddr": 18446741874810786192,
+      "fileoff": 7033232
+    },
+    {
+      "id": "com.apple.driver.usb.AppleUSBVHCI",
+      "vmaddr": 18446741874810802832,
+      "fileoff": 7049872
+    },
+    {
+      "id": "com.apple.driver.usb.AppleUSBVHCIRSM",
+      "vmaddr": 18446741874810821392,
+      "fileoff": 7068432
+    },
+    {
+      "id": "com.apple.driver.usb.AppleUSBXHCI",
+      "vmaddr": 18446741874810826208,
+      "fileoff": 7073248
+    },
+    {
+      "id": "com.apple.driver.usb.AppleUSBXHCIPCI",
+      "vmaddr": 18446741874810871168,
+      "fileoff": 7118208
+    },
+    {
+      "id": "com.apple.driver.usb.IOUSBHostHIDDevice",
+      "vmaddr": 18446741874810889600,
+      "fileoff": 7136640
+    },
+    {
+      "id": "com.apple.iokit.IOUSBMassStorageDriver",
+      "vmaddr": 18446741874810896416,
+      "fileoff": 7143456
+    },
+    {
+      "id": "com.apple.iokit.IOUserEthernet",
+      "vmaddr": 18446741874810910480,
+      "fileoff": 7157520
+    },
+    {
+      "id": "com.apple.driver.driverkit.serial",
+      "vmaddr": 18446741874810915360,
+      "fileoff": 7162400
+    },
+    {
+      "id": "com.apple.iokit.IOVideoFamily",
+      "vmaddr": 18446741874810917920,
+      "fileoff": 7164960
+    },
+    {
+      "id": "com.apple.security.Image4",
+      "vmaddr": 18446741874810919984,
+      "fileoff": 7167024
+    },
+    {
+      "id": "com.apple.nke.l2tp",
+      "vmaddr": 18446741874810967632,
+      "fileoff": 7214672
+    },
+    {
+      "id": "com.apple.nke.ppp",
+      "vmaddr": 18446741874810972000,
+      "fileoff": 7219040
+    },
+    {
+      "id": "com.apple.nke.pppoe",
+      "vmaddr": 18446741874810980560,
+      "fileoff": 7227600
+    },
+    {
+      "id": "com.apple.security.quarantine",
+      "vmaddr": 18446741874810984496,
+      "fileoff": 7231536
+    },
+    {
+      "id": "com.apple.driver.RTBuddy",
+      "vmaddr": 18446741874810988960,
+      "fileoff": 7236000
+    },
+    {
+      "id": "com.apple.security.sandbox",
+      "vmaddr": 18446741874811034032,
+      "fileoff": 7281072
+    },
+    {
+      "id": "com.apple.driver.SoftRAID",
+      "vmaddr": 18446741874811210080,
+      "fileoff": 7457120
+    },
+    {
+      "id": "com.apple.UVCService",
+      "vmaddr": 18446741874811222112,
+      "fileoff": 7469152
+    },
+    {
+      "id": "com.apple.filesystems.acfs",
+      "vmaddr": 18446741874811223904,
+      "fileoff": 7470944
+    },
+    {
+      "id": "com.apple.filesystems.acfsctl",
+      "vmaddr": 18446741874811468400,
+      "fileoff": 7715440
+    },
+    {
+      "id": "com.apple.filesystems.apfs",
+      "vmaddr": 18446741874811470208,
+      "fileoff": 7717248
+    },
+    {
+      "id": "com.apple.filesystems.autofs",
+      "vmaddr": 18446741874811822688,
+      "fileoff": 8069728
+    },
+    {
+      "id": "com.apple.filesystems.cd9660",
+      "vmaddr": 18446741874811828624,
+      "fileoff": 8075664
+    },
+    {
+      "id": "com.apple.filesystems.cddafs",
+      "vmaddr": 18446741874811835248,
+      "fileoff": 8082288
+    },
+    {
+      "id": "com.apple.driver.corecapture",
+      "vmaddr": 18446741874811839504,
+      "fileoff": 8086544
+    },
+    {
+      "id": "com.apple.kec.corecrypto",
+      "vmaddr": 18446741874811868576,
+      "fileoff": 8115616
+    },
+    {
+      "id": "com.apple.driver.iPodSBCDriver",
+      "vmaddr": 18446741874811952960,
+      "fileoff": 8200000
+    },
+    {
+      "id": "com.apple.filesystems.lifs",
+      "vmaddr": 18446741874811954688,
+      "fileoff": 8201728
+    },
+    {
+      "id": "com.apple.kext.mcx.alr",
+      "vmaddr": 18446741874811976048,
+      "fileoff": 8223088
+    },
+    {
+      "id": "com.apple.filesystems.nfs",
+      "vmaddr": 18446741874811981520,
+      "fileoff": 8228560
+    },
+    {
+      "id": "com.apple.filesystems.smbfs",
+      "vmaddr": 18446741874812024272,
+      "fileoff": 8271312
+    },
+    {
+      "id": "com.apple.filesystems.tmpfs",
+      "vmaddr": 18446741874812148368,
+      "fileoff": 8395408
+    },
+    {
+      "id": "com.apple.kext.triggers",
+      "vmaddr": 18446741874812151744,
+      "fileoff": 8398784
+    },
+    {
+      "id": "com.apple.filesystems.udf",
+      "vmaddr": 18446741874812154256,
+      "fileoff": 8401296
+    },
+    {
+      "id": "com.apple.filesystems.webdav",
+      "vmaddr": 18446741874812175200,
+      "fileoff": 8422240
+    }
+  ],
+  "uuid": "e17fc1e4-1a81-ec3f-52f2-55be515b96ea",
+  "entry": 18446741874852217984,
+  "vm_low": 18446741874803752960,
+  "vm_high": 18446741874884624384,
+  "vm_span": 80871424
+}

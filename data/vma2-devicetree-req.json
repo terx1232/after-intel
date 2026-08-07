@@ -1,0 +1,2363 @@
+{
+  "kext_count": 235,
+  "personality_count": 1114,
+  "name_match": {
+    "wlan": 4,
+    "defaults": 3,
+    "bluetooth": 2,
+    "iop-nub,sep": 2,
+    "iop-spu-nub": 2,
+    "iop-aop-nub": 2,
+    "ARM,gicv2": 1,
+    "ARM,gicv3": 1,
+    "charger": 1,
+    "charger,passthrough": 1,
+    "backlight": 1,
+    "nor-flash,cfi": 1,
+    "cpu": 1,
+    "gen-aft": 1,
+    "eeprom,i2c": 1,
+    "cpu-debug-interface": 1,
+    "programmer-switch": 1,
+    "nvram,chrp": 1,
+    "nvram,nor": 1,
+    "paniclog": 1,
+    "AppleARM": 1,
+    "backlight,pwm": 1,
+    "nor-flash,spi": 1,
+    "sacm": 1,
+    "iic,soft": 1,
+    "diagnostic-data,format1": 1,
+    "effaceable,nor": 1,
+    "als,ct720": 1,
+    "als,ct817": 1,
+    "als,ct809": 1,
+    "amctempsensor,s5l8960x": 1,
+    "dietempctl,s5l8960x": 1,
+    "dietempctl,t7000": 1,
+    "dietempctl,t7001": 1,
+    "dietempctl,s8000": 1,
+    "dietempctl,t8010": 1,
+    "dietempctl,t8012": 1,
+    "dietempctl,t8015": 1,
+    "dietempctl,t8020": 1,
+    "dietempctl,t8027": 1,
+    "dietempctl,t8030": 1,
+    "dietempctl,t8004": 1,
+    "dietempctl,t8006": 1,
+    "tempsensor,s5l8945x": 1,
+    "scctempsensor,s5l8950x": 1,
+    "sochot,s5l8955x": 1,
+    "tempsensor,t7000": 1,
+    "tempsensor,t7001": 1,
+    "tempsensor,s8000": 1,
+    "tempsensor,t8010": 1,
+    "tempsensor,t8012": 1,
+    "tempsensor,t8006": 1,
+    "tempsensor,t8015": 1,
+    "tempsensor,t8020": 1,
+    "tempsensor,t8027": 1,
+    "tempsensor,t8030": 1,
+    "mtrtempsensor,t8020": 1,
+    "vtempctl,t8010": 1,
+    "vtempctl,s8003": 1,
+    "vtempctl,s8001": 1,
+    "vtempctl,s8000": 1,
+    "vtempctl,t8015": 1,
+    "vtempctl,t8020": 1,
+    "vtempctl,t8027": 1,
+    "vtempctl,t8030": 1,
+    "vtempctl,t8006": 1,
+    "usb-repeater-i2c,ticd2e22": 1,
+    "usb-hub-i2c": 1,
+    "ap_echo-test": 1,
+    "afk-io-service-client": 1,
+    "afk-smc-client": 1,
+    "afk-shmem-registry": 1,
+    "afk-shmem-test-registry": 1,
+    "tb-test-server-ep": 1,
+    "tb-test-client-ep": 1,
+    "IntraServer,fc": 1,
+    "pci1000,626": 1,
+    "pci1000,622": 1,
+    "pci1000,646": 1,
+    "LSILogic,sas": 1,
+    "pci1000,50": 1,
+    "pci1000,56": 1,
+    "pci1000,58": 1,
+    "LSILogic,scsi": 1,
+    "pci1000,30": 1,
+    "scaler,s5l8960x": 1,
+    "buttons": 1,
+    "amfm": 1,
+    "QEMU0001": 1,
+    "qemu,pvpanic-mmio": 1,
+    "paravirtualizedgraphics,gpu": 1,
+    "paravirtualizedgraphics,iosurface": 1,
+    "aes,s8000": 1,
+    "pci17a0,9755": 1,
+    "pcie-sdreader-helper": 1,
+    "sep-endpoint,artr": 1,
+    "sep-endpoint,arts": 1,
+    "sep-endpoint,debu": 1,
+    "sep-endpoint,hilo": 1,
+    "SEPM": 1,
+    "sep-endpoint,log": 1,
+    "sep-endpoint,pair": 1,
+    "sep-endpoint,unit": 1,
+    "sep-endpoint,xarm": 1,
+    "sep-endpoint,xars": 1,
+    "smc-acam": 1,
+    "smc-aop": 1,
+    "smc-charger": 1,
+    "smc-orion-charger": 1,
+    "smc-charger-util": 1,
+    "dock,smc-usb-ufp": 1,
+    "portmicro,smc-ccg2": 1,
+    "SMCEndpoint1": 1,
+    "smc-pmu": 1,
+    "smc-power-out": 1,
+    "smc-tempsensor": 1,
+    "smc-control": 1,
+    "AOPEndpoint1": 1,
+    "AOPEndpoint2": 1,
+    "AOPEndpoint3": 1,
+    "AOPEndpoint4": 1,
+    "AOPEndpoint5": 1,
+    "AOPEndpoint6": 1,
+    "AOPEndpoint7": 1,
+    "AOPEndpoint8": 1,
+    "AOPEndpoint9": 1,
+    "AOPEndpoint10": 1,
+    "AOPEndpoint11": 1,
+    "AOPEndpoint12": 1,
+    "AOPEndpoint13": 1,
+    "AOPEndpoint14": 1,
+    "AOPEndpoint15": 1,
+    "AOPEndpoint16": 1,
+    "AOPEndpoint17": 1,
+    "AOPEndpoint18": 1,
+    "AOPEndpoint19": 1,
+    "AOPEndpoint20": 1,
+    "AOPEndpoint21": 1,
+    "AOPEndpoint22": 1,
+    "AOPEndpoint23": 1,
+    "AOPEndpoint24": 1,
+    "AOPEndpoint25": 1,
+    "AOPEndpoint26": 1,
+    "AOPEndpoint27": 1,
+    "AOPEndpoint28": 1,
+    "AOPEndpoint29": 1,
+    "AOPEndpoint30": 1,
+    "AOPEndpoint31": 1,
+    "AOPEndpoint32": 1,
+    "SPUEndpoint1": 1,
+    "SPUEndpoint2": 1,
+    "SPUEndpoint3": 1,
+    "SPUEndpoint4": 1,
+    "SPUEndpoint5": 1,
+    "SPUEndpoint6": 1,
+    "SPUEndpoint7": 1,
+    "SPUEndpoint8": 1,
+    "SPUEndpoint9": 1,
+    "SPUEndpoint10": 1,
+    "SPUEndpoint11": 1,
+    "SPUEndpoint12": 1,
+    "SPUEndpoint13": 1,
+    "SPUEndpoint14": 1,
+    "SPUEndpoint15": 1,
+    "SPUEndpoint16": 1,
+    "SPU2Endpoint1": 1,
+    "SPU2Endpoint2": 1,
+    "SPU2Endpoint3": 1,
+    "SPU2Endpoint4": 1,
+    "SPU2Endpoint5": 1,
+    "SPU2Endpoint6": 1,
+    "SPU2Endpoint7": 1,
+    "SPU2Endpoint8": 1,
+    "SPU2Endpoint9": 1,
+    "SPU2Endpoint10": 1,
+    "SPU2Endpoint11": 1,
+    "SPU2Endpoint12": 1,
+    "SPU2Endpoint13": 1,
+    "SPU2Endpoint14": 1,
+    "SPU2Endpoint15": 1,
+    "SPU2Endpoint16": 1,
+    "aon-ptd": 1,
+    "SPUApp": 1,
+    "batt-adc": 1,
+    "bora-uart": 1,
+    "multi-touch": 1,
+    "opal": 1,
+    "dcp-control": 1,
+    "disp-adc": 1,
+    "gnss": 1,
+    "romeo": 1,
+    "juliet": 1,
+    "lanai_l": 1,
+    "lanai_r": 1,
+    "grimaldi-control": 1,
+    "aop-haptics-audio": 1,
+    "aop-haptics-manager": 1,
+    "AOP_log": 1,
+    "aop-marconi-bt-control": 1,
+    "pdmclk": 1,
+    "AOP_profile": 1,
+    "uart-1,samsung": 1,
+    "dockchannel-uart": 1,
+    "uart0": 1,
+    "uart1": 1,
+    "uart2": 1,
+    "uart3": 1,
+    "uart4": 1,
+    "uart5": 1,
+    "uart6": 1,
+    "uart7": 1,
+    "uart8": 1,
+    "ARM,pl031": 1,
+    "ARM,psci": 1,
+    "AppleVirtualPlatformARM": 1,
+    "arm-io,vmapple1": 1,
+    "pcie,vmapple1": 1,
+    "ARM,pl061": 1,
+    "avp,rtc": 1,
+    "avp,sealed-registers": 1,
+    "port-virtual-1": 1,
+    "audio-data,hdmi": 1,
+    "dock,0pin": 1,
+    "dock,30pin": 1,
+    "dock,usb-ufp": 1,
+    "iap,uart": 1,
+    "port": 1,
+    "iommu-mapper": 1,
+    "pci-bridge": 1,
+    "usb-xhci,ASM3142": 1,
+    "usb-xhci,FL1100": 1,
+    "usb-xhci-init,FL1100": 1,
+    "usb-drd,t8027": 1,
+    "usb-drd,t8030": 1,
+    "usb-drd,t8101": 1,
+    "usb-drd,t8130": 1,
+    "usb-drd,t8140": 1,
+    "usb-drd,t8150": 1,
+    "iop-nub,rtbuddy-v2": 1,
+    "iop-nub,rtbuddy": 1,
+    "iop-nub,rtbuddy-arg": 1,
+    "iop-nub,rtbuddy-route-only": 1
+  },
+  "provider_class": {
+    "IOHIDInterface": 242,
+    "IOUSBMassStorageDriverNub": 144,
+    "IOUSBHostDevice": 117,
+    "IOUSBHostInterface": 109,
+    "IOResources": 49,
+    "AppleARMIODevice": 39,
+    "IOPCIDevice": 30,
+    "IOSCSIPeripheralDeviceNub": 26,
+    "IOBluetoothL2CAPChannel": 21,
+    "AppleVirtIOTransport": 20,
+    "IOMedia": 17,
+    "IOPlatformDevice": 13,
+    "AppleUserHIDDevice": 13,
+    "AppleSPUAppInterface": 10,
+    "AppleHIDTransportHIDDevice": 10,
+    "AppleSEPDeviceService": 9,
+    "IOEthernetInterface": 9,
+    "AppleA7IOPNub": 8,
+    "AppleSMCInterface": 8,
+    "IOHIDDevice": 8,
+    "IOUSBDeviceInterface": 8,
+    "IOAccessoryBulkDataEndpoint": 8,
+    "IOUSBMassStorageCBIDriverNub": 8,
+    "IOService": 7,
+    "AppleEmbeddedUSBDevice": 7,
+    "AFKEndpointInterface": 7,
+    "AppleSPUInterface": 6,
+    "IOUSBMassStorageInterfaceNub": 6,
+    "IOUSBDevice": 6,
+    "AppleARMIICDevice": 5,
+    "AppleARMNORFlashDevice": 5,
+    "AppleOnboardSerialSync": 5,
+    "com_apple_driver_AppleUSBCardReaderDriverNub": 5,
+    "com_apple_driver_AppleUSBCardReaderInterfaceNub": 5,
+    "IOHIDEventService": 5,
+    "IOUSBDeviceController": 5,
+    "IOHIDEventDriver": 4,
+    "IOUSBInterface": 4,
+    "AFKTightbeamEndpoint": 3,
+    "RTBuddyService": 3,
+    "IOSCSILogicalUnitNub": 3,
+    "AppleVirtIOInput": 3,
+    "IORSMChannel": 3,
+    "IOUSBHostHIDDevice": 3,
+    "IOPlatformExpertDevice": 2,
+    "AppleBluetoothModule": 2,
+    "AppleGCHIDUserEventDriver": 2,
+    "RTBuddyEndpointService": 2,
+    "AppleSPUAppDriver": 2,
+    "AppleUSBNCMControl": 2,
+    "IOAccessoryManager": 2,
+    "IOCDMedia": 2,
+    "IODisplayConnect": 2,
+    "KDIURL": 2,
+    "KDIBackingStore": 2,
+    "IOTimeSyncRootService": 2,
+    "AppleARMPWMDevice": 1,
+    "AppleARMSPIDevice": 1,
+    "AppleBCMWLANBusInterfacePCIe": 1,
+    "AppleBCMWLANBusInterfaceSDIO": 1,
+    "AppleCallbackPowerSourceProvider": 1,
+    "AppleConvergedIPCOLYBTControl": 1,
+    "AppleConvergedIPCRTIInterface": 1,
+    "AppleNANDConfigAccess": 1,
+    "IOBufferCopyEngine": 1,
+    "AppleTDMEffaceableNORDriver": 1,
+    "AppleT8101USB20XHCILightningPort": 1,
+    "IOACPIPlatformDevice": 1,
+    "IOSurfaceParavirtMapperDevice": 1,
+    "AppleSDXCSlot": 1,
+    "AppleSEPManager": 1,
+    "AppleSEPIntelIOPNub": 1,
+    "AppleSPUFastpathInterface": 1,
+    "AppleSPUHIDInterface": 1,
+    "AppleTDMAKSDriver": 1,
+    "IOSCSIHierarchicalLogicalUnit": 1,
+    "AppleUSBNCM11Control": 1,
+    "AppleVirtIOUSBConfiguration": 1,
+    "AppleVirtualPlatformARMPE": 1,
+    "AppleVirtualPlatformIdentityMessenger": 1,
+    "AppleVirtualPlatformProvisioningMessenger": 1,
+    "CoreStorageLogical": 1,
+    "CoreStorageAdmin": 1,
+    "IOEthernetController": 1,
+    "IOTimeSyncEthernetInterfaceAdapter": 1,
+    "AppleARMIISDevice": 1,
+    "IOAVAudioInterface": 1,
+    "DCPAVCECInterfaceProxy": 1,
+    "IOAVDevice": 1,
+    "IOAVSliceVideoInterface": 1,
+    "IOAccessoryManagerAID": 1,
+    "IOAccessoryManagerHSAID": 1,
+    "IOBDBlockStorageDevice": 1,
+    "IOBDMedia": 1,
+    "IOCDBlockStorageDevice": 1,
+    "IODARTMapperNub": 1,
+    "IODVDBlockStorageDevice": 1,
+    "IODVDMedia": 1,
+    "PSVR2SenseDevice": 1,
+    "KDIDiskImageNub": 1,
+    "KDIDiskImage": 1,
+    "KDIUDIFEncoding": 1,
+    "IOKernelDebugger": 1,
+    "IOSCSIProtocolServices": 1,
+    "IOBDServices": 1,
+    "IOCompactDiscServices": 1,
+    "IODVDServices": 1,
+    "IOSerialStreamSync": 1,
+    "IOSkywalkInterface": 1,
+    "IOSkywalkEthernetInterface": 1,
+    "IOSkywalkNetworkInterface": 1,
+    "IOBlockStorageDevice": 1,
+    "IOTimeSyncClockManager": 1,
+    "AppleUSBUserHCIUserClient": 1,
+    "RTBuddy": 1,
+    "AppleAPFSMedia": 1,
+    "AppleAPFSVolume": 1,
+    "com_apple_driver_iPodSBCNub": 1,
+    "IOStream": 1,
+    "IOVideoDevice": 1
+  },
+  "io_class_count": 422,
+  "by_node": {
+    "ARM,gicv2": [
+      {
+        "bundle": "com.apple.driver.AppleARMGIC",
+        "personality": "AppleARMGICv2",
+        "IOClass": "AppleARMGICv2",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "ARM,gicv3": [
+      {
+        "bundle": "com.apple.driver.AppleARMGIC",
+        "personality": "AppleARMGICv3",
+        "IOClass": "AppleARMGICv3",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "charger": [
+      {
+        "bundle": "com.apple.driver.AppleARMPMU",
+        "personality": "AppleARMCharger",
+        "IOClass": "AppleARMPMUCharger",
+        "IOProviderClass": "IOService"
+      }
+    ],
+    "charger,passthrough": [
+      {
+        "bundle": "com.apple.driver.AppleARMPMU",
+        "personality": "AppleARMPassthroughPowerSource",
+        "IOClass": "AppleARMPassthroughPowerSource",
+        "IOProviderClass": "IOService"
+      }
+    ],
+    "backlight": [
+      {
+        "bundle": "com.apple.driver.AppleARMPlatform",
+        "personality": "AppleARMBacklight",
+        "IOClass": "AppleARMBacklight",
+        "IOProviderClass": "IOPlatformDevice"
+      }
+    ],
+    "nor-flash,cfi": [
+      {
+        "bundle": "com.apple.driver.AppleARMPlatform",
+        "personality": "AppleARMCFIFlashController",
+        "IOClass": "AppleARMCFIFlashController",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "cpu": [
+      {
+        "bundle": "com.apple.driver.AppleARMPlatform",
+        "personality": "AppleARMCPU",
+        "IOClass": "AppleARMCPU",
+        "IOProviderClass": "IOPlatformDevice"
+      }
+    ],
+    "gen-aft": [
+      {
+        "bundle": "com.apple.driver.AppleARMPlatform",
+        "personality": "AppleARMFabricTrace",
+        "IOClass": "AppleARMFabricTrace",
+        "IOProviderClass": "IOService"
+      }
+    ],
+    "eeprom,i2c": [
+      {
+        "bundle": "com.apple.driver.AppleARMPlatform",
+        "personality": "AppleARMI2CEEPROM",
+        "IOClass": "AppleARMI2CEEPROM",
+        "IOProviderClass": "AppleARMIICDevice"
+      }
+    ],
+    "cpu-debug-interface": [
+      {
+        "bundle": "com.apple.driver.AppleARMPlatform",
+        "personality": "AppleARMLightEmUp",
+        "IOClass": "AppleARMLightEmUp",
+        "IOProviderClass": "IOService"
+      }
+    ],
+    "programmer-switch": [
+      {
+        "bundle": "com.apple.driver.AppleARMPlatform",
+        "personality": "AppleARMNMI",
+        "IOClass": "AppleARMNMI",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "nvram,chrp": [
+      {
+        "bundle": "com.apple.driver.AppleARMPlatform",
+        "personality": "AppleARMNORNVRAM1",
+        "IOClass": "AppleARMNORNVRAM",
+        "IOProviderClass": "AppleARMNORFlashDevice"
+      }
+    ],
+    "nvram,nor": [
+      {
+        "bundle": "com.apple.driver.AppleARMPlatform",
+        "personality": "AppleARMNORNVRAM2",
+        "IOClass": "AppleARMNORNVRAM",
+        "IOProviderClass": "AppleARMNORFlashDevice"
+      }
+    ],
+    "paniclog": [
+      {
+        "bundle": "com.apple.driver.AppleARMPlatform",
+        "personality": "AppleARMNORPanicLog",
+        "IOClass": "AppleARMNORPanicLog",
+        "IOProviderClass": "AppleARMNORFlashDevice"
+      }
+    ],
+    "AppleARM": [
+      {
+        "bundle": "com.apple.driver.AppleARMPlatform",
+        "personality": "AppleARMPE",
+        "IOClass": "AppleARMPE",
+        "IOProviderClass": "IOPlatformExpertDevice"
+      }
+    ],
+    "backlight,pwm": [
+      {
+        "bundle": "com.apple.driver.AppleARMPlatform",
+        "personality": "AppleARMPWMBacklight",
+        "IOClass": "AppleARMPWMBacklight",
+        "IOProviderClass": "AppleARMPWMDevice"
+      }
+    ],
+    "nor-flash,spi": [
+      {
+        "bundle": "com.apple.driver.AppleARMPlatform",
+        "personality": "AppleARMSPIFlashController",
+        "IOClass": "AppleARMSPIFlashController",
+        "IOProviderClass": "AppleARMSPIDevice"
+      }
+    ],
+    "sacm": [
+      {
+        "bundle": "com.apple.driver.AppleARMPlatform",
+        "personality": "AppleARMSlowAdaptiveClockingManager",
+        "IOClass": "AppleARMSlowAdaptiveClockingManager",
+        "IOProviderClass": "IOPlatformDevice"
+      }
+    ],
+    "iic,soft": [
+      {
+        "bundle": "com.apple.driver.AppleARMPlatform",
+        "personality": "AppleARMSoftIICController",
+        "IOClass": "AppleARMSoftIICController",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "wlan": [
+      {
+        "bundle": "com.apple.driver.AppleBCMWLANBusInterfacePCIe",
+        "personality": "AppleARMIODevice",
+        "IOClass": "AppleBCMWLANBusInterfacePCIe",
+        "IOProviderClass": "AppleARMIODevice"
+      },
+      {
+        "bundle": "com.apple.driver.AppleBCMWLANBusInterfacePCIe",
+        "personality": "UART",
+        "IOClass": "AppleBCMWLANBusInterfacePCIe",
+        "IOProviderClass": "AppleOnboardSerialSync"
+      },
+      {
+        "bundle": "com.apple.driver.AppleOLYHAL",
+        "personality": "AppleARMIODevice",
+        "IOClass": "AppleOLYHAL",
+        "IOProviderClass": "AppleARMIODevice"
+      },
+      {
+        "bundle": "com.apple.driver.AppleOLYHAL",
+        "personality": "UART",
+        "IOClass": "AppleOLYHAL",
+        "IOProviderClass": "AppleOnboardSerialSync"
+      }
+    ],
+    "bluetooth": [
+      {
+        "bundle": "com.apple.driver.AppleBluetoothModule",
+        "personality": "AppleBluetoothModule",
+        "IOClass": "AppleBluetoothModule",
+        "IOProviderClass": "AppleARMIODevice"
+      },
+      {
+        "bundle": "com.apple.driver.AppleBluetoothModule",
+        "personality": "AppleBluetoothModule_UART",
+        "IOClass": "AppleBluetoothModule",
+        "IOProviderClass": "AppleOnboardSerialSync"
+      }
+    ],
+    "diagnostic-data,format1": [
+      {
+        "bundle": "com.apple.driver.AppleDiagnosticDataAccessReadOnly",
+        "personality": "AppleNORDiagnosticDataAccess",
+        "IOClass": "AppleDiagnosticDataAccessReadOnly",
+        "IOProviderClass": "AppleARMNORFlashDevice"
+      }
+    ],
+    "effaceable,nor": [
+      {
+        "bundle": "com.apple.driver.AppleEffaceableNOR",
+        "personality": "AppleEffaceableNOR",
+        "IOClass": "AppleEffaceableNOR",
+        "IOProviderClass": "AppleARMNORFlashDevice"
+      }
+    ],
+    "als,ct720": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedLightSensor",
+        "personality": "AppleCT720",
+        "IOClass": "AppleCT720",
+        "IOProviderClass": "AppleARMIICDevice"
+      }
+    ],
+    "als,ct817": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedLightSensor",
+        "personality": "AppleCT809",
+        "IOClass": "AppleCT809",
+        "IOProviderClass": "AppleARMIICDevice"
+      }
+    ],
+    "als,ct809": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedLightSensor",
+        "personality": "AppleCT809",
+        "IOClass": "AppleCT809",
+        "IOProviderClass": "AppleARMIICDevice"
+      }
+    ],
+    "amctempsensor,s5l8960x": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AMCTempSensor",
+        "IOClass": "AMCTempSensor",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "dietempctl,s5l8960x": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleDieTempController",
+        "IOClass": "AppleDieTempController",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "dietempctl,t7000": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleDieTempController",
+        "IOClass": "AppleDieTempController",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "dietempctl,t7001": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleDieTempController",
+        "IOClass": "AppleDieTempController",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "dietempctl,s8000": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleDieTempController",
+        "IOClass": "AppleDieTempController",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "dietempctl,t8010": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleDieTempController",
+        "IOClass": "AppleDieTempController",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "dietempctl,t8012": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleDieTempController",
+        "IOClass": "AppleDieTempController",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "dietempctl,t8015": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleDieTempController",
+        "IOClass": "AppleDieTempController",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "dietempctl,t8020": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleDieTempController",
+        "IOClass": "AppleDieTempController",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "dietempctl,t8027": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleDieTempController",
+        "IOClass": "AppleDieTempController",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "dietempctl,t8030": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleDieTempController",
+        "IOClass": "AppleDieTempController",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "dietempctl,t8004": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleDieTempController",
+        "IOClass": "AppleDieTempController",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "dietempctl,t8006": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleDieTempController",
+        "IOClass": "AppleDieTempController",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "tempsensor,s5l8945x": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "ApplePMGRTempSensor",
+        "IOClass": "ApplePMGRTempSensor",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "scctempsensor,s5l8950x": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleSCCTempSensor",
+        "IOClass": "AppleSCCTempSensor",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "sochot,s5l8955x": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleSocHot",
+        "IOClass": "AppleSocHot",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "tempsensor,t7000": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleT700XTempSensor",
+        "IOClass": "AppleT700XTempSensor",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "tempsensor,t7001": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleT700XTempSensor",
+        "IOClass": "AppleT700XTempSensor",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "tempsensor,s8000": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleT700XTempSensor",
+        "IOClass": "AppleT700XTempSensor",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "tempsensor,t8010": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleT700XTempSensor",
+        "IOClass": "AppleT700XTempSensor",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "tempsensor,t8012": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleT700XTempSensor",
+        "IOClass": "AppleT700XTempSensor",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "tempsensor,t8006": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleT700XTempSensor",
+        "IOClass": "AppleT700XTempSensor",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "tempsensor,t8015": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleT8015TempSensor",
+        "IOClass": "AppleT8015TempSensor",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "tempsensor,t8020": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleT8015TempSensor",
+        "IOClass": "AppleT8015TempSensor",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "tempsensor,t8027": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleT8015TempSensor",
+        "IOClass": "AppleT8015TempSensor",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "tempsensor,t8030": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleT8015TempSensor",
+        "IOClass": "AppleT8015TempSensor",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "mtrtempsensor,t8020": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleT8020MTRTempSensor",
+        "IOClass": "AppleT8020MTRTempSensor",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "vtempctl,t8010": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleVTempDispatcher",
+        "IOClass": "AppleVTempDispatcher",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "vtempctl,s8003": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleVTempDispatcher",
+        "IOClass": "AppleVTempDispatcher",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "vtempctl,s8001": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleVTempDispatcher",
+        "IOClass": "AppleVTempDispatcher",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "vtempctl,s8000": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleVTempDispatcher",
+        "IOClass": "AppleVTempDispatcher",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "vtempctl,t8015": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleVTempDispatcher",
+        "IOClass": "AppleVTempDispatcher",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "vtempctl,t8020": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleVTempDispatcher",
+        "IOClass": "AppleVTempDispatcher",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "vtempctl,t8027": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleVTempDispatcher",
+        "IOClass": "AppleVTempDispatcher",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "vtempctl,t8030": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleVTempDispatcher",
+        "IOClass": "AppleVTempDispatcher",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "vtempctl,t8006": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedTempSensor",
+        "personality": "AppleVTempDispatcher",
+        "IOClass": "AppleVTempDispatcher",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "usb-repeater-i2c,ticd2e22": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedUSBHost",
+        "personality": "AppleTICD2E22",
+        "IOClass": "AppleTICD2E22",
+        "IOProviderClass": "AppleARMIICDevice"
+      }
+    ],
+    "usb-hub-i2c": [
+      {
+        "bundle": "com.apple.driver.AppleEmbeddedUSBHost",
+        "personality": "AppleUSBHubIICDevice",
+        "IOClass": "AppleUSBHubIICDevice",
+        "IOProviderClass": "AppleARMIICDevice"
+      }
+    ],
+    "ap_echo-test": [
+      {
+        "bundle": "com.apple.driver.AppleFirmwareKit",
+        "personality": "AFKEchoTestEPIC",
+        "IOClass": "AFKEchoTestEPIC",
+        "IOProviderClass": "AFKEndpointInterface"
+      }
+    ],
+    "afk-io-service-client": [
+      {
+        "bundle": "com.apple.driver.AppleFirmwareKit",
+        "personality": "AFKIOServiceClient",
+        "IOClass": "AFKIOServiceClient",
+        "IOProviderClass": "AFKEndpointInterface"
+      }
+    ],
+    "afk-smc-client": [
+      {
+        "bundle": "com.apple.driver.AppleFirmwareKit",
+        "personality": "AFKRemoteSMCClient",
+        "IOClass": "AFKRemoteSMCClient",
+        "IOProviderClass": "AFKEndpointInterface"
+      }
+    ],
+    "afk-shmem-registry": [
+      {
+        "bundle": "com.apple.driver.AppleFirmwareKit",
+        "personality": "AFKSharedMemoryMapServer",
+        "IOClass": "AFKSharedMemoryMapServer",
+        "IOProviderClass": "AFKEndpointInterface"
+      }
+    ],
+    "afk-shmem-test-registry": [
+      {
+        "bundle": "com.apple.driver.AppleFirmwareKit",
+        "personality": "AFKSharedMemoryMapServer",
+        "IOClass": "AFKSharedMemoryMapServer",
+        "IOProviderClass": "AFKEndpointInterface"
+      }
+    ],
+    "tb-test-server-ep": [
+      {
+        "bundle": "com.apple.driver.AppleFirmwareKit",
+        "personality": "AFKTBTestClient",
+        "IOClass": "AFKTBTestClient",
+        "IOProviderClass": "AFKTightbeamEndpoint"
+      }
+    ],
+    "tb-test-client-ep": [
+      {
+        "bundle": "com.apple.driver.AppleFirmwareKit",
+        "personality": "AFKTBTestServer",
+        "IOClass": "AFKTBTestServer",
+        "IOProviderClass": "AFKTightbeamEndpoint"
+      }
+    ],
+    "defaults": [
+      {
+        "bundle": "com.apple.security.AppleImage4",
+        "personality": "AppleImage4",
+        "IOClass": "AppleImage4",
+        "IOProviderClass": "IOPlatformDevice"
+      },
+      {
+        "bundle": "com.apple.driver.AppleMobileApNonce",
+        "personality": "AppleMobileApNonceNVRAM",
+        "IOClass": "AppleMobileApNonce",
+        "IOProviderClass": "IOPlatformDevice"
+      },
+      {
+        "bundle": "com.apple.security.Image4",
+        "personality": "Image4",
+        "IOClass": "Image4",
+        "IOProviderClass": "IOPlatformDevice"
+      }
+    ],
+    "IntraServer,fc": [
+      {
+        "bundle": "com.apple.driver.AppleLSIFusionMPT",
+        "personality": "AppleLSIFusionFC",
+        "IOClass": "AppleLSIFusionFC",
+        "IOProviderClass": "IOPCIDevice"
+      }
+    ],
+    "pci1000,626": [
+      {
+        "bundle": "com.apple.driver.AppleLSIFusionMPT",
+        "personality": "AppleLSIFusionFC",
+        "IOClass": "AppleLSIFusionFC",
+        "IOProviderClass": "IOPCIDevice"
+      }
+    ],
+    "pci1000,622": [
+      {
+        "bundle": "com.apple.driver.AppleLSIFusionMPT",
+        "personality": "AppleLSIFusionFC",
+        "IOClass": "AppleLSIFusionFC",
+        "IOProviderClass": "IOPCIDevice"
+      }
+    ],
+    "pci1000,646": [
+      {
+        "bundle": "com.apple.driver.AppleLSIFusionMPT",
+        "personality": "AppleLSIFusionFC",
+        "IOClass": "AppleLSIFusionFC",
+        "IOProviderClass": "IOPCIDevice"
+      }
+    ],
+    "LSILogic,sas": [
+      {
+        "bundle": "com.apple.driver.AppleLSIFusionMPT",
+        "personality": "AppleLSIFusionSAS",
+        "IOClass": "AppleLSIFusionSAS",
+        "IOProviderClass": "IOPCIDevice"
+      }
+    ],
+    "pci1000,50": [
+      {
+        "bundle": "com.apple.driver.AppleLSIFusionMPT",
+        "personality": "AppleLSIFusionSAS",
+        "IOClass": "AppleLSIFusionSAS",
+        "IOProviderClass": "IOPCIDevice"
+      }
+    ],
+    "pci1000,56": [
+      {
+        "bundle": "com.apple.driver.AppleLSIFusionMPT",
+        "personality": "AppleLSIFusionSAS",
+        "IOClass": "AppleLSIFusionSAS",
+        "IOProviderClass": "IOPCIDevice"
+      }
+    ],
+    "pci1000,58": [
+      {
+        "bundle": "com.apple.driver.AppleLSIFusionMPT",
+        "personality": "AppleLSIFusionSAS",
+        "IOClass": "AppleLSIFusionSAS",
+        "IOProviderClass": "IOPCIDevice"
+      }
+    ],
+    "LSILogic,scsi": [
+      {
+        "bundle": "com.apple.driver.AppleLSIFusionMPT",
+        "personality": "AppleLSIFusionSCSI",
+        "IOClass": "AppleLSIFusionSCSI",
+        "IOProviderClass": "IOPCIDevice"
+      }
+    ],
+    "pci1000,30": [
+      {
+        "bundle": "com.apple.driver.AppleLSIFusionMPT",
+        "personality": "AppleLSIFusionSCSI",
+        "IOClass": "AppleLSIFusionSCSI",
+        "IOProviderClass": "IOPCIDevice"
+      }
+    ],
+    "scaler,s5l8960x": [
+      {
+        "bundle": "com.apple.driver.AppleM2ScalerCSCDriver",
+        "personality": "s5l8720x",
+        "IOClass": "AppleM2ScalerCSCDriver",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "buttons": [
+      {
+        "bundle": "com.apple.driver.AppleM68Buttons",
+        "personality": "AppleM68Buttons",
+        "IOClass": "AppleM68Buttons",
+        "IOProviderClass": "IOPlatformDevice"
+      }
+    ],
+    "amfm": [
+      {
+        "bundle": "com.apple.driver.AppleMultiFunctionManager",
+        "personality": "AppleMultiFunctionManager",
+        "IOClass": "AppleMultiFunctionManager",
+        "IOProviderClass": "IOPlatformDevice"
+      }
+    ],
+    "QEMU0001": [
+      {
+        "bundle": "com.apple.driver.ApplePVPanic",
+        "personality": "ApplePVPanicISA",
+        "IOClass": "ApplePVPanicISA",
+        "IOProviderClass": "IOACPIPlatformDevice"
+      }
+    ],
+    "qemu,pvpanic-mmio": [
+      {
+        "bundle": "com.apple.driver.ApplePVPanic",
+        "personality": "ApplePVPanicMMIO",
+        "IOClass": "ApplePVPanicMMIO",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "paravirtualizedgraphics,gpu": [
+      {
+        "bundle": "com.apple.driver.AppleParavirtGPUIOGPUFamily",
+        "personality": "AppleParavirtGPUARM",
+        "IOClass": "AppleParavirtGPU",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "paravirtualizedgraphics,iosurface": [
+      {
+        "bundle": "com.apple.iokit.AppleParavirtIOSurface",
+        "personality": "ParavirtMapperDevice",
+        "IOClass": "IOSurfaceParavirtMapperDevice",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "aes,s8000": [
+      {
+        "bundle": "com.apple.driver.AppleS8000AES",
+        "personality": "AppleS8000AES",
+        "IOClass": "AppleS8000AESAccelerator",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "pci17a0,9755": [
+      {
+        "bundle": "com.apple.driver.AppleSDXC",
+        "personality": "AppleSDXC",
+        "IOClass": "AppleSDXC",
+        "IOProviderClass": "IOPCIDevice"
+      }
+    ],
+    "pcie-sdreader-helper": [
+      {
+        "bundle": "com.apple.driver.AppleSDXC",
+        "personality": "AppleSDXCSDDetect",
+        "IOClass": "AppleSDXCSDDetect",
+        "IOProviderClass": "IOPlatformDevice"
+      }
+    ],
+    "iop-nub,sep": [
+      {
+        "bundle": "com.apple.driver.AppleSEPManager",
+        "personality": "A7IOPNub",
+        "IOClass": "AppleSEPManager",
+        "IOProviderClass": "AppleA7IOPNub"
+      },
+      {
+        "bundle": "com.apple.driver.AppleSEPManager",
+        "personality": "IntelIOPNub",
+        "IOClass": "AppleSEPManager",
+        "IOProviderClass": "AppleSEPIntelIOPNub"
+      }
+    ],
+    "sep-endpoint,artr": [
+      {
+        "bundle": "com.apple.driver.AppleSEPManager",
+        "personality": "ARTRequestsDevice",
+        "IOClass": "AppleSEPARTRequestsService",
+        "IOProviderClass": "AppleSEPDeviceService"
+      }
+    ],
+    "sep-endpoint,arts": [
+      {
+        "bundle": "com.apple.driver.AppleSEPManager",
+        "personality": "ARTStorageDevice",
+        "IOClass": "AppleSEPARTStorageService",
+        "IOProviderClass": "AppleSEPDeviceService"
+      }
+    ],
+    "sep-endpoint,debu": [
+      {
+        "bundle": "com.apple.driver.AppleSEPManager",
+        "personality": "DebugDevice",
+        "IOClass": "AppleSEPDebugService",
+        "IOProviderClass": "AppleSEPDeviceService"
+      }
+    ],
+    "sep-endpoint,hilo": [
+      {
+        "bundle": "com.apple.driver.AppleSEPManager",
+        "personality": "HiloDevice",
+        "IOClass": "AppleSEPHiloService",
+        "IOProviderClass": "AppleSEPDeviceService"
+      }
+    ],
+    "SEPM": [
+      {
+        "bundle": "com.apple.driver.AppleSEPManager",
+        "personality": "IntelIOP",
+        "IOClass": "AppleSEPIntelIOP",
+        "IOProviderClass": "IOPCIDevice"
+      }
+    ],
+    "sep-endpoint,log": [
+      {
+        "bundle": "com.apple.driver.AppleSEPManager",
+        "personality": "LoggingDevice",
+        "IOClass": "AppleSEPLoggerService",
+        "IOProviderClass": "AppleSEPDeviceService"
+      }
+    ],
+    "sep-endpoint,pair": [
+      {
+        "bundle": "com.apple.driver.AppleSEPManager",
+        "personality": "PairingDevice",
+        "IOClass": "AppleSEPPairing",
+        "IOProviderClass": "AppleSEPDeviceService"
+      }
+    ],
+    "sep-endpoint,unit": [
+      {
+        "bundle": "com.apple.driver.AppleSEPManager",
+        "personality": "TestingDevice",
+        "IOClass": "AppleSEPTestingService",
+        "IOProviderClass": "AppleSEPDeviceService"
+      }
+    ],
+    "sep-endpoint,xarm": [
+      {
+        "bundle": "com.apple.driver.AppleSEPManager",
+        "personality": "xARTMasterDevice",
+        "IOClass": "AppleSEPXARTService",
+        "IOProviderClass": "AppleSEPDeviceService"
+      }
+    ],
+    "sep-endpoint,xars": [
+      {
+        "bundle": "com.apple.driver.AppleSEPManager",
+        "personality": "xARTSlaveDevice",
+        "IOClass": "AppleSEPXARTService",
+        "IOProviderClass": "AppleSEPDeviceService"
+      }
+    ],
+    "smc-acam": [
+      {
+        "bundle": "com.apple.driver.AppleSMC",
+        "personality": "AppleSMCACAMDriver",
+        "IOClass": "AppleSMCACAMDriver",
+        "IOProviderClass": "AppleSMCInterface"
+      }
+    ],
+    "smc-aop": [
+      {
+        "bundle": "com.apple.driver.AppleSMC",
+        "personality": "AppleSMCAOP",
+        "IOClass": "AppleAOPSMC",
+        "IOProviderClass": "AppleSMCInterface"
+      }
+    ],
+    "smc-charger": [
+      {
+        "bundle": "com.apple.driver.AppleSMC",
+        "personality": "AppleSMCCharger",
+        "IOClass": "AppleSMCCharger",
+        "IOProviderClass": "AppleSMCInterface"
+      }
+    ],
+    "smc-orion-charger": [
+      {
+        "bundle": "com.apple.driver.AppleSMC",
+        "personality": "AppleSMCCharger",
+        "IOClass": "AppleSMCCharger",
+        "IOProviderClass": "AppleSMCInterface"
+      }
+    ],
+    "smc-charger-util": [
+      {
+        "bundle": "com.apple.driver.AppleSMC",
+        "personality": "AppleSMCChargerUtil",
+        "IOClass": "AppleSMCChargerUtil",
+        "IOProviderClass": "AppleSMCInterface"
+      }
+    ],
+    "dock,smc-usb-ufp": [
+      {
+        "bundle": "com.apple.driver.AppleSMC",
+        "personality": "AppleSMCDockUSB_UFP",
+        "IOClass": "AppleSMCDockUSB_UFP",
+        "IOProviderClass": "AppleSMCInterface"
+      }
+    ],
+    "portmicro,smc-ccg2": [
+      {
+        "bundle": "com.apple.driver.AppleSMC",
+        "personality": "AppleSMCHighVoltageCharger",
+        "IOClass": "AppleSMCHighVoltageCharger",
+        "IOProviderClass": "AppleSMCInterface"
+      }
+    ],
+    "SMCEndpoint1": [
+      {
+        "bundle": "com.apple.driver.AppleSMC",
+        "personality": "AppleSMCKeysEndpoint",
+        "IOClass": "AppleSMCKeysEndpoint",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "smc-pmu": [
+      {
+        "bundle": "com.apple.driver.AppleSMC",
+        "personality": "AppleSMCPMU",
+        "IOClass": "AppleSMCPMU",
+        "IOProviderClass": "AppleSMCInterface"
+      }
+    ],
+    "smc-power-out": [
+      {
+        "bundle": "com.apple.driver.AppleSMC",
+        "personality": "AppleSMCPowerOut",
+        "IOClass": "AppleSMCPowerOut",
+        "IOProviderClass": "AppleSMCInterface"
+      }
+    ],
+    "smc-tempsensor": [
+      {
+        "bundle": "com.apple.driver.AppleSMC",
+        "personality": "AppleSMCSensorDispatcher",
+        "IOClass": "AppleSMCSensorDispatcher",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "smc-control": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleAOPSMCDriver",
+        "IOClass": "AppleAOPSMCDriver",
+        "IOProviderClass": "AppleSPUAppInterface"
+      }
+    ],
+    "iop-spu-nub": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleLVBOOST",
+        "IOClass": "AppleLVBOOST",
+        "IOProviderClass": "AppleA7IOPNub"
+      },
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUTimesyncV1",
+        "IOClass": "AppleSPUTimesyncV1",
+        "IOProviderClass": "AppleA7IOPNub"
+      }
+    ],
+    "iop-aop-nub": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleLVBOOST",
+        "IOClass": "AppleLVBOOST",
+        "IOProviderClass": "AppleA7IOPNub"
+      },
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUTimesyncV2",
+        "IOClass": "AppleSPUTimesyncV2",
+        "IOProviderClass": "AppleA7IOPNub"
+      }
+    ],
+    "AOPEndpoint1": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint2": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint3": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint4": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint5": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint6": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint7": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint8": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint9": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint10": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint11": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint12": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint13": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint14": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint15": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint16": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint17": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint18": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint19": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint20": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint21": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint22": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint23": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint24": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint25": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint26": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint27": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint28": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint29": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint30": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint31": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "AOPEndpoint32": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPUEndpoint1": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPUEndpoint2": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPUEndpoint3": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPUEndpoint4": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPUEndpoint5": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPUEndpoint6": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPUEndpoint7": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPUEndpoint8": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPUEndpoint9": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPUEndpoint10": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPUEndpoint11": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPUEndpoint12": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPUEndpoint13": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPUEndpoint14": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPUEndpoint15": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPUEndpoint16": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPU2Endpoint1": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPU2Endpoint2": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPU2Endpoint3": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPU2Endpoint4": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPU2Endpoint5": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPU2Endpoint6": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPU2Endpoint7": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPU2Endpoint8": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPU2Endpoint9": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPU2Endpoint10": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPU2Endpoint11": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPU2Endpoint12": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPU2Endpoint13": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPU2Endpoint14": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPU2Endpoint15": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "SPU2Endpoint16": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPU",
+        "IOClass": "AppleSPU",
+        "IOProviderClass": "RTBuddyEndpointService"
+      }
+    ],
+    "aon-ptd": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUAONPTDDriver",
+        "IOClass": "AppleSPUAONPTDDriver",
+        "IOProviderClass": "AppleSPUAppInterface"
+      }
+    ],
+    "SPUApp": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUAppDriver",
+        "IOClass": "AppleSPUAppDriver",
+        "IOProviderClass": "AppleSPUAppInterface"
+      }
+    ],
+    "batt-adc": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUBattChannelDriver",
+        "IOClass": "AppleSPUBattChannelDriver",
+        "IOProviderClass": "AppleSPUAppInterface"
+      }
+    ],
+    "bora-uart": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUBoraUartDriver",
+        "IOClass": "AppleSPUBoraUartDriver",
+        "IOProviderClass": "AppleSPUAppInterface"
+      }
+    ],
+    "multi-touch": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUControl",
+        "IOClass": "AppleSPUControl",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "opal": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUControl",
+        "IOClass": "AppleSPUControl",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "dcp-control": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUDCPDriver",
+        "IOClass": "AppleSPUDCPDriver",
+        "IOProviderClass": "AppleSPUAppInterface"
+      }
+    ],
+    "disp-adc": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUDispADCDriver",
+        "IOClass": "AppleSPUDispADCDriver",
+        "IOProviderClass": "AppleSPUAppInterface"
+      }
+    ],
+    "gnss": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUGNSSDriver",
+        "IOClass": "AppleSPUGNSSDriver",
+        "IOProviderClass": "AppleSPUAppInterface"
+      }
+    ],
+    "romeo": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUGpioUnplugDriver",
+        "IOClass": "AppleSPUGpioUnplugDriver",
+        "IOProviderClass": "AppleSPUInterface"
+      }
+    ],
+    "juliet": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUGpioUnplugDriver",
+        "IOClass": "AppleSPUGpioUnplugDriver",
+        "IOProviderClass": "AppleSPUInterface"
+      }
+    ],
+    "lanai_l": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUGpioUnplugDriver",
+        "IOClass": "AppleSPUGpioUnplugDriver",
+        "IOProviderClass": "AppleSPUInterface"
+      }
+    ],
+    "lanai_r": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUGpioUnplugDriver",
+        "IOClass": "AppleSPUGpioUnplugDriver",
+        "IOProviderClass": "AppleSPUInterface"
+      }
+    ],
+    "grimaldi-control": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUGrimaldiDriver",
+        "IOClass": "AppleSPUGrimaldiDriver",
+        "IOProviderClass": "AppleSPUAppInterface"
+      }
+    ],
+    "aop-haptics-audio": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUHapticsAudioDriver",
+        "IOClass": "AppleSPUHapticsAudioDriver",
+        "IOProviderClass": "AppleSPUInterface"
+      }
+    ],
+    "aop-haptics-manager": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUHapticsManagerDriver",
+        "IOClass": "AppleSPUHapticsManagerDriver",
+        "IOProviderClass": "AppleSPUInterface"
+      }
+    ],
+    "AOP_log": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPULogFirmwareDriver",
+        "IOClass": "AppleSPULogFirmwareDriver",
+        "IOProviderClass": "AppleSPUInterface"
+      }
+    ],
+    "aop-marconi-bt-control": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUMarconiControl",
+        "IOClass": "AppleSPUMarconiControl",
+        "IOProviderClass": "AppleSPUAppInterface"
+      }
+    ],
+    "pdmclk": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUPDMCLKDriver",
+        "IOClass": "AppleSPUPDMCLKDriver",
+        "IOProviderClass": "AppleSPUInterface"
+      }
+    ],
+    "AOP_profile": [
+      {
+        "bundle": "com.apple.driver.AppleSPU",
+        "personality": "AppleSPUProfileFirmwareDriver",
+        "IOClass": "AppleSPUProfileFirmwareDriver",
+        "IOProviderClass": "AppleSPUInterface"
+      }
+    ],
+    "uart-1,samsung": [
+      {
+        "bundle": "com.apple.driver.AppleSamsungSerial",
+        "personality": "AppleSamsungSerial",
+        "IOClass": "AppleSamsungSerial",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "dockchannel-uart": [
+      {
+        "bundle": "com.apple.driver.AppleSerialShim",
+        "personality": "AppleSerialShimGeneral",
+        "IOClass": "AppleSerialShim",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "uart0": [
+      {
+        "bundle": "com.apple.driver.AppleSerialShim",
+        "personality": "AppleSerialShimUart",
+        "IOClass": "AppleSerialShim",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "uart1": [
+      {
+        "bundle": "com.apple.driver.AppleSerialShim",
+        "personality": "AppleSerialShimUart",
+        "IOClass": "AppleSerialShim",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "uart2": [
+      {
+        "bundle": "com.apple.driver.AppleSerialShim",
+        "personality": "AppleSerialShimUart",
+        "IOClass": "AppleSerialShim",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "uart3": [
+      {
+        "bundle": "com.apple.driver.AppleSerialShim",
+        "personality": "AppleSerialShimUart",
+        "IOClass": "AppleSerialShim",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "uart4": [
+      {
+        "bundle": "com.apple.driver.AppleSerialShim",
+        "personality": "AppleSerialShimUart",
+        "IOClass": "AppleSerialShim",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "uart5": [
+      {
+        "bundle": "com.apple.driver.AppleSerialShim",
+        "personality": "AppleSerialShimUart",
+        "IOClass": "AppleSerialShim",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "uart6": [
+      {
+        "bundle": "com.apple.driver.AppleSerialShim",
+        "personality": "AppleSerialShimUart",
+        "IOClass": "AppleSerialShim",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "uart7": [
+      {
+        "bundle": "com.apple.driver.AppleSerialShim",
+        "personality": "AppleSerialShimUart",
+        "IOClass": "AppleSerialShim",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "uart8": [
+      {
+        "bundle": "com.apple.driver.AppleSerialShim",
+        "personality": "AppleSerialShimUart",
+        "IOClass": "AppleSerialShim",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "ARM,pl031": [
+      {
+        "bundle": "com.apple.driver.AppleVirtualPlatform",
+        "personality": "ApplePL031RTC",
+        "IOClass": "ApplePL031RTC",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "ARM,psci": [
+      {
+        "bundle": "com.apple.driver.AppleVirtualPlatform",
+        "personality": "ApplePSCI",
+        "IOClass": "ApplePSCI",
+        "IOProviderClass": "IOPlatformDevice"
+      }
+    ],
+    "AppleVirtualPlatformARM": [
+      {
+        "bundle": "com.apple.driver.AppleVirtualPlatform",
+        "personality": "AppleVirtualPlatformARMPE",
+        "IOClass": "AppleVirtualPlatformARMPE",
+        "IOProviderClass": "IOPlatformExpertDevice"
+      }
+    ],
+    "arm-io,vmapple1": [
+      {
+        "bundle": "com.apple.driver.AppleVirtualPlatform",
+        "personality": "AppleVirtualPlatformIO",
+        "IOClass": "AppleVirtualPlatformIO",
+        "IOProviderClass": "IOPlatformDevice"
+      }
+    ],
+    "pcie,vmapple1": [
+      {
+        "bundle": "com.apple.driver.AppleVirtualPlatform",
+        "personality": "AppleVirtualPlatformPCIE",
+        "IOClass": "AppleVirtualPlatformPCIE",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "ARM,pl061": [
+      {
+        "bundle": "com.apple.driver.AppleVirtualPlatform",
+        "personality": "AppleVirtualPlatformPowerButtons",
+        "IOClass": "AppleVirtualPlatformButtons",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "avp,rtc": [
+      {
+        "bundle": "com.apple.driver.AppleVirtualPlatform",
+        "personality": "AppleVirtualPlatformRTC",
+        "IOClass": "AppleVirtualPlatformRTC",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "avp,sealed-registers": [
+      {
+        "bundle": "com.apple.driver.AppleVirtualPlatform",
+        "personality": "AppleVirtualPlatformSealedRegisters",
+        "IOClass": "AppleVirtualPlatformSealedRegisters",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "port-virtual-1": [
+      {
+        "bundle": "com.apple.driver.AppleVirtualPlatform",
+        "personality": "AppleVirtualUSBPort",
+        "IOClass": "AppleVirtualUSBPort",
+        "IOProviderClass": "IOPlatformDevice"
+      }
+    ],
+    "audio-data,hdmi": [
+      {
+        "bundle": "com.apple.iokit.IOAVFamily",
+        "personality": "AppleARMIISAudioLinkDelegate",
+        "IOClass": "AppleIISAudioLinkDelegate",
+        "IOProviderClass": "AppleARMIISDevice"
+      }
+    ],
+    "dock,0pin": [
+      {
+        "bundle": "com.apple.iokit.IOAccessoryManager",
+        "personality": "Dock 0-pin",
+        "IOClass": "IOAccessoryDock0PinBuiltin",
+        "IOProviderClass": "IOService"
+      }
+    ],
+    "dock,30pin": [
+      {
+        "bundle": "com.apple.iokit.IOAccessoryManager",
+        "personality": "Dock 30-pin",
+        "IOClass": "IOAccessoryDock30PinBuiltIn",
+        "IOProviderClass": "IOService"
+      }
+    ],
+    "dock,usb-ufp": [
+      {
+        "bundle": "com.apple.iokit.IOAccessoryManager",
+        "personality": "Dock USB UFP",
+        "IOClass": "IOAccessoryDockUSB_UFP",
+        "IOProviderClass": "IOService"
+      }
+    ],
+    "iap,uart": [
+      {
+        "bundle": "com.apple.iokit.IOAccessoryManager",
+        "personality": "IAP Serial Port",
+        "IOClass": "IOAccessoryPortSerialSync",
+        "IOProviderClass": "AppleOnboardSerialSync"
+      }
+    ],
+    "port": [
+      {
+        "bundle": "com.apple.iokit.IOAccessoryManager",
+        "personality": "IOPort Auto Match",
+        "IOClass": "IOPort",
+        "IOProviderClass": "IOPlatformDevice"
+      }
+    ],
+    "iommu-mapper": [
+      {
+        "bundle": "com.apple.driver.IODARTFamily",
+        "personality": "IODARTMapper",
+        "IOClass": "IODARTMapper",
+        "IOProviderClass": "IODARTMapperNub"
+      }
+    ],
+    "pci-bridge": [
+      {
+        "bundle": "com.apple.iokit.IOPCIFamily",
+        "personality": "IOPCI2PCIBridge-Name",
+        "IOClass": "IOPCI2PCIBridge",
+        "IOProviderClass": "IOPCIDevice"
+      }
+    ],
+    "usb-xhci,ASM3142": [
+      {
+        "bundle": "com.apple.driver.usb.AppleEmbeddedUSBXHCIPCI",
+        "personality": "AppleEmbeddedUSBXHCIASMedia3142",
+        "IOClass": "AppleEmbeddedUSBXHCIASMedia3142",
+        "IOProviderClass": "IOPCIDevice"
+      }
+    ],
+    "usb-xhci,FL1100": [
+      {
+        "bundle": "com.apple.driver.usb.AppleEmbeddedUSBXHCIPCI",
+        "personality": "AppleEmbeddedUSBXHCIFL1100",
+        "IOClass": "AppleEmbeddedUSBXHCIFL1100",
+        "IOProviderClass": "IOPCIDevice"
+      }
+    ],
+    "usb-xhci-init,FL1100": [
+      {
+        "bundle": "com.apple.driver.usb.AppleEmbeddedUSBXHCIPCI",
+        "personality": "AppleEmbeddedUSBXHCIFL1100Init",
+        "IOClass": "AppleEmbeddedUSBXHCIFL1100Init",
+        "IOProviderClass": "IOPCIDevice"
+      }
+    ],
+    "usb-drd,t8027": [
+      {
+        "bundle": "com.apple.driver.usb.AppleSynopsysUSBXHCI",
+        "personality": "AppleT8027USBXHCI",
+        "IOClass": "AppleT8027USBXHCI",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "usb-drd,t8030": [
+      {
+        "bundle": "com.apple.driver.usb.AppleSynopsysUSBXHCI",
+        "personality": "AppleT8030USBXHCI",
+        "IOClass": "AppleT8030USBXHCI",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "usb-drd,t8101": [
+      {
+        "bundle": "com.apple.driver.usb.AppleSynopsysUSBXHCI",
+        "personality": "AppleT8101USBXHCI",
+        "IOClass": "AppleT8101USBXHCI",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "usb-drd,t8130": [
+      {
+        "bundle": "com.apple.driver.usb.AppleSynopsysUSBXHCI",
+        "personality": "AppleT8130USBXHCI",
+        "IOClass": "AppleT8130USBXHCI",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "usb-drd,t8140": [
+      {
+        "bundle": "com.apple.driver.usb.AppleSynopsysUSBXHCI",
+        "personality": "AppleT8140USBXHCI",
+        "IOClass": "AppleT8140USBXHCI",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "usb-drd,t8150": [
+      {
+        "bundle": "com.apple.driver.usb.AppleSynopsysUSBXHCI",
+        "personality": "AppleT8150USBXHCI",
+        "IOClass": "AppleT8150USBXHCI",
+        "IOProviderClass": "AppleARMIODevice"
+      }
+    ],
+    "iop-nub,rtbuddy-v2": [
+      {
+        "bundle": "com.apple.driver.RTBuddy",
+        "personality": "RTBuddy",
+        "IOClass": "RTBuddy",
+        "IOProviderClass": "AppleA7IOPNub"
+      }
+    ],
+    "iop-nub,rtbuddy": [
+      {
+        "bundle": "com.apple.driver.RTBuddy",
+        "personality": "RTBuddy64",
+        "IOClass": "RTBuddy64",
+        "IOProviderClass": "AppleA7IOPNub"
+      }
+    ],
+    "iop-nub,rtbuddy-arg": [
+      {
+        "bundle": "com.apple.driver.RTBuddy",
+        "personality": "RTBuddyARG",
+        "IOClass": "RTBuddyARG",
+        "IOProviderClass": "AppleA7IOPNub"
+      }
+    ],
+    "iop-nub,rtbuddy-route-only": [
+      {
+        "bundle": "com.apple.driver.RTBuddy",
+        "personality": "RTBuddyRouteOnly",
+        "IOClass": "RTBuddyRouteOnly",
+        "IOProviderClass": "AppleA7IOPNub"
+      }
+    ]
+  }
+}
