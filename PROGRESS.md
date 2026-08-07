@@ -36,30 +36,25 @@ of confident forum assertions.
 | 14 | XNU's x86 boot handoff is 49 fields / exactly 4096 bytes: 12 EFI-dependent, 15 boot-security. arm64 is 13 fields, no EFI, no security state. The x86 entry contract is written in EFI's vocabulary, which is why the loader must be a UEFI application | [measured] `data/boot-protocol.json` |
 | 15 | The bootloader participates in the sealed-system-volume chain: it supplies the ARV root hash and manifest for both the system volume and Base System, plus the APFS volume key and SIP configuration | [verified] `pexpert/pexpert/i386/boot.h` |
 
+| 16 | Building XNU for Intel needs no Kernel Debug Kit; building for Apple silicon does, plus a per-SoC platform identifier. Apple's README states this outright. The open-source kernel is *more* self-sufficient on x86 than on ARM | [verified] XNU `README.md` |
+| 17 | All four declared XNU build dependencies (DTrace, AvailabilityVersions, libdispatch, xnu headers) are published; DTrace is marked optional. The real gate is that the build needs Xcode, i.e. a Mac | [verified] XNU `README.md` |
+
 ## In progress
 
 **Track: bootloader and porting the system to x86.**
 
-- **Can the published XNU actually be built for x86_64?** Finding #14 shows the
-  entry contract is public and satisfied. The next question is whether the
-  open-source kernel behind it is buildable standalone, or whether it needs
-  unpublished dependencies. Checkable; not yet checked.
+- **Kernel collection format.** What the loader hands over is a KC, not a bare
+  kernel — `KC_hdrs_vaddr` in `boot_args` points at it. OpenCore's
+  `OcAppleKernelLib` implements the handling and the source is already on disk
+  at `_downloads/OpenCorePkg-src-1.0.7`, so this is measurable without network.
 
 ## Queue
 
-1. **XNU x86_64 build dependency audit** — enumerate what the published tree
-   needs that Apple does not publish (private headers, `Libsyscall` pieces,
-   AvailabilityInternal, firmware blobs). This bounds how much of "port the
-   system" is even startable.
-2. **Kernel collection / kernelcache format** — what the loader actually hands
-   over is a KC, not a bare kernel. `KC_hdrs_vaddr` in `boot_args` points at it.
-   Format is partly documented in OpenCore's `OcAppleKernelLib`, which is on
-   disk in `_downloads/OpenCorePkg-src-1.0.7`.
-3. **OpenCore x86-specific surface** — measure how much of OpenCorePkg is
+1. **OpenCore x86-specific surface** — measure how much of OpenCorePkg is
    architecture-bound, using the checkout already in `_downloads/`.
-4. **Argument buffers, residency and heap aliasing** — three gaps left [open] by
+2. **Argument buffers, residency and heap aliasing** — three gaps left [open] by
    finding #12. Deferred behind the bootloader track at the user's direction.
-5. **Local image audit** — run `macho_audit.py` against the Big Sur
+3. **Local image audit** — run `macho_audit.py` against the Big Sur
    `BaseSystem.dmg` in `_downloads/`. Big Sur is the first universal release, so
    it is the earliest point where the arm64/x86_64 ratio inside Apple's own
    shipped system becomes measurable. Blocked on reading APFS from Windows;

@@ -134,6 +134,9 @@ shader compiler, which is what applications actually call. See
 - [docs/07-boot-protocol.md](docs/07-boot-protocol.md) — XNU's boot handoff
   measured across architectures, and why the bootloader is the one component
   that is already finished
+- [docs/08-building-xnu-for-x86.md](docs/08-building-xnu-for-x86.md) — whether
+  the published kernel still builds for Intel, and the surprise that it is the
+  easier of Apple's two targets
 
 Every claim is tagged **[measured]**, **[verified]**, **[literature]** or
 **[open]** so a reader can tell an experiment from a citation from a guess.
