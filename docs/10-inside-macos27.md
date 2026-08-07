@@ -30,12 +30,12 @@ properly would mean implementing APFS. Three cheaper steps sufficed:
 
 1. `InstallAssistant.pkg` is a **xar** archive. Its table of contents shows five
    members, of which `SharedSupport.dmg` is 15.8 GB and, importantly, stored
-   **uncompressed** — so it can be read in place at a known offset without
+   **uncompressed** - so it can be read in place at a known offset without
    extracting a copy.
 2. That DMG is **UDIF v4** with a `koly` trailer, data fork at +0, 15.79 GiB.
 3. A full linear scan for Mach-O headers across all 15.79 GiB found **zero**
    binaries, with only 17 magic hits rejected by header validation across the
-   whole image — a near-zero noise floor. Everything is packed.
+   whole image - a near-zero noise floor. Everything is packed.
 4. What it *is* packed in turned out to be **zip**. Zip stores member names
    uncompressed, so a linear carve recovers the complete file listing without
    any filesystem support, and individual members can then be decompressed by
@@ -54,17 +54,17 @@ kernelcache.release.mac15g
 ```
 
 Twelve are named for Apple silicon Mac platforms. There is no x86 kernelcache in
-the package — not a stripped one, not a legacy one, none.
+the package - not a stripped one, not a legacy one, none.
 
 The thirteenth is worth its own line: **`vma2`** is the Apple Virtual Machine
-platform — the target described in
+platform - the target described in
 [docs/09-emulation-path.md](09-emulation-path.md) via XNU's own `VMAPPLE.h`.
 Apple ships a kernel for it in the retail installer.
 
 All thirteen are **IM4P** (Image4 payload) containers, tag `krnl`, description
 `KernelManagement_host-514`, with the payload **LZFSE**-compressed (`bvx2`
 magic). The `vma2` cache is 23 085 654 bytes against roughly 32 MB for the real
-Mac platforms — consistent with a VM kernel needing fewer drivers.
+Mac platforms - consistent with a VM kernel needing fewer drivers.
 
 ### All thirteen, unwrapped and read
 
@@ -89,8 +89,8 @@ Run over every kernelcache in the package (`data/gg-kernelcaches.json`):
 
 **Thirteen of thirteen are arm64e**, read from the `cputype` field of each
 decompressed Mach-O rather than inferred from a filename. Every one is an
-`MH_FILESET` kernel collection. The Mac platforms carry 342–370 bundled kexts
-in 119–126 MB; the virtual platform carries 216 in 81 MB, which is what a
+`MH_FILESET` kernel collection. The Mac platforms carry 342-370 bundled kexts
+in 119-126 MB; the virtual platform carries 216 in 81 MB, which is what a
 machine with no real hardware to drive looks like.
 
 ### The vma2 kernel in detail
@@ -119,17 +119,17 @@ What those 216 contain is itself informative:
 | Looking for | Found |
 |---|---|
 | the platform driver | `com.apple.driver.AppleVirtualPlatform` |
-| interrupt controller | `com.apple.driver.AppleARMGIC` — the GICv3 driver, exactly as `VMAPPLE.h` declares |
+| interrupt controller | `com.apple.driver.AppleARMGIC` - the GICv3 driver, exactly as `VMAPPLE.h` declares |
 | storage | `com.apple.iokit.AppleVirtIOStorage` |
 | **graphics** | **`com.apple.driver.AppleParavirtGPUIOGPUFamily`** |
-| anything x86 | **nothing — zero matches** |
+| anything x86 | **nothing - zero matches** |
 
 The graphics entry is the one that matters and it corrects
 [docs/09-emulation-path.md](09-emulation-path.md), which assumed the VM guest
 would talk to virtio-gpu. It does not. It talks to **Apple's own
 paravirtualised GPU interface**. That cuts both ways: a paravirtualised device
 has a defined guest/host protocol rather than silicon to emulate, which is
-better than an Apple GPU — but the protocol is Apple's, undocumented, and on a
+better than an Apple GPU - but the protocol is Apple's, undocumented, and on a
 real Mac the host side is implemented by Virtualization.framework forwarding
 into the real Metal driver. Anyone emulating vmapple on x86 would have to
 implement that host side themselves. Graphics is not free on this path either;
@@ -142,7 +142,7 @@ largest items:
 
 | Member | Size |
 |---|---|
-| `payloadv2/image_patches/cryptex-system-rosetta` | zip64 sentinel — see below |
+| `payloadv2/image_patches/cryptex-system-rosetta` | zip64 sentinel - see below |
 | `payloadv2/image_patches/cryptex-system-arm64e` | 1 525 685 858 |
 | `payloadv2/basesystem_patches/arm64eBaseSystem.dmg` | 1 186 686 256 |
 | `usr/standalone/update/ramdisk/arm64eSURamDisk.dmg` | 213 909 531 |
@@ -167,7 +167,7 @@ So there *is* x86_64 code in the macOS 27 installer, which is worth stating
 plainly because the simple version of the story says there is none.
 
 But note where it is. Both x86-bearing binaries belong to
-`com.apple.MobileSoftwareUpdate.UpdateBrainService` — the software-update
+`com.apple.MobileSoftwareUpdate.UpdateBrainService` - the software-update
 "brain", which is installer and updater infrastructure, and whose own
 `version.plist` gives `ProjectName: UpdateBrainAsset`,
 `BuildAliasOf: MobileSoftwareUpdate`. It is a shared component of Apple's update
@@ -180,7 +180,7 @@ such support.
 
 `AssetData/payloadv2/image_patches/cryptex-system-rosetta` is the biggest member
 in the listing. Its local header carries `0xFFFFFFFF` as the uncompressed size,
-which is the zip64 sentinel meaning the true size lives in an extra field — so
+which is the zip64 sentinel meaning the true size lives in an extra field - so
 the exact figure is **[open]** here, but it is larger than 4 GiB.
 
 This closes the loop on [docs/04-apple-x86-artifacts.md](04-apple-x86-artifacts.md):
@@ -214,7 +214,7 @@ main risk here:
   **patches**, not standalone images, in Apple's undocumented `RIDIFF`/`BXDIFF`
   delta formats.
 
-  `pbzm` is structurally a `pbzx` derivative — same chunked layout, 8 MiB
+  `pbzm` is structurally a `pbzx` derivative - same chunked layout, 8 MiB
   chunks, big-endian `[uncompressed][compressed][data]` triples, and the header
   parses cleanly as such (chunk 0: 8 388 608 → 7 258 876 bytes). But the
   per-chunk codec is **not** xz, LZFSE, gzip or zlib; the payload carries no

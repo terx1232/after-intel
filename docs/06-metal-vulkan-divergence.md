@@ -1,6 +1,6 @@
 # Where Metal and Vulkan actually diverge
 
-> **Status: [literature].** Synthesised from published sources — Apple's Metal
+> **Status: [literature].** Synthesised from published sources - Apple's Metal
 > documentation, MoltenVK's issue tracker and user guide, and a 2026
 > cross-vendor study. Nothing measured here. The numbers quoted are other
 > people's measurements, attributed.
@@ -17,7 +17,7 @@ usually name.
 
 Metal resources are created in `MTLHazardTrackingMode.tracked` by default. Metal
 applies runtime safeguards that prevent memory hazards when commands access a
-resource — the application does not declare dependencies, and the framework
+resource - the application does not declare dependencies, and the framework
 works them out.
 
 Vulkan does the opposite. Barriers and layout transitions are explicit, and the
@@ -34,7 +34,7 @@ existence of MoltenVK does not imply the reverse is comparable work.**
 
 A Metal application relies on Metal to notice that a texture written in one pass
 is read in the next. Running that application on Vulkan means the layer has to
-derive that dependency itself — which is per-resource hazard tracking, in full.
+derive that dependency itself - which is per-resource hazard tracking, in full.
 
 ### What that costs, measured by someone else
 
@@ -43,11 +43,11 @@ tracking against global pass-boundary barriers reports:
 
 - wgpu's resource trackers are *"some of the hottest code in its codebase"*
 - host-side cost of per-resource tracking: **5.59 µs per compute pass**, against
-  0.74 µs for coarse pass-boundary barriers — a 7.5× difference
+  0.74 µs for coarse pass-boundary barriers - a 7.5× difference
 - for graphics passes, 3.75 µs against 0.58 µs
 
 Crucially, the same study's Metal backend *"tracks hazards for resources created
-in the default `MTLHazardTrackingModeTracked` mode"* and simply relies on it —
+in the default `MTLHazardTrackingModeTracked` mode"* and simply relies on it -
 their manual-barrier option has no effect on Metal at all. The authors describe
 Metal's tracking as moved *"into the framework, not disappeared"*.
 
@@ -60,7 +60,7 @@ This does not appear in the 2 558-method count at all.
 ## 2. Tile memory, imageblocks and programmable blending
 
 Metal exposes Apple's tile-based deferred renderer directly. Memoryless textures
-are tile memory — never read from or written to system memory, existing only for
+are tile memory - never read from or written to system memory, existing only for
 the duration of a render pass. Imageblocks give fine-grained control over on-chip
 memory, though they are available only on some hardware.
 
@@ -90,7 +90,7 @@ unsupported; `VkAllocationCallbacks` are ignored; and MoltenVK does not load
 Vulkan layers itself.
 
 Four bullets, all narrow. The Vulkan-on-Metal direction is, for practical
-purposes, solved. That is genuinely encouraging about the shared substrate — and
+purposes, solved. That is genuinely encouraging about the shared substrate - and
 it is also why quoting MoltenVK as evidence that the reverse is tractable is a
 mistake. It is evidence that the *easy* direction is tractable.
 
@@ -128,9 +128,9 @@ version of that document's estimate should be read with this attached.
 
 ## Sources
 
-- [MTLHazardTrackingMode — Apple Developer Documentation](https://developer.apple.com/documentation/metal/mtlhazardtrackingmode)
-- [Global Pass Barriers Without Per-Resource RHI Tracking: A Cross-Vendor Study with Blade — arXiv 2607.26506](https://arxiv.org/html/2607.26506)
-- [MoltenVK Runtime User Guide — Known Limitations](https://github.com/KhronosGroup/MoltenVK/blob/main/Docs/MoltenVK_Runtime_UserGuide.md)
-- [Subpasses with transient attachments not working correctly — MoltenVK #490](https://github.com/KhronosGroup/MoltenVK/issues/490)
-- [VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT — MoltenVK #2454](https://github.com/KhronosGroup/MoltenVK/issues/2454)
-- [Vulkan Barriers Explained — AMD GPUOpen](https://gpuopen.com/learn/vulkan-barriers-explained/)
+- [MTLHazardTrackingMode - Apple Developer Documentation](https://developer.apple.com/documentation/metal/mtlhazardtrackingmode)
+- [Global Pass Barriers Without Per-Resource RHI Tracking: A Cross-Vendor Study with Blade - arXiv 2607.26506](https://arxiv.org/html/2607.26506)
+- [MoltenVK Runtime User Guide - Known Limitations](https://github.com/KhronosGroup/MoltenVK/blob/main/Docs/MoltenVK_Runtime_UserGuide.md)
+- [Subpasses with transient attachments not working correctly - MoltenVK #490](https://github.com/KhronosGroup/MoltenVK/issues/490)
+- [VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT - MoltenVK #2454](https://github.com/KhronosGroup/MoltenVK/issues/2454)
+- [Vulkan Barriers Explained - AMD GPUOpen](https://gpuopen.com/learn/vulkan-barriers-explained/)

@@ -9,8 +9,8 @@
 > (`sizeof(boot_args) == 4096`). The extraction agrees with the source.
 
 "Write a new bootloader" is the usual first proposal for getting macOS onto
-non-Apple hardware. This document answers the prior question — what does a
-bootloader actually have to hand the kernel? — and the answer makes the proposal
+non-Apple hardware. This document answers the prior question - what does a
+bootloader actually have to hand the kernel? - and the answer makes the proposal
 look different.
 
 ## The handoff, measured
@@ -52,14 +52,14 @@ physical base, memory size, a flattened device tree pointer, video, command
 line, boot flags. That is iBoot's handoff, and it is EFI-free.
 
 This is the concrete reason OpenCore is a UEFI application rather than a
-freestanding loader. It is not a design preference — the x86 XNU entry contract
+freestanding loader. It is not a design preference - the x86 XNU entry contract
 is written in EFI's vocabulary. Any x86 loader has to be a UEFI application or
 provide a complete UEFI environment, which is what OpenDuetPkg does for legacy
 BIOS machines.
 
 ## 2. The bootloader is inside the boot-security chain
 
-Fifteen of the 49 x86 fields — more than the EFI set — are security state the
+Fifteen of the 49 x86 fields - more than the EFI set - are security state the
 loader must supply:
 
 ```
@@ -73,7 +73,7 @@ bsARVRootHashStart/Size        bsARVManifestStart/Size
 system volume, passed separately for the system volume and the Base System. The
 loader locates these files and hands the kernel their physical addresses. The
 sealed-system-volume verification chain therefore *runs through the bootloader*
-— it is a participant, not a bystander. `csrActiveConfig` is SIP configuration,
+- it is a participant, not a bystander. `csrActiveConfig` is SIP configuration,
 and `apfsDataStart` is the APFS volume key structure.
 
 None of this exists in the arm64 struct, where the equivalent guarantees are
@@ -89,7 +89,7 @@ correctly, today, and boots macOS 26 Tahoe on non-Apple x86 hardware. There is
 no unsolved research problem here and no missing documentation.
 
 Writing a new x86 loader would mean reimplementing a working, documented,
-open-source component — and at the end of it, `boot_args` would be handed to a
+open-source component - and at the end of it, `boot_args` would be handed to a
 kernel that, on macOS 27, does not exist for x86. The struct is an interface.
 The interface is public and satisfied. What is missing is the implementation on
 the far side of it.
@@ -101,9 +101,9 @@ years.
 
 ## The one genuinely open question here
 
-Whether the macOS 27 kernel still *has* an x86 entry path at all — i.e. whether
+Whether the macOS 27 kernel still *has* an x86 entry path at all - i.e. whether
 `pexpert/pexpert/i386/boot.h` and `config/MASTER.x86_64` survive the Golden Gate
-source drop — is unanswered, because Apple has not published that source. It is
+source drop - is unanswered, because Apple has not published that source. It is
 tracked as the primary open item in [PROGRESS.md](../PROGRESS.md) and
 `tools/xnu_arch_check.py` exists to answer it in one command.
 

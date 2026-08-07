@@ -4,7 +4,7 @@
 > `xnu-12377.121.6`, plus **[literature]** for the QEMU and prior-art claims.
 > Nothing here was run.
 
-Every other document in this repository examines *porting* — getting an x86
+Every other document in this repository examines *porting* - getting an x86
 build of something that only exists for ARM. This one examines the alternative:
 leave the system as ARM code and translate it at runtime.
 
@@ -22,7 +22,7 @@ blockers it hit were all Apple-specific silicon: Apple's modified pointer
 authentication algorithm (disabled outright rather than implemented), APRR
 memory-permission remapping for JIT, and AIC, Apple's custom interrupt
 controller. Plus an undocumented GPU that Asahi spent years reverse engineering
-merely to write a *driver* for — emulating it is strictly harder than driving it.
+merely to write a *driver* for - emulating it is strictly harder than driving it.
 
 **The Apple Virtual Platform.** Apple defines a second, entirely separate
 hardware target for macOS VMs, and it is described in XNU's own published
@@ -50,38 +50,38 @@ Read that list against the blockers above:
 
 | Real Mac blocker | On VMAPPLE |
 |---|---|
-| AIC, Apple's custom interrupt controller | **GICv3** — a standard ARM controller. The header even cites the spec, Arm IHI 0069G, and includes the register definitions. |
-| Apple's custom UART | **PL011** — ARM PrimeCell, public spec, emulated in QEMU for over a decade. |
-| Apple's modified PAC algorithm | **`HAS_PARAVIRTUALIZED_PAC`** — pointer authentication is provided through a hypervisor interface rather than secret silicon behaviour. |
-| CTRR / KTRR text protection | **`HAS_PARAVIRTUALIZED_CTRR`**, and `NO_MONITOR` — no secure monitor firmware layer at all. |
-| Heterogeneous P/E cores | **`NO_ECORE`** — homogeneous CPU. |
-| Undocumented Apple GPU | a **paravirtualised** GPU, not real silicon — see the correction below. |
+| AIC, Apple's custom interrupt controller | **GICv3** - a standard ARM controller. The header even cites the spec, Arm IHI 0069G, and includes the register definitions. |
+| Apple's custom UART | **PL011** - ARM PrimeCell, public spec, emulated in QEMU for over a decade. |
+| Apple's modified PAC algorithm | **`HAS_PARAVIRTUALIZED_PAC`** - pointer authentication is provided through a hypervisor interface rather than secret silicon behaviour. |
+| CTRR / KTRR text protection | **`HAS_PARAVIRTUALIZED_CTRR`**, and `NO_MONITOR` - no secure monitor firmware layer at all. |
+| Heterogeneous P/E cores | **`NO_ECORE`** - homogeneous CPU. |
+| Undocumented Apple GPU | a **paravirtualised** GPU, not real silicon - see the correction below. |
 
 > **Correction, added after measuring the shipped kernel.** The row above
 > originally said "virtio devices, which are open standards". That was wrong.
 > The `vma2` kernel collection in the macOS 27 installer contains
-> `com.apple.driver.AppleParavirtGPUIOGPUFamily` — Apple's own paravirtualised
+> `com.apple.driver.AppleParavirtGPUIOGPUFamily` - Apple's own paravirtualised
 > GPU interface, not virtio-gpu. Storage really is virtio
 > (`com.apple.iokit.AppleVirtIOStorage`), but graphics is not. A paravirtual
 > device still beats emulating an Apple GPU, because a defined guest/host
-> protocol exists rather than silicon behaviour — but the protocol is Apple's
+> protocol exists rather than silicon behaviour - but the protocol is Apple's
 > and undocumented, and on a real Mac the host half is implemented by
 > Virtualization.framework forwarding into the Metal driver. Emulating vmapple
 > on x86 means implementing that host half. See
 > [docs/10-inside-macos27.md](10-inside-macos27.md).
 
-The remaining CPU requirements — SME, SME2, SSBS2, PAN3, 16K pages — are all
+The remaining CPU requirements - SME, SME2, SSBS2, PAN3, 16K pages - are all
 publicly specified ARM architecture extensions, not Apple inventions.
 
 **The Apple Virtual Platform is mostly standard ARM hardware, and the
-Apple-specific parts are paravirtualised — that is, they have a defined
+Apple-specific parts are paravirtualised - that is, they have a defined
 interface by construction, because a hypervisor has to implement them.** That is
 a categorically better emulation target than an M-series die.
 
 ## One thing genuinely in this approach's favour
 
 ARM has a weak memory model; x86 has a strong one. Emulating a weak-ordered
-guest on a strongly-ordered host is the **easy** direction — the host already
+guest on a strongly-ordered host is the **easy** direction - the host already
 provides more ordering than the guest requires, so no extra fences are needed.
 
 This is worth stating because the reverse direction is famously hard: Apple had
@@ -93,14 +93,14 @@ x86-on-ARM emulation fast. Nobody needs to add anything to run ARM on x86.
 Being precise, since the target looks better than expected:
 
 1. **AVPBooter.** QEMU's `vmapple` machine model implements the Virtualization
-   .framework device model, but needs `AVPBooter.vmapple2.bin` — Apple's signed
-   VM firmware — plus a trimmed `aux.img` and a `disk.img`, all extractable only
+   .framework device model, but needs `AVPBooter.vmapple2.bin` - Apple's signed
+   VM firmware - plus a trimmed `aux.img` and a `disk.img`, all extractable only
    from a running Apple silicon Mac. Replacing it means reimplementing Apple's
    boot chain including Image4 verification.
 2. **QEMU's `vmapple` is `hvf`-only.** The documented configuration uses
    hardware virtualisation, which means an Apple silicon host. There is no TCG
    path today. QEMU emulates ARM64 guests under TCG on x86 hosts perfectly well
-   in general, so this is ordinary engineering rather than a wall — but it is
+   in general, so this is ordinary engineering rather than a wall - but it is
    unwritten, and guest support is documented as macOS 12.x only.
 3. **Code signing.** The prior art could not disable signature enforcement, and
    the trustcache failed to load at the expected address. macOS 27 is stricter
@@ -118,7 +118,7 @@ Being precise, since the target looks better than expected:
 bootloader. A loader sets up state, hands off, and exits; runtime translation
 needs a *resident* component that stays underneath the guest for the machine's
 whole life. That component is a hypervisor or a full-system emulator. The idea is
-sound — it is simply that the thing being described is QEMU. Which is good news,
+sound - it is simply that the thing being described is QEMU. Which is good news,
 because QEMU exists and already has a `vmapple` machine.
 
 **"Pre-translate it ahead of time instead."** Ahead-of-time translation cannot
@@ -134,7 +134,7 @@ perishable.
 ## The honest ranking
 
 Emulation gets further, faster, toward "the kernel boots" than any porting
-approach — the prior art proves that, and VMAPPLE makes the target much cleaner
+approach - the prior art proves that, and VMAPPLE makes the target much cleaner
 than the prior art had to deal with.
 
 It gets nowhere on "a usable graphical system", and it does so for a different
@@ -150,6 +150,6 @@ bounded, publishable contribution, and it does not require the result to be fast
 
 ## Sources
 
-- `pexpert/pexpert/arm64/VMAPPLE.h`, XNU `xnu-12377.121.6` — read directly
-- [VMApple machine emulation — QEMU documentation](https://www.qemu.org/docs/master/system/arm/vmapple.html)
-- [Booting a macOS Apple Silicon kernel in QEMU — Zhuowei Zhang](https://worthdoingbadly.com/xnuqemu3/)
+- `pexpert/pexpert/arm64/VMAPPLE.h`, XNU `xnu-12377.121.6` - read directly
+- [VMApple machine emulation - QEMU documentation](https://www.qemu.org/docs/master/system/arm/vmapple.html)
+- [Booting a macOS Apple Silicon kernel in QEMU - Zhuowei Zhang](https://worthdoingbadly.com/xnuqemu3/)

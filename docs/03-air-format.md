@@ -1,21 +1,21 @@
 # AIR: what is actually known about Metal's shader format
 
 > **Status: [literature].** Everything below is published third-party reverse
-> engineering. None of it has been reproduced in this repository — there is no
+> engineering. None of it has been reproduced in this repository - there is no
 > Mac and no Metal toolchain in this environment. Treat it as a survey of what
 > others have established, not as an independent result.
 
 [docs/02-hardware-targets.md](02-hardware-targets.md) concluded that Metal is
-the real wall and that a Metal implementation on top of Vulkan is the highest
--leverage unclaimed work in the area. The obvious objection is that a shader
-compiler for an undocumented format is the hardest part of that job.
+the real wall and that a Metal implementation on top of Vulkan is the
+highest-leverage unclaimed work in the area. The obvious objection is that a
+shader compiler for an undocumented format is the hardest part of that job.
 
 That objection appears to be wrong, and it is worth setting out why, because it
 inverts where the difficulty sits.
 
 ## The container: `.metallib`
 
-Metal ships compiled shaders in `.metallib` archives — a custom Apple container
+Metal ships compiled shaders in `.metallib` archives - a custom Apple container
 format, undocumented, reverse engineered by hex inspection. It uses FourCC tags:
 
 ```
@@ -74,7 +74,7 @@ Recorded honestly, because these are the things that would actually cost time:
 - **Undocumented metadata.** Unexplained `i1` boolean flags appear in texture
   sampling functions, and some metadata references have no established meaning.
 - **Semantic gaps, unmeasured.** Nobody has published an inventory of where
-  Metal's execution model diverges from Vulkan's — argument buffers, heaps,
+  Metal's execution model diverges from Vulkan's - argument buffers, heaps,
   residency, tile shaders, the `MTLHeap` aliasing rules. Translating the
   *shader* is not translating the *API*, and the API is where the divergence
   lives.
@@ -82,13 +82,13 @@ Recorded honestly, because these are the things that would actually cost time:
 
 ## Where the difficulty actually sits
 
-If the shader path is tractable, the cost moves to the API surface — the `MTL*`
+If the shader path is tractable, the cost moves to the API surface - the `MTL*`
 object model that applications call at runtime. That is the next queue item, and
 it deserves a number rather than an adjective: nobody appears to have published
 how large the Metal surface actually is.
 
 ## Sources
 
-- [Compile Metal shader Bitcode to x86 and ARM assembly — Zhuowei Zhang](https://worthdoingbadly.com/metalbitcode/)
+- [Compile Metal shader Bitcode to x86 and ARM assembly - Zhuowei Zhang](https://worthdoingbadly.com/metalbitcode/)
 - [MetalShaderTools](https://github.com/zhuowei/MetalShaderTools)
-- [Breaking down Metal's intermediate representation format — SamoZ256](https://medium.com/@samuliak/breaking-down-metals-intermediate-representation-format-41827022489c)
+- [Breaking down Metal's intermediate representation format - SamoZ256](https://medium.com/@samuliak/breaking-down-metals-intermediate-representation-format-41827022489c)

@@ -7,7 +7,7 @@ support, and which cannot be supported at any effort level?
 The answer is more lopsided than the usual framing suggests, and it moves the
 wall to a different place than most discussions put it.
 
-## Tier 1 — trivial, and already done
+## Tier 1 - trivial, and already done
 
 Fully public specifications, small state machines, decades of stability.
 
@@ -18,10 +18,10 @@ Fully public specifications, small state machines, decades of stability.
 | RTC / CMOS, HPET, APIC | ACPI + Intel SDM | Documented, no surprises |
 | SMBus / I2C controllers | Public Intel datasheets | Documented |
 
-## Tier 2 — easy, and the community has already proven it
+## Tier 2 - easy, and the community has already proven it
 
 Open industry specifications. These are the ones people cite when they say
-"nobody writes real drivers any more" — and the claim is false.
+"nobody writes real drivers any more" - and the claim is false.
 
 | Component | Spec source | Evidence it was done from scratch |
 |---|---|---|
@@ -34,7 +34,7 @@ Open industry specifications. These are the ones people cite when they say
 
 Mieze's two Ethernet drivers are the important data point. They are not patches
 on Apple code. They are real drivers with no-copy transmit and receive,
-multisegment packets, and TCP/UDP/IPv4 and IPv6 checksum offload — the kind of
+multisegment packets, and TCP/UDP/IPv4 and IPv6 checksum offload - the kind of
 thing a vendor ships. Written by one person against public datasheets.
 
 There is a caveat worth recording, because it is the recurring failure mode:
@@ -43,7 +43,7 @@ updates `IONetworking.kext` the linker can fail to notice and the result is a
 kernel panic. Real drivers are achievable; staying compatible with a closed,
 moving host OS is the part that grinds people down.
 
-## Tier 3 — hard, but genuinely documented
+## Tier 3 - hard, but genuinely documented
 
 This is where the received wisdom is wrong, and it is worth being precise.
 
@@ -65,7 +65,7 @@ alone, it would be: an AMD GPU, Intel or Realtek Ethernet, NVMe storage, xHCI
 USB, PS/2 or USB input, HDA audio. Every one of those has a public spec and a
 readable open-source reference implementation.
 
-## Tier 4 — the actual wall
+## Tier 4 - the actual wall
 
 And here is the finding that matters, because it is *not* where people put it.
 
@@ -73,7 +73,7 @@ And here is the finding that matters, because it is *not* where people put it.
 
 A kernel-mode GPU driver gets you memory management, command submission and a
 display. It gets you no applications, because macOS applications do not talk to
-the GPU — they talk to **Metal**, and Metal is a closed userspace API with a
+the GPU - they talk to **Metal**, and Metal is a closed userspace API with a
 closed shader compiler.
 
 The state of play:
@@ -84,7 +84,7 @@ The state of play:
   the Quartz WindowServer implementation onto a GOP framebuffer first, and
   "eventually to Metal/Vulkan/DRM-KMS or something accelerated."
 - **Metal → Vulkan translation does not exist.** MoltenVK is mature, Valve-owned
-  and Apache-licensed — and runs the *opposite* direction, Vulkan on top of
+  and Apache-licensed - and runs the *opposite* direction, Vulkan on top of
   Metal. The reverse ("MetalVK") exists only as a proposal in a Darling
   discussion thread.
 - The shader format is partially understood. Metal shaders are AIR, which is
@@ -102,7 +102,7 @@ These are genuinely closed in a way AMD graphics is not.
 
 Choosing "hardware that is easy to write drivers for" does not route around the
 problem. It routes around roughly ninety-five percent of it, and leaves the
-remaining five percent untouched — because storage, networking, USB, input and
+remaining five percent untouched - because storage, networking, USB, input and
 audio controllers were never the hard part, and the hard part was never a
 driver at all.
 
@@ -125,8 +125,8 @@ loop is available at all.
 - [AMD machine-readable GPU ISA documentation](https://gpuopen.com/machine-readable-isa/)
 - [AMD GPU architecture programming documentation](https://gpuopen.com/amd-gpu-architecture-programming-documentation/)
 - [ravynOS technical details](https://ravynos.com/more/) and [roadmap](https://wiki.ravynos.com/roadmap)
-- [MetalVK proposal — darling discussion #1646](https://github.com/darlinghq/darling/discussions/1646)
+- [MetalVK proposal - darling discussion #1646](https://github.com/darlinghq/darling/discussions/1646)
 - [MoltenVK](https://github.com/KhronosGroup/MoltenVK)
-- [MetalShaderTools — zhuowei](https://github.com/zhuowei/MetalShaderTools)
-- [RTL8111_driver_for_OS_X — Mieze](https://github.com/Mieze/RTL8111_driver_for_OS_X)
-- [IntelMausiEthernet — Mieze](https://github.com/Mieze/IntelMausiEthernet)
+- [MetalShaderTools - zhuowei](https://github.com/zhuowei/MetalShaderTools)
+- [RTL8111_driver_for_OS_X - Mieze](https://github.com/Mieze/RTL8111_driver_for_OS_X)
+- [IntelMausiEthernet - Mieze](https://github.com/Mieze/IntelMausiEthernet)

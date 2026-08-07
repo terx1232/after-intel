@@ -4,7 +4,7 @@
 > `README.md` of `xnu-12377.121.6` (macOS 26.5), plus **[measured]** inventory
 > of the vendored headers in `data/xnu-external-headers.json`.
 >
-> **Not reproduced.** No build was attempted — Apple's toolchain requires macOS
+> **Not reproduced.** No build was attempted - Apple's toolchain requires macOS
 > and there is none in this environment. What follows is Apple's documented
 > procedure and what it implies, not a build log.
 
@@ -37,7 +37,7 @@ The ARM build needs two things the Intel build does not:
    required for building on Apple silicon. If you are building only for Intel,
    you can skip this step."* The KDK requires an Apple Developer account and
    must match your exact macOS version and build number.
-2. **A per-SoC platform identifier** — `T8101` for a MacBookAir10,1, with a
+2. **A per-SoC platform identifier** - `T8101` for a MacBookAir10,1, with a
    lookup table of Mac models at the end of the README.
 
 So the open-source kernel is *more* self-sufficient on x86 than on ARM. Building
@@ -51,7 +51,7 @@ Apple lists four, all obtainable from opensource.apple.com:
 
 | Dependency | Purpose | Published? |
 |---|---|---|
-| DTrace | CTF tools (`ctfconvert`, `ctfdump`, `ctfmerge`) | yes — and marked *optional* |
+| DTrace | CTF tools (`ctfconvert`, `ctfdump`, `ctfmerge`) | yes - and marked *optional* |
 | AvailabilityVersions | version macros | yes |
 | libdispatch | `libfirehose_kernel` | yes |
 | xnu headers | bootstrapped from the tree itself | yes |
@@ -80,7 +80,7 @@ dependency cycles. Inventory:
 
 These are **headers only**. The kernel compiles against them; the
 implementations come from elsewhere. Note what they are: `corecrypto`,
-`CoreTrust`, `CoreEntitlements`, `image4`/`img4`, `libDER` — cryptography, code
+`CoreTrust`, `CoreEntitlements`, `image4`/`img4`, `libDER` - cryptography, code
 signing, entitlement checking and Image4 secure-boot verification. Whether each
 of those has a published implementation is **[open]**; corecrypto is known to be
 released, and CoreTrust and image4 are not believed to be, but that was not
@@ -97,7 +97,7 @@ Xcode requires macOS.**
 That is the actual constraint on this step, and it is a bootstrapping problem
 rather than a licensing or availability one: to build Darwin you need a Mac, or
 a macOS VM, or a cross-toolchain nobody has assembled. It is not "the source is
-missing" — it is "the compiler runs on the thing you are trying to replace."
+missing" - it is "the compiler runs on the thing you are trying to replace."
 
 ## What this does and does not mean
 
@@ -108,8 +108,8 @@ and it is the good news in this repository.
 
 **Does not:** produce anything resembling macOS. A built kernel is the ~5% of
 the system that is open. It has no graphics driver, no WindowServer, no
-AppKit, no Metal, and — per
-[docs/01-patchers-not-drivers.md](01-patchers-not-drivers.md) — the community
+AppKit, no Metal, and - per
+[docs/01-patchers-not-drivers.md](01-patchers-not-drivers.md) - the community
 kext stack consists of patches that need Apple's closed drivers to be present
 before they do anything. Booting a self-built XNU on a PC gets you a console.
 

@@ -9,7 +9,7 @@ runs on assertion. This repository replaces assertions with numbers.
 
 It contains seven small, dependency-free tools and the measurements they
 produce. They run on Windows, Linux or macOS with a stock Python 3.8+.
-**No Mac required** — including for reading a macOS installer.
+**No Mac required** - including for reading a macOS installer.
 
 ---
 
@@ -17,7 +17,7 @@ produce. They run on Windows, Linux or macOS with a stock Python 3.8+.
 
 ### 1. macOS 27, opened and counted
 
-The shipped `InstallAssistant_27.0_26A5388g.pkg` — 16 972 015 289 bytes — was
+The shipped `InstallAssistant_27.0_26A5388g.pkg` - 16 972 015 289 bytes - was
 read end to end without a Mac and without implementing APFS. Full method and
 caveats in **[docs/10-inside-macos27.md](docs/10-inside-macos27.md)**.
 
@@ -26,13 +26,13 @@ caveats in **[docs/10-inside-macos27.md](docs/10-inside-macos27.md)**.
 | zip members carved from the image | 1 842 (16.46 GiB) |
 | kernelcaches | **13, and all 13 are arm64e** by header read |
 | x86 kernelcaches | **0** |
-| system images | `arm64eBaseSystem.dmg`, `cryptex-system-arm64e`, `arm64eSURamDisk.dmg` — no x86 counterpart |
+| system images | `arm64eBaseSystem.dmg`, `cryptex-system-arm64e`, `arm64eSURamDisk.dmg` - no x86 counterpart |
 | Mach-O binaries directly visible | 3, of which 2 carry x86_64 slices |
-| where those 2 live | `UpdateBrainService` — the software-update brain, i.e. installer infrastructure |
+| where those 2 live | `UpdateBrainService` - the software-update brain, i.e. installer infrastructure |
 | largest single payload item | `cryptex-system-rosetta`, the x86-on-ARM translation runtime |
 
-The kernelcaches decompose as 342–370 bundled kexts in 119–126 MB for the Mac
-platforms, and 216 kexts in 81 MB for `vma2` — the Apple Virtual Machine
+The kernelcaches decompose as 342-370 bundled kexts in 119-126 MB for the Mac
+platforms, and 216 kexts in 81 MB for `vma2` - the Apple Virtual Machine
 platform, which Apple ships a kernel for in the retail installer.
 
 ### 2. The community's entire toolchain is x86-only
@@ -51,7 +51,7 @@ architecture slices (`tools/macho_audit.py`, output in
 | BrcmPatchRAM 2.7.2 | 8 | 8 | 0 |
 | **total** | **29** | **35** | **0** |
 
-Not one arm64 slice exists anywhere in the stack. This is not an oversight — it
+Not one arm64 slice exists anywhere in the stack. This is not an oversight - it
 follows from what these kexts *are*, which is the finding underneath the finding
 (see [docs/01-patchers-not-drivers.md](docs/01-patchers-not-drivers.md)).
 
@@ -77,7 +77,7 @@ kernel build targets declared in config/:
 
 At the time of writing (7 August 2026) the newest tags on
 `apple-oss-distributions` are `xnu-12377.121.6` and `macos-265`, both dated
-17 June 2026 — Tahoe 26.5. Apple publishes source at release, so the Golden Gate
+17 June 2026 - Tahoe 26.5. Apple publishes source at release, so the Golden Gate
 drop is due around GM in the autumn.
 
 **This means nobody has yet checked whether the x86 platform code survives in
@@ -101,7 +101,7 @@ Two possible outcomes, and they mean very different things:
 - **`MASTER.x86_64` and the ~84 000 lines are still there.** Apple kept the
   Intel code because ripping it out costs engineering time for no benefit. The
   open-source kernel can still in principle be built for x86. That does not give
-  anyone a bootable macOS — but it keeps a live x86 Darwin base for downstream
+  anyone a bootable macOS - but it keeps a live x86 Darwin base for downstream
   projects (PureDarwin, ravynOS) instead of a frozen 2026 snapshot.
 - **They are gone.** From macOS 27 on, even the open part of the stack is
   ARM-only, and every downstream project inherits a dead-end kernel.
@@ -117,7 +117,7 @@ Being explicit, because the surrounding discussion usually is not:
 **Nothing here is a path to running macOS 27 on a PC.** The kernel is under 5% of
 the system, and it is the only part that is open. AppKit, Foundation,
 CoreGraphics, WindowServer, Metal, CoreAudio, and every GPU and audio driver are
-closed source and shipped as arm64e only — which finding 1 above establishes by
+closed source and shipped as arm64e only - which finding 1 above establishes by
 measurement rather than assumption. There is no source to recompile and no x86
 build to patch. Static ARM→x86 translation of the shipped binaries runs into
 pointer authentication, runtime dispatch in Objective-C and Swift, JIT-generated
@@ -129,7 +129,7 @@ other side of the wall, and where the wall actually is.
 On that last point, the reconnaissance produced a result worth stating up front:
 **the wall is not where it is usually placed.** AMD publishes complete ISA
 documentation and an open reference driver, so a kernel-mode GPU driver is
-tractable. What is not tractable is Metal — a closed userspace API with a closed
+tractable. What is not tractable is Metal - a closed userspace API with a closed
 shader compiler, which is what applications actually call. See
 [docs/02-hardware-targets.md](docs/02-hardware-targets.md).
 
@@ -137,32 +137,32 @@ shader compiler, which is what applications actually call. See
 
 ## Documents
 
-- [PROGRESS.md](PROGRESS.md) — work log, queue, and a list of this repo's own
+- [PROGRESS.md](PROGRESS.md) - work log, queue, and a list of this repo's own
   known methodological limitations
-- [docs/01-patchers-not-drivers.md](docs/01-patchers-not-drivers.md) — what the
+- [docs/01-patchers-not-drivers.md](docs/01-patchers-not-drivers.md) - what the
   kext bundle metadata reveals about the stack
-- [docs/02-hardware-targets.md](docs/02-hardware-targets.md) — which hardware is
+- [docs/02-hardware-targets.md](docs/02-hardware-targets.md) - which hardware is
   actually easy to write drivers for, and where the wall really is
-- [docs/03-air-format.md](docs/03-air-format.md) — the state of knowledge on
+- [docs/03-air-format.md](docs/03-air-format.md) - the state of knowledge on
   Metal's shader format, and why the shader compiler is the *tractable* part
-- [docs/04-apple-x86-artifacts.md](docs/04-apple-x86-artifacts.md) — what x86
+- [docs/04-apple-x86-artifacts.md](docs/04-apple-x86-artifacts.md) - what x86
   material Apple still ships, and which of it is any use
-- [docs/05-metal-surface.md](docs/05-metal-surface.md) — how big Metal actually
+- [docs/05-metal-surface.md](docs/05-metal-surface.md) - how big Metal actually
   is, measured: 218 classes, 2 558 methods, and why that number decomposes into
   something bounded
-- [docs/06-metal-vulkan-divergence.md](docs/06-metal-vulkan-divergence.md) —
+- [docs/06-metal-vulkan-divergence.md](docs/06-metal-vulkan-divergence.md) -
   where the two execution models diverge, and why MoltenVK's existence is not
   evidence that the reverse direction is comparable work
-- [docs/07-boot-protocol.md](docs/07-boot-protocol.md) — XNU's boot handoff
+- [docs/07-boot-protocol.md](docs/07-boot-protocol.md) - XNU's boot handoff
   measured across architectures, and why the bootloader is the one component
   that is already finished
-- [docs/08-building-xnu-for-x86.md](docs/08-building-xnu-for-x86.md) — whether
+- [docs/08-building-xnu-for-x86.md](docs/08-building-xnu-for-x86.md) - whether
   the published kernel still builds for Intel, and the surprise that it is the
   easier of Apple's two targets
-- [docs/09-emulation-path.md](docs/09-emulation-path.md) — the alternative to
+- [docs/09-emulation-path.md](docs/09-emulation-path.md) - the alternative to
   porting: translate ARM at runtime instead. Why Apple's VM platform is a far
   better emulation target than real Apple silicon, and where that road ends
-- **[docs/10-inside-macos27.md](docs/10-inside-macos27.md)** — the shipped
+- **[docs/10-inside-macos27.md](docs/10-inside-macos27.md)** - the shipped
   macOS 27 beta opened up and measured: 13 kernelcaches and not one of them
   x86, every system image named arm64e, and the two x86 binaries that *are*
   in there
@@ -177,7 +177,7 @@ Every claim is tagged **[measured]**, **[verified]**, **[literature]** or
 ### `tools/macho_audit.py`
 
 Parses Mach-O and universal ("fat") headers directly and reports which
-architecture slices are present across a tree — per file and in aggregate,
+architecture slices are present across a tree - per file and in aggregate,
 including the arm64 / arm64e distinction that matters for pointer
 authentication. Works on any system tree, installer payload, kext bundle or
 framework.
@@ -188,8 +188,8 @@ python tools/macho_audit.py /path/to/System --json out.json --entries
 
 ### `tools/metal_surface.py`
 
-Parses Apple's `metal-cpp` headers and counts the Metal API surface — classes,
-methods, enums and constants — then decomposes it by kind of work, separating
+Parses Apple's `metal-cpp` headers and counts the Metal API surface - classes,
+methods, enums and constants - then decomposes it by kind of work, separating
 mechanical descriptor plumbing from load-bearing encoder and device behaviour.
 
 ```bash
@@ -202,7 +202,7 @@ The chain for reading a macOS installer without a Mac and without implementing
 APFS. `xar_explore.py` reads the package table of contents and extracts members;
 `image_arch_scan.py` validates Mach-O headers across a raw byte range, reporting
 its own noise floor; `zip_carve.py` recovers zip member listings from raw image
-bytes — names are stored uncompressed — and decompresses individual members by
+bytes - names are stored uncompressed - and decompresses individual members by
 offset to identify their architecture.
 
 ```bash
@@ -212,7 +212,7 @@ python tools/zip_carve.py Install*.pkg --start N --length N --grep dyld --archch
 
 ### `tools/im4p_extract.py`
 
-Unwraps an Apple Image4 payload — the container Apple ships kernelcaches in —
+Unwraps an Apple Image4 payload - the container Apple ships kernelcaches in -
 by parsing the ASN.1 DER directly, decompresses the LZFSE payload, and reports
 the Mach-O header of what comes out, including `MH_FILESET` entries. LZFSE
 support is optional; without it the tool still reports the container structure
@@ -258,9 +258,9 @@ python tools/xnu_arch_check.py _work/xnu-tahoe --json data/xnu-tahoe-26.5.json
 
 ## Sources
 
-- macOS 27 is Apple-silicon-only — [MacRumors, 10 Jun 2026](https://www.macrumors.com/2026/06/10/macos-golden-gate-last-to-support-intel-apps/)
-- Tahoe as the last Intel release — [AppleInsider, 17 Jun 2025](https://appleinsider.com/articles/25/06/17/opencore-and-hackintosh-are-sadly-dead-after-apple-ends-intel-mac-support)
-- Apple open source — [github.com/apple-oss-distributions](https://github.com/apple-oss-distributions)
+- macOS 27 is Apple-silicon-only - [MacRumors, 10 Jun 2026](https://www.macrumors.com/2026/06/10/macos-golden-gate-last-to-support-intel-apps/)
+- Tahoe as the last Intel release - [AppleInsider, 17 Jun 2025](https://appleinsider.com/articles/25/06/17/opencore-and-hackintosh-are-sadly-dead-after-apple-ends-intel-mac-support)
+- Apple open source - [github.com/apple-oss-distributions](https://github.com/apple-oss-distributions)
 
 ## Licence
 

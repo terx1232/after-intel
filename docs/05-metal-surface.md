@@ -20,7 +20,7 @@ Foundation        23       22      229      0         0       0
 TOTAL            136      240     2787    128       918      27
 ```
 
-The graphics surface proper — Metal plus MetalFX plus QuartzCore — is
+The graphics surface proper - Metal plus MetalFX plus QuartzCore - is
 **218 classes and 2 558 methods**, over 128 enumerations carrying 918 values.
 Foundation is counted separately because `NS::` is a different problem, already
 addressed by GNUstep and Darling.
@@ -39,13 +39,13 @@ kind of work. Splitting Metal's surface by what a class *is*:
 | everything else | 108 | 740 | 31.0% |
 
 Nearly half the API by method count is descriptors. A descriptor is a property
-bag — `RenderPipelineDescriptor` has 72 methods because it has 36 settable
+bag - `RenderPipelineDescriptor` has 72 methods because it has 36 settable
 properties with a getter and a setter each. Implementing one is mechanical: hold
 a struct, validate on use. It is bulk, not difficulty.
 
 The load-bearing surface is the encoders (267 methods) and the device and
-command queue (212), which is where real driver behaviour lives — roughly
-**480 methods, about a fifth of the total** — plus some fraction of the 740 in
+command queue (212), which is where real driver behaviour lives - roughly
+**480 methods, about a fifth of the total** - plus some fraction of the 740 in
 "everything else" (textures, buffers, libraries, functions).
 
 The single largest classes are `Device` at 155 methods and
@@ -79,7 +79,7 @@ number:
   line; `RenderCommandEncoder::drawIndexedPrimitives` correctly implemented over
   Vulkan is not.
 - **`metal-cpp` may lag the Objective-C API.** It is Apple's own binding, but
-  whether it covers the Objective-C surface exhaustively is **[open]** — not
+  whether it covers the Objective-C surface exhaustively is **[open]** - not
   verified here.
 - **The "everything else" bucket is heterogeneous**, mixing trivial value types
   with load-bearing objects like `Texture` and `Library`. The 480-method figure
