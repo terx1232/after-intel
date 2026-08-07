@@ -1,0 +1,180 @@
+{
+  "payload": "Payload",
+  "decoded_bytes": 27385856,
+  "member_count": 1130,
+  "kinds": {
+    "dir": 224,
+    "file": 886,
+    "symlink": 20
+  },
+  "arch_tally": {
+    "arm64": 8,
+    "arm64e": 12
+  },
+  "combos": {
+    "arm64": 8,
+    "arm64e": 12
+  },
+  "machos": [
+    {
+      "name": "./Applications/Install macOS 27 Golden Gate Beta.app/Contents/MacOS/InstallAssistant",
+      "mode": 33261,
+      "size": 74656,
+      "archs": [
+        "arm64"
+      ]
+    },
+    {
+      "name": "./Applications/Install macOS 27 Golden Gate Beta.app/Contents/MacOS/InstallAssistant_springboard",
+      "mode": 33261,
+      "size": 93040,
+      "archs": [
+        "arm64"
+      ]
+    },
+    {
+      "name": "./Applications/Install macOS 27 Golden Gate Beta.app/Contents/PlugIns/DiskManagement.IABundle/Contents/MacOS/DiskManagement",
+      "mode": 33261,
+      "size": 131280,
+      "archs": [
+        "arm64e"
+      ]
+    },
+    {
+      "name": "./Applications/Install macOS 27 Golden Gate Beta.app/Contents/PlugIns/IA.bundle/Contents/MacOS/libBaseIA.dylib",
+      "mode": 33261,
+      "size": 107584,
+      "archs": [
+        "arm64e"
+      ]
+    },
+    {
+      "name": "./Applications/Install macOS 27 Golden Gate Beta.app/Contents/PlugIns/IA.bundle/Contents/MacOS/IA",
+      "mode": 33261,
+      "size": 345536,
+      "archs": [
+        "arm64e"
+      ]
+    },
+    {
+      "name": "./Applications/Install macOS 27 Golden Gate Beta.app/Contents/Resources/createinstallmedia.dylib",
+      "mode": 33261,
+      "size": 2032128,
+      "archs": [
+        "arm64e"
+      ]
+    },
+    {
+      "name": "./Applications/Install macOS 27 Golden Gate Beta.app/Contents/Resources/startosinstall",
+      "mode": 33261,
+      "size": 111280,
+      "archs": [
+        "arm64"
+      ]
+    },
+    {
+      "name": "./Applications/Install macOS 27 Golden Gate Beta.app/Contents/Resources/createinstallmedia",
+      "mode": 33261,
+      "size": 73664,
+      "archs": [
+        "arm64"
+      ]
+    },
+    {
+      "name": "./Applications/Install macOS 27 Golden Gate Beta.app/Contents/Frameworks/OSInstallerSetup.framework/Versions/A/Resources/osisstashhelper",
+      "mode": 33261,
+      "size": 68880,
+      "archs": [
+        "arm64"
+      ]
+    },
+    {
+      "name": "./Applications/Install macOS 27 Golden Gate Beta.app/Contents/Frameworks/OSInstallerSetup.framework/Versions/A/Resources/cleanup_installer",
+      "mode": 33261,
+      "size": 69536,
+      "archs": [
+        "arm64"
+      ]
+    },
+    {
+      "name": "./Applications/Install macOS 27 Golden Gate Beta.app/Contents/Frameworks/OSInstallerSetup.framework/Versions/A/Resources/osishelperd.dylib",
+      "mode": 33261,
+      "size": 691296,
+      "archs": [
+        "arm64e"
+      ]
+    },
+    {
+      "name": "./Applications/Install macOS 27 Golden Gate Beta.app/Contents/Frameworks/OSInstallerSetup.framework/Versions/A/Resources/osishelperd",
+      "mode": 33261,
+      "size": 69536,
+      "archs": [
+        "arm64"
+      ]
+    },
+    {
+      "name": "./Applications/Install macOS 27 Golden Gate Beta.app/Contents/Frameworks/OSInstallerSetup.framework/Versions/A/Resources/osinstallersetupd",
+      "mode": 33261,
+      "size": 149936,
+      "archs": [
+        "arm64"
+      ]
+    },
+    {
+      "name": "./Applications/Install macOS 27 Golden Gate Beta.app/Contents/Frameworks/OSInstallerSetup.framework/Versions/A/Resources/osisstashhelper.dylib",
+      "mode": 33261,
+      "size": 78992,
+      "archs": [
+        "arm64e"
+      ]
+    },
+    {
+      "name": "./Applications/Install macOS 27 Golden Gate Beta.app/Contents/Frameworks/OSInstallerSetup.framework/Versions/A/OSInstallerSetup",
+      "mode": 33261,
+      "size": 382608,
+      "archs": [
+        "arm64e"
+      ]
+    },
+    {
+      "name": "./Applications/Install macOS 27 Golden Gate Beta.app/Contents/Frameworks/OSInstallerSetup.framework/Versions/A/Frameworks/OSInstallerSetupInternal.framework/Versions/A/OSInstallerSetupInternal",
+      "mode": 33261,
+      "size": 2986288,
+      "archs": [
+        "arm64e"
+      ]
+    },
+    {
+      "name": "./Applications/Install macOS 27 Golden Gate Beta.app/Contents/Frameworks/OSInstallerSetup.framework/Versions/A/Frameworks/IAESD.framework/Versions/A/IAESD",
+      "mode": 33261,
+      "size": 35232,
+      "archs": [
+        "arm64e"
+      ]
+    },
+    {
+      "name": "./Applications/Install macOS 27 Golden Gate Beta.app/Contents/Frameworks/OSInstallerSetup.framework/Versions/A/Frameworks/IAESD.framework/Versions/A/Frameworks/IAMiniSoftwareUpdate.framework/Versions/A/IAMiniSoftwareUpdate",
+      "mode": 33261,
+      "size": 183584,
+      "archs": [
+        "arm64e"
+      ]
+    },
+    {
+      "name": "./Applications/Install macOS 27 Golden Gate Beta.app/Contents/Frameworks/OSInstallerSetup.framework/Versions/A/Frameworks/IAESD.framework/Versions/A/Frameworks/IAPackageKit.framework/Versions/A/IAPackageKit",
+      "mode": 33261,
+      "size": 244304,
+      "archs": [
+        "arm64e"
+      ]
+    },
+    {
+      "name": "./Applications/Install macOS 27 Golden Gate Beta.app/Contents/Frameworks/OSInstallerSetup.framework/Versions/A/Frameworks/IAESD.framework/Versions/A/Frameworks/IAInstallerUtilities.framework/Versions/A/IAInstallerUtilities",
+      "mode": 33261,
+      "size": 170416,
+      "archs": [
+        "arm64e"
+      ]
+    }
+  ]
+}
