@@ -125,6 +125,9 @@ shader compiler, which is what applications actually call. See
   Metal's shader format, and why the shader compiler is the *tractable* part
 - [docs/04-apple-x86-artifacts.md](docs/04-apple-x86-artifacts.md) — what x86
   material Apple still ships, and which of it is any use
+- [docs/05-metal-surface.md](docs/05-metal-surface.md) — how big Metal actually
+  is, measured: 218 classes, 2 558 methods, and why that number decomposes into
+  something bounded
 
 Every claim is tagged **[measured]**, **[verified]**, **[literature]** or
 **[open]** so a reader can tell an experiment from a citation from a guess.
@@ -143,6 +146,16 @@ framework.
 
 ```bash
 python tools/macho_audit.py /path/to/System --json out.json --entries
+```
+
+### `tools/metal_surface.py`
+
+Parses Apple's `metal-cpp` headers and counts the Metal API surface — classes,
+methods, enums and constants — then decomposes it by kind of work, separating
+mechanical descriptor plumbing from load-bearing encoder and device behaviour.
+
+```bash
+python tools/metal_surface.py /path/to/metal-cpp --json out.json
 ```
 
 ### `tools/xnu_arch_check.py`

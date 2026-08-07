@@ -1,0 +1,549 @@
+{
+  "root": "D:\\macos\\gg-x86-recon\\_work\\metal-cpp",
+  "frameworks": {
+    "Foundation": {
+      "headers": 23,
+      "binding_artefacts_excluded": 0,
+      "classes": 22,
+      "methods": 229,
+      "enums": 0,
+      "enum_members": 0,
+      "constants": 0,
+      "largest_classes": [
+        [
+          "Number",
+          47
+        ],
+        [
+          "ProcessInfo",
+          36
+        ],
+        [
+          "Bundle",
+          35
+        ],
+        [
+          "String",
+          19
+        ],
+        [
+          "Object",
+          13
+        ],
+        [
+          "Error",
+          11
+        ],
+        [
+          "Array",
+          10
+        ],
+        [
+          "Dictionary",
+          10
+        ],
+        [
+          "Value",
+          9
+        ],
+        [
+          "Condition",
+          6
+        ],
+        [
+          "Set",
+          6
+        ],
+        [
+          "URL",
+          6
+        ],
+        [
+          "AutoreleasePool",
+          5
+        ],
+        [
+          "NotificationCenter",
+          4
+        ],
+        [
+          "Notification",
+          3
+        ]
+      ],
+      "categories": {
+        "descriptors": {
+          "classes": 0,
+          "methods": 0
+        },
+        "encoders": {
+          "classes": 0,
+          "methods": 0
+        },
+        "state_objects": {
+          "classes": 0,
+          "methods": 0
+        },
+        "device_and_queue": {
+          "classes": 0,
+          "methods": 0
+        },
+        "other": {
+          "classes": 22,
+          "methods": 229
+        }
+      },
+      "all_classes": {
+        "Number": 47,
+        "ProcessInfo": 36,
+        "Bundle": 35,
+        "String": 19,
+        "Object": 13,
+        "Error": 11,
+        "Array": 10,
+        "Dictionary": 10,
+        "Value": 9,
+        "Condition": 6,
+        "Set": 6,
+        "URL": 6,
+        "AutoreleasePool": 5,
+        "NotificationCenter": 4,
+        "Notification": 3,
+        "Data": 2,
+        "Enumerator": 2,
+        "Locking": 2,
+        "Date": 1,
+        "FastEnumeration": 1,
+        "Copying": 1,
+        "SecureCoding": 0
+      }
+    },
+    "Metal": {
+      "headers": 97,
+      "binding_artefacts_excluded": 0,
+      "classes": 207,
+      "methods": 2385,
+      "enums": 128,
+      "enum_members": 918,
+      "constants": 27,
+      "largest_classes": [
+        [
+          "Device",
+          155
+        ],
+        [
+          "RenderCommandEncoder",
+          131
+        ],
+        [
+          "RenderPipelineDescriptor",
+          72
+        ],
+        [
+          "MeshRenderPipelineDescriptor",
+          60
+        ],
+        [
+          "CommandBuffer",
+          41
+        ],
+        [
+          "Texture",
+          41
+        ],
+        [
+          "IndirectCommandBufferDescriptor",
+          40
+        ],
+        [
+          "ComputeCommandEncoder",
+          39
+        ],
+        [
+          "TextureDescriptor",
+          39
+        ],
+        [
+          "AccelerationStructureCurveGeometryDescriptor",
+          37
+        ],
+        [
+          "SamplerDescriptor",
+          36
+        ],
+        [
+          "RenderPassDescriptor",
+          35
+        ],
+        [
+          "CompileOptions",
+          34
+        ],
+        [
+          "AccelerationStructureMotionCurveGeometryDescriptor",
+          33
+        ],
+        [
+          "IndirectInstanceAccelerationStructureDescriptor",
+          33
+        ]
+      ],
+      "categories": {
+        "descriptors": {
+          "classes": 81,
+          "methods": 1110
+        },
+        "encoders": {
+          "classes": 9,
+          "methods": 267
+        },
+        "state_objects": {
+          "classes": 6,
+          "methods": 56
+        },
+        "device_and_queue": {
+          "classes": 3,
+          "methods": 212
+        },
+        "other": {
+          "classes": 108,
+          "methods": 740
+        }
+      },
+      "all_classes": {
+        "Device": 155,
+        "RenderCommandEncoder": 131,
+        "RenderPipelineDescriptor": 72,
+        "MeshRenderPipelineDescriptor": 60,
+        "CommandBuffer": 41,
+        "Texture": 41,
+        "IndirectCommandBufferDescriptor": 40,
+        "ComputeCommandEncoder": 39,
+        "TextureDescriptor": 39,
+        "AccelerationStructureCurveGeometryDescriptor": 37,
+        "SamplerDescriptor": 36,
+        "RenderPassDescriptor": 35,
+        "CompileOptions": 34,
+        "AccelerationStructureMotionCurveGeometryDescriptor": 33,
+        "IndirectInstanceAccelerationStructureDescriptor": 33,
+        "ComputePipelineDescriptor": 32,
+        "Compiler": 30,
+        "TileRenderPipelineDescriptor": 29,
+        "ArgumentEncoder": 28,
+        "InstanceAccelerationStructureDescriptor": 27,
+        "BlitCommandEncoder": 27,
+        "RenderPipelineState": 26,
+        "AccelerationStructureTriangleGeometryDescriptor": 25,
+        "RenderPassAttachmentDescriptor": 24,
+        "AccelerationStructureMotionTriangleGeometryDescriptor": 23,
+        "IndirectRenderCommand": 22,
+        "RenderPipelineColorAttachmentDescriptor": 21,
+        "Heap": 21,
+        "TensorDescriptor": 20,
+        "Argument": 19,
+        "IOCommandBuffer": 19,
+        "AccelerationStructureGeometryDescriptor": 18,
+        "ComputePipelineState": 18,
+        "HeapDescriptor": 18,
+        "Library": 17,
+        "CommandQueue": 16,
+        "PrimitiveAccelerationStructureDescriptor": 15,
+        "CaptureManager": 15,
+        "ArgumentDescriptor": 15,
+        "ArgumentTableDescriptor": 14,
+        "AccelerationStructureCommandEncoder": 14,
+        "StencilDescriptor": 14,
+        "ResidencySet": 14,
+        "Resource": 14,
+        "FunctionDescriptor": 13,
+        "RenderPipelineBinaryFunctionsDescriptor": 13,
+        "DepthStencilDescriptor": 13,
+        "Function": 13,
+        "RasterizationRateMapDescriptor": 13,
+        "CommandEncoder": 12,
+        "IOCommandQueueDescriptor": 12,
+        "RenderPassSampleBufferAttachmentDescriptor": 12,
+        "Tensor": 12,
+        "TextureViewDescriptor": 12,
+        "AccelerationStructureBoundingBoxGeometryDescriptor": 11,
+        "StructMember": 11,
+        "ArrayType": 11,
+        "Buffer": 11,
+        "FunctionStitchingGraph": 11,
+        "IndirectComputeCommand": 11,
+        "IntersectionFunctionTable": 11,
+        "VertexAttribute": 11,
+        "Attribute": 11,
+        "LinkedFunctions": 11,
+        "RasterizationRateLayerDescriptor": 11,
+        "MachineLearningPipelineDescriptor": 10,
+        "BinaryArchive": 10,
+        "CounterSampleBufferDescriptor": 10,
+        "StitchedLibraryDescriptor": 10,
+        "RasterizationRateMap": 10,
+        "RenderPipelineReflection": 10,
+        "StageInputOutputDescriptor": 10,
+        "AccelerationStructureMotionBoundingBoxGeometryDescriptor": 9,
+        "PointerType": 9,
+        "FunctionStitchingFunctionNode": 9,
+        "BinaryFunctionDescriptor": 8,
+        "LibraryDescriptor": 8,
+        "StaticLinkingDescriptor": 8,
+        "PipelineStageDynamicLinkingDescriptor": 8,
+        "SpecializedFunctionDescriptor": 8,
+        "AccelerationStructurePassSampleBufferAttachmentDescriptor": 8,
+        "Binding": 8,
+        "BlitPassSampleBufferAttachmentDescriptor": 8,
+        "CaptureDescriptor": 8,
+        "CommandBufferDescriptor": 8,
+        "ComputePassSampleBufferAttachmentDescriptor": 8,
+        "RenderPipelineFunctionsDescriptor": 8,
+        "ResourceStatePassSampleBufferAttachmentDescriptor": 8,
+        "BufferLayoutDescriptor": 8,
+        "AttributeDescriptor": 8,
+        "VertexBufferLayoutDescriptor": 8,
+        "VertexAttributeDescriptor": 8,
+        "Archive": 7,
+        "ArgumentTable": 7,
+        "RenderPipelineDynamicLinkingDescriptor": 7,
+        "MotionKeyframeData": 7,
+        "TensorReferenceType": 7,
+        "Drawable": 7,
+        "ParallelRenderCommandEncoder": 7,
+        "CommandQueueDescriptor": 6,
+        "CompilerDescriptor": 6,
+        "CounterHeapDescriptor": 6,
+        "CounterHeap": 6,
+        "LibraryFunctionDescriptor": 6,
+        "PipelineOptions": 6,
+        "PipelineDescriptor": 6,
+        "StitchedFunctionDescriptor": 6,
+        "TextureReferenceType": 6,
+        "CaptureScope": 6,
+        "ComputePassDescriptor": 6,
+        "SharedEvent": 6,
+        "FunctionConstantValues": 6,
+        "FunctionConstant": 6,
+        "LogStateDescriptor": 6,
+        "RenderPassDepthAttachmentDescriptor": 6,
+        "RenderPassStencilAttachmentDescriptor": 6,
+        "ResidencySetDescriptor": 6,
+        "ResourceStateCommandEncoder": 6,
+        "ResourceViewPoolDescriptor": 6,
+        "TensorAuxiliaryPlaneDescriptor": 6,
+        "TensorBufferAttachments": 6,
+        "VertexDescriptor": 6,
+        "RenderPipelineColorAttachmentDescriptorArray": 5,
+        "TensorAuxiliaryPlaneType": 5,
+        "BufferBinding": 5,
+        "TextureBinding": 5,
+        "DynamicLibrary": 5,
+        "SharedEventListener": 5,
+        "FunctionStitchingInputNode": 5,
+        "IOCommandQueue": 5,
+        "IndirectCommandBuffer": 5,
+        "IntersectionFunctionTableDescriptor": 5,
+        "LogicalToPhysicalColorAttachmentMap": 5,
+        "ResourceViewPool": 5,
+        "TensorExtents": 5,
+        "TensorAuxiliaryPlaneDescriptorMap": 5,
+        "TensorAuxiliaryPlane": 5,
+        "VisibleFunctionTableDescriptor": 5,
+        "AccelerationStructureDescriptor": 4,
+        "CommandAllocatorDescriptor": 4,
+        "CommandAllocator": 4,
+        "CommandBufferOptions": 4,
+        "CommitOptions": 4,
+        "CompilerTaskOptions": 4,
+        "MachineLearningPipelineState": 4,
+        "PipelineDataSetSerializerDescriptor": 4,
+        "AccelerationStructurePassSampleBufferAttachmentDescriptorArray": 4,
+        "AccelerationStructurePassDescriptor": 4,
+        "StructType": 4,
+        "TensorBinding": 4,
+        "BinaryArchiveDescriptor": 4,
+        "BlitPassSampleBufferAttachmentDescriptorArray": 4,
+        "BlitPassDescriptor": 4,
+        "ComputePassSampleBufferAttachmentDescriptorArray": 4,
+        "ComputePipelineReflection": 4,
+        "CounterSampleBuffer": 4,
+        "FunctionHandle": 4,
+        "FunctionLogDebugLocation": 4,
+        "FunctionLog": 4,
+        "FunctionReflection": 4,
+        "PipelineBufferDescriptor": 4,
+        "PipelineBufferDescriptorArray": 4,
+        "RasterizationRateSampleArray": 4,
+        "RasterizationRateLayerArray": 4,
+        "RenderPassColorAttachmentDescriptor": 4,
+        "RenderPassColorAttachmentDescriptorArray": 4,
+        "RenderPassSampleBufferAttachmentDescriptorArray": 4,
+        "TileRenderPipelineColorAttachmentDescriptor": 4,
+        "TileRenderPipelineColorAttachmentDescriptorArray": 4,
+        "ResourceStatePassSampleBufferAttachmentDescriptorArray": 4,
+        "ResourceStatePassDescriptor": 4,
+        "BufferLayoutDescriptorArray": 4,
+        "AttributeDescriptorArray": 4,
+        "SharedTextureHandle": 4,
+        "VertexBufferLayoutDescriptorArray": 4,
+        "VertexAttributeDescriptorArray": 4,
+        "CommitFeedback": 3,
+        "CompilerTask": 3,
+        "MachineLearningCommandEncoder": 3,
+        "MachineLearningPipelineReflection": 3,
+        "Type": 3,
+        "CommandBufferEncoderInfo": 3,
+        "DepthStencilState": 3,
+        "Architecture": 3,
+        "Event": 3,
+        "SharedEventHandle": 3,
+        "Fence": 3,
+        "SamplerState": 3,
+        "TextureViewPool": 3,
+        "VisibleFunctionTable": 3,
+        "BinaryFunction": 2,
+        "PipelineDataSetSerializer": 2,
+        "AccelerationStructure": 2,
+        "ThreadgroupBinding": 2,
+        "ObjectPayloadBinding": 2,
+        "CounterSet": 2,
+        "IntersectionFunctionDescriptor": 2,
+        "FunctionStitchingAttributeAlwaysInline": 2,
+        "IOFileHandle": 2,
+        "LogState": 2,
+        "Allocation": 1,
+        "Counter": 1,
+        "IOScratchBuffer": 1,
+        "IOScratchBufferAllocator": 1,
+        "LogContainer": 0,
+        "FunctionStitchingAttribute": 0,
+        "FunctionStitchingNode": 0
+      }
+    },
+    "MetalFX": {
+      "headers": 11,
+      "binding_artefacts_excluded": 4,
+      "classes": 9,
+      "methods": 150,
+      "enums": 0,
+      "enum_members": 0,
+      "constants": 0,
+      "largest_classes": [
+        [
+          "TemporalDenoisedScalerDescriptor",
+          58
+        ],
+        [
+          "TemporalScalerDescriptor",
+          40
+        ],
+        [
+          "FrameInterpolatorDescriptor",
+          28
+        ],
+        [
+          "SpatialScalerDescriptor",
+          20
+        ],
+        [
+          "FrameInterpolator",
+          1
+        ],
+        [
+          "SpatialScaler",
+          1
+        ],
+        [
+          "TemporalDenoisedScaler",
+          1
+        ],
+        [
+          "TemporalScaler",
+          1
+        ],
+        [
+          "FrameInterpolatableScaler",
+          0
+        ]
+      ],
+      "categories": {
+        "descriptors": {
+          "classes": 4,
+          "methods": 146
+        },
+        "encoders": {
+          "classes": 0,
+          "methods": 0
+        },
+        "state_objects": {
+          "classes": 0,
+          "methods": 0
+        },
+        "device_and_queue": {
+          "classes": 0,
+          "methods": 0
+        },
+        "other": {
+          "classes": 5,
+          "methods": 4
+        }
+      },
+      "all_classes": {
+        "TemporalDenoisedScalerDescriptor": 58,
+        "TemporalScalerDescriptor": 40,
+        "FrameInterpolatorDescriptor": 28,
+        "SpatialScalerDescriptor": 20,
+        "FrameInterpolator": 1,
+        "SpatialScaler": 1,
+        "TemporalDenoisedScaler": 1,
+        "TemporalScaler": 1,
+        "FrameInterpolatableScaler": 0
+      }
+    },
+    "QuartzCore": {
+      "headers": 5,
+      "binding_artefacts_excluded": 0,
+      "classes": 2,
+      "methods": 23,
+      "enums": 0,
+      "enum_members": 0,
+      "constants": 0,
+      "largest_classes": [
+        [
+          "MetalLayer",
+          21
+        ],
+        [
+          "MetalDrawable",
+          2
+        ]
+      ],
+      "categories": {
+        "descriptors": {
+          "classes": 0,
+          "methods": 0
+        },
+        "encoders": {
+          "classes": 0,
+          "methods": 0
+        },
+        "state_objects": {
+          "classes": 0,
+          "methods": 0
+        },
+        "device_and_queue": {
+          "classes": 0,
+          "methods": 0
+        },
+        "other": {
+          "classes": 2,
+          "methods": 23
+        }
+      },
+      "all_classes": {
+        "MetalLayer": 21,
+        "MetalDrawable": 2
+      }
+    }
+  }
+}

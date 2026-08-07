@@ -29,18 +29,18 @@ of confident forum assertions.
 | 8 | Apple's macOS VM restore images (IPSW, via mesu.apple.com) are Apple-silicon only; no x86 equivalent exists | [verified] |
 | 9 | iOS Simulator runtimes ship real `x86_64-simulator` slices; Apple built modern framework binaries for x86_64 well into the transition | [verified] |
 | 10 | Apple ships and supports an x86→ARM translator for Linux VMs; there is no ARM→x86 counterpart | [verified] |
+| 11 | The Metal graphics surface is 218 classes / 2 558 methods / 918 enum values; 46.5% of Metal's methods are descriptor property accessors, ~480 are load-bearing | [measured] `data/metal-surface.json` |
 
 ## In progress
 
-- **Metal API surface sizing.** How many classes and methods would a
-  reimplementation actually have to cover? Nobody has published a number.
+- **Metal vs Vulkan semantic divergence inventory.** Where do the two execution
+  models actually differ — argument buffers, heap aliasing, residency, tile
+  shaders, memory model? This is the uncounted risk in finding #11 and the thing
+  that actually stalls such projects. Nobody has published it.
 
 ## Queue
 
-1. **Metal API surface sizing** — count the public `MTL*` protocol and class
-   surface from published headers; produce a concrete "how big is this job"
-   figure rather than an adjective.
-2. **Local image audit** — run `macho_audit.py` against the Big Sur
+1. **Local image audit** — run `macho_audit.py` against the Big Sur
    `BaseSystem.dmg` in `_downloads/`. Big Sur is the first universal release, so
    it is the earliest point where the arm64/x86_64 ratio inside Apple's own
    shipped system becomes measurable. Blocked on reading APFS from Windows;
