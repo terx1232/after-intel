@@ -140,6 +140,10 @@ shader compiler, which is what applications actually call. See
 - [docs/09-emulation-path.md](docs/09-emulation-path.md) — the alternative to
   porting: translate ARM at runtime instead. Why Apple's VM platform is a far
   better emulation target than real Apple silicon, and where that road ends
+- **[docs/10-inside-macos27.md](docs/10-inside-macos27.md)** — the shipped
+  macOS 27 beta opened up and measured: 13 kernelcaches and not one of them
+  x86, every system image named arm64e, and the two x86 binaries that *are*
+  in there
 
 Every claim is tagged **[measured]**, **[verified]**, **[literature]** or
 **[open]** so a reader can tell an experiment from a citation from a guess.
@@ -168,6 +172,20 @@ mechanical descriptor plumbing from load-bearing encoder and device behaviour.
 
 ```bash
 python tools/metal_surface.py /path/to/metal-cpp --json out.json
+```
+
+### `tools/xar_explore.py`, `tools/zip_carve.py`, `tools/image_arch_scan.py`
+
+The chain for reading a macOS installer without a Mac and without implementing
+APFS. `xar_explore.py` reads the package table of contents and extracts members;
+`image_arch_scan.py` validates Mach-O headers across a raw byte range, reporting
+its own noise floor; `zip_carve.py` recovers zip member listings from raw image
+bytes — names are stored uncompressed — and decompresses individual members by
+offset to identify their architecture.
+
+```bash
+python tools/xar_explore.py Install*.pkg --json toc.json
+python tools/zip_carve.py Install*.pkg --start N --length N --grep dyld --archcheck
 ```
 
 ### `tools/boot_protocol.py`

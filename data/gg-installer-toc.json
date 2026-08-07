@@ -1,0 +1,53 @@
+{
+  "archive": "D:\\macos\\InstallAssistant_27.0_26A5388g.pkg",
+  "header": {
+    "header_size": 28,
+    "version": 1,
+    "toc_compressed": 4315,
+    "toc_uncompressed": 9139,
+    "checksum_alg": 1,
+    "heap_offset": 4343
+  },
+  "members": [
+    {
+      "path": "SharedSupport.dmg",
+      "type": "file",
+      "offset": 13031571,
+      "length": 16958978351,
+      "size": 16958978351,
+      "encoding": "application/octet-stream"
+    },
+    {
+      "path": "PackageInfo",
+      "type": "file",
+      "offset": 13031080,
+      "length": 459,
+      "size": 970,
+      "encoding": "application/x-gzip"
+    },
+    {
+      "path": "Scripts",
+      "type": "file",
+      "offset": 13021601,
+      "length": 9479,
+      "size": 9479,
+      "encoding": "application/octet-stream"
+    },
+    {
+      "path": "Payload",
+      "type": "file",
+      "offset": 85745,
+      "length": 12935856,
+      "size": 12935856,
+      "encoding": "application/octet-stream"
+    },
+    {
+      "path": "Bom",
+      "type": "file",
+      "offset": 276,
+      "length": 85469,
+      "size": 402129,
+      "encoding": "application/x-gzip"
+    }
+  ]
+}

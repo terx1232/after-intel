@@ -1,0 +1,39 @@
+{
+  "machos": [
+    {
+      "name": "AssetData/com.apple.MobileSoftwareUpdate.UpdateBrainService.xpc/Contents/MacOS/UpdateBrainLibrary.dylib",
+      "archs": [
+        "x86_64",
+        "arm64e"
+      ],
+      "size": 12621952
+    },
+    {
+      "name": "AssetData/com.apple.MobileSoftwareUpdate.UpdateBrainService.xpc/Contents/MacOS/com.apple.MobileSoftwareUpdate.UpdateBrainService",
+      "archs": [
+        "x86_64",
+        "arm64"
+      ],
+      "size": 172752
+    },
+    {
+      "name": "AssetData/Restore/BootabilityBundle/Restore/Bootability/BootabilityBrain.framework/Versions/A/BootabilityBrain",
+      "archs": [
+        "arm64e"
+      ],
+      "size": 6027296
+    }
+  ],
+  "tally": {
+    "x86_64": 2,
+    "arm64e": 2,
+    "arm64": 1
+  },
+  "combos": {
+    "x86_64+arm64e": 1,
+    "x86_64+arm64": 1,
+    "arm64e": 1
+  },
+  "not_macho": 1553,
+  "undecodable": 94
+}

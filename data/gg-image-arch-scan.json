@@ -1,0 +1,15 @@
+{
+  "path": "D:\\macos\\InstallAssistant_27.0_26A5388g.pkg",
+  "start": 13035914,
+  "length": 16958964736,
+  "validated_macho_headers": 0,
+  "fat_headers": 0,
+  "per_arch": {},
+  "rejected_magic_hits": {
+    "fat64": 4,
+    "thin64": 4,
+    "fat": 5,
+    "thin32": 4
+  },
+  "sample_hits": []
+}

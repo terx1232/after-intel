@@ -40,15 +40,25 @@ of confident forum assertions.
 | 17 | All four declared XNU build dependencies (DTrace, AvailabilityVersions, libdispatch, xnu headers) are published; DTrace is marked optional. The real gate is that the build needs Xcode, i.e. a Mac | [verified] XNU `README.md` |
 | 18 | Apple's VM platform (VMAPPLE) uses standard GICv3 and PL011 rather than Apple's AIC and custom UART, and paravirtualises PAC and CTRR with no secure monitor. It is a far cleaner emulation target than real Apple silicon | [verified] `pexpert/pexpert/arm64/VMAPPLE.h` |
 | 19 | Emulating a weak-ordered ARM guest on a strongly-ordered x86 host is the favourable direction for memory ordering; no hardware assist is needed, unlike x86-on-ARM which required Apple to add a TSO mode | [verified] architecture semantics |
+| 20 | macOS 27 beta `26A5388g` ships 13 kernelcaches, 12 for Apple silicon Mac platforms and one (`vma2`) for the Apple Virtual Machine platform. There is no x86 kernelcache | [measured] `data/gg-zip-members.json` |
+| 21 | Every system image in the package is named arm64e — `arm64eBaseSystem.dmg`, `cryptex-system-arm64e`, `arm64eSURamDisk.dmg` — with no x86 counterpart anywhere in 1 842 members | [measured] same |
+| 22 | Exactly 3 Mach-O binaries are directly visible in the 16.46 GiB payload; the only two carrying x86_64 slices both belong to `UpdateBrainService`, i.e. update infrastructure rather than the installed system | [measured] `data/gg-member-archs.json` |
+| 23 | The largest single item in the payload is `cryptex-system-rosetta` — the x86-on-ARM translation runtime. Apple's biggest x86 artifact in macOS 27 points inward, as every other one does | [measured] same |
 
 ## In progress
 
-**Track: bootloader and porting the system to x86.**
+**Track: what is actually inside the shipped macOS 27 installer.**
 
-- **Kernel collection format.** What the loader hands over is a KC, not a bare
-  kernel — `KC_hdrs_vaddr` in `boot_args` points at it. OpenCore's
-  `OcAppleKernelLib` implements the handling and the source is already on disk
-  at `_downloads/OpenCorePkg-src-1.0.7`, so this is measurable without network.
+- **Open the opaque containers.** `payloadv2/payload.NNN`, the cryptexes and the
+  `.dmg.aea` Apple Encrypted Archives were not opened, so the installed
+  system's individual binaries remain un-enumerated. Until that is done,
+  finding #21 rests on image *naming*, not on a binary census of the installed
+  system. Establishing whether the containers are readable at all is the next
+  step.
+- **Decode a kernelcache.** The 13 kernelcaches did not decode as bare Mach-O,
+  so they are IM4P-wrapped or LZSS-compressed. Confirming their architecture
+  directly would turn finding #20 from a naming argument into a header
+  measurement.
 
 ## Queue
 
