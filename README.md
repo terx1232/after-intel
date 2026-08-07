@@ -104,6 +104,13 @@ Swift, JIT-generated code, and a fresh set of signatures every point release.
 The honest scope of this repo is reconnaissance: know exactly what is on the
 other side of the wall, and where the wall actually is.
 
+On that last point, the reconnaissance produced a result worth stating up front:
+**the wall is not where it is usually placed.** AMD publishes complete ISA
+documentation and an open reference driver, so a kernel-mode GPU driver is
+tractable. What is not tractable is Metal — a closed userspace API with a closed
+shader compiler, which is what applications actually call. See
+[docs/02-hardware-targets.md](docs/02-hardware-targets.md).
+
 ---
 
 ## Tools
