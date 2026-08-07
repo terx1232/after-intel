@@ -1,4 +1,4 @@
-# gg-x86-recon
+# after-intel
 
 **Measuring, rather than arguing about, what the Apple silicon transition leaves behind.**
 
@@ -7,14 +7,35 @@ macOS 26 Tahoe is the last release that supports Intel. macOS 27 "Golden Gate"
 discussion of what that means for running macOS on non-Apple hardware currently
 runs on assertion. This repository replaces assertions with numbers.
 
-It contains two small, dependency-free tools and the measurements they produce.
-Both run on Windows, Linux or macOS with a stock Python 3.8+. No Mac required.
+It contains seven small, dependency-free tools and the measurements they
+produce. They run on Windows, Linux or macOS with a stock Python 3.8+.
+**No Mac required** — including for reading a macOS installer.
 
 ---
 
 ## What has actually been measured
 
-### 1. The community's entire toolchain is x86-only
+### 1. macOS 27, opened and counted
+
+The shipped `InstallAssistant_27.0_26A5388g.pkg` — 16 972 015 289 bytes — was
+read end to end without a Mac and without implementing APFS. Full method and
+caveats in **[docs/10-inside-macos27.md](docs/10-inside-macos27.md)**.
+
+| | |
+|---|---|
+| zip members carved from the image | 1 842 (16.46 GiB) |
+| kernelcaches | **13, and all 13 are arm64e** by header read |
+| x86 kernelcaches | **0** |
+| system images | `arm64eBaseSystem.dmg`, `cryptex-system-arm64e`, `arm64eSURamDisk.dmg` — no x86 counterpart |
+| Mach-O binaries directly visible | 3, of which 2 carry x86_64 slices |
+| where those 2 live | `UpdateBrainService` — the software-update brain, i.e. installer infrastructure |
+| largest single payload item | `cryptex-system-rosetta`, the x86-on-ARM translation runtime |
+
+The kernelcaches decompose as 342–370 bundled kexts in 119–126 MB for the Mac
+platforms, and 216 kexts in 81 MB for `vma2` — the Apple Virtual Machine
+platform, which Apple ships a kernel for in the retail installer.
+
+### 2. The community's entire toolchain is x86-only
 
 Every kext the Hackintosh ecosystem depends on was audited for shipped
 architecture slices (`tools/macho_audit.py`, output in
@@ -34,7 +55,7 @@ Not one arm64 slice exists anywhere in the stack. This is not an oversight — i
 follows from what these kexts *are*, which is the finding underneath the finding
 (see [docs/01-patchers-not-drivers.md](docs/01-patchers-not-drivers.md)).
 
-### 2. XNU baseline at the last Intel-supporting release
+### 3. XNU baseline at the last Intel-supporting release
 
 `tools/xnu_arch_check.py` run against `xnu-12377.121.6` (macOS 26.5, published
 17 June 2026), full output in `data/xnu-tahoe-26.5.json`:
@@ -52,7 +73,7 @@ kernel build targets declared in config/:
   MASTER.arm  MASTER.arm64  MASTER
 ```
 
-### 3. The macOS 27 source has not been published yet
+### 4. The macOS 27 source has not been published yet
 
 At the time of writing (7 August 2026) the newest tags on
 `apple-oss-distributions` are `xnu-12377.121.6` and `macos-265`, both dated
@@ -96,10 +117,11 @@ Being explicit, because the surrounding discussion usually is not:
 **Nothing here is a path to running macOS 27 on a PC.** The kernel is under 5% of
 the system, and it is the only part that is open. AppKit, Foundation,
 CoreGraphics, WindowServer, Metal, CoreAudio, and every GPU and audio driver are
-closed source and, from macOS 27, shipped as arm64e only. There is no source to
-recompile and no x86 build to patch. Static ARM→x86 translation of the shipped
-binaries runs into pointer authentication, runtime dispatch in Objective-C and
-Swift, JIT-generated code, and a fresh set of signatures every point release.
+closed source and shipped as arm64e only — which finding 1 above establishes by
+measurement rather than assumption. There is no source to recompile and no x86
+build to patch. Static ARM→x86 translation of the shipped binaries runs into
+pointer authentication, runtime dispatch in Objective-C and Swift, JIT-generated
+code, and a fresh set of signatures every point release.
 
 The honest scope of this repo is reconnaissance: know exactly what is on the
 other side of the wall, and where the wall actually is.
@@ -188,6 +210,18 @@ python tools/xar_explore.py Install*.pkg --json toc.json
 python tools/zip_carve.py Install*.pkg --start N --length N --grep dyld --archcheck
 ```
 
+### `tools/im4p_extract.py`
+
+Unwraps an Apple Image4 payload — the container Apple ships kernelcaches in —
+by parsing the ASN.1 DER directly, decompresses the LZFSE payload, and reports
+the Mach-O header of what comes out, including `MH_FILESET` entries. LZFSE
+support is optional; without it the tool still reports the container structure
+and payload format.
+
+```bash
+python tools/im4p_extract.py kernelcache.release.vma2 --json out.json
+```
+
 ### `tools/boot_protocol.py`
 
 Extracts XNU's `boot_args` handoff struct from `pexpert/pexpert/<arch>/boot.h`
@@ -230,4 +264,8 @@ python tools/xnu_arch_check.py _work/xnu-tahoe --json data/xnu-tahoe-26.5.json
 
 ## Licence
 
-Tools are MIT. Measurements are facts and belong to nobody.
+Tools are [MIT](LICENSE). Measurements are facts and belong to nobody.
+
+**No Apple software is redistributed here.** This repository contains tools and
+the numbers they produced. The installer package it was pointed at is not
+included and is not hosted anywhere by this project.
