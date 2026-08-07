@@ -1,0 +1,10 @@
+# Source checkouts and other bulk inputs. Everything here is reproducible from
+# the commands in README.md, so it never belongs in the repository.
+_work/
+*.dmg
+*.ipsw
+*.pkg
+*.zip
+
+__pycache__/
+*.pyc

@@ -1,0 +1,96 @@
+{
+  "root": "D:\\macos\\gg-x86-recon\\_work\\xnu-tahoe",
+  "arch": {
+    "x86": {
+      "dirs": {
+        "osfmk/i386": {
+          "exists": true,
+          "files": 140,
+          "lines": 52665
+        },
+        "osfmk/x86_64": {
+          "exists": true,
+          "files": 30,
+          "lines": 13201
+        },
+        "bsd/dev/i386": {
+          "exists": true,
+          "files": 18,
+          "lines": 14905
+        },
+        "pexpert/i386": {
+          "exists": true,
+          "files": 7,
+          "lines": 1738
+        },
+        "osfmk/kdp/ml/i386": {
+          "exists": true,
+          "files": 2,
+          "lines": 533
+        },
+        "osfmk/kdp/ml/x86_64": {
+          "exists": true,
+          "files": 2,
+          "lines": 772
+        }
+      },
+      "dirs_present": 6,
+      "dirs_total": 6,
+      "files": 199,
+      "lines": 83814
+    },
+    "arm": {
+      "dirs": {
+        "osfmk/arm": {
+          "exists": true,
+          "files": 74,
+          "lines": 41372
+        },
+        "osfmk/arm64": {
+          "exists": true,
+          "files": 102,
+          "lines": 72425
+        },
+        "bsd/dev/arm": {
+          "exists": true,
+          "files": 9,
+          "lines": 3540
+        },
+        "bsd/dev/arm64": {
+          "exists": true,
+          "files": 11,
+          "lines": 4557
+        },
+        "pexpert/arm": {
+          "exists": true,
+          "files": 9,
+          "lines": 3606
+        },
+        "osfmk/kdp/ml/arm": {
+          "exists": true,
+          "files": 2,
+          "lines": 1052
+        }
+      },
+      "dirs_present": 6,
+      "dirs_total": 6,
+      "files": 207,
+      "lines": 126552
+    }
+  },
+  "build_files": {
+    "makedefs/MakeInc.def": true,
+    "config/MASTER.x86_64": true,
+    "config/MASTER.arm64": true
+  },
+  "master_configs": [
+    "MASTER",
+    "MASTER.arm",
+    "MASTER.arm64",
+    "MASTER.arm64.BridgeOS",
+    "MASTER.arm64.MacOSX",
+    "MASTER.arm64.WatchOS",
+    "MASTER.arm64.iPhoneOS",
+    "MASTER.x86_64"
+  ]
+}

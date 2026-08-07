@@ -1,0 +1,363 @@
+{
+  "tool": "macho_audit.py",
+  "roots": [
+    {
+      "root": "D:\\macos\\_downloads\\Lilu-1.7.2-RELEASE",
+      "files_seen": 2,
+      "macho_files": 1,
+      "fat_files": 1,
+      "thin_files": 0,
+      "per_arch": {
+        "x86_64": 1,
+        "i386": 1
+      },
+      "per_filetype": {
+        "kext": 1
+      },
+      "combos": {
+        "i386+x86_64": 1
+      },
+      "entries": [
+        {
+          "path": "Lilu.kext\\Contents\\MacOS\\Lilu",
+          "archs": [
+            "x86_64",
+            "i386"
+          ],
+          "filetype": "kext",
+          "fat": true
+        }
+      ]
+    },
+    {
+      "root": "D:\\macos\\_downloads\\WhateverGreen-1.7.0-RELEASE",
+      "files_seen": 6,
+      "macho_files": 2,
+      "fat_files": 1,
+      "thin_files": 1,
+      "per_arch": {
+        "x86_64": 2,
+        "i386": 1
+      },
+      "per_filetype": {
+        "kext": 1,
+        "dylib": 1
+      },
+      "combos": {
+        "x86_64": 1,
+        "i386+x86_64": 1
+      },
+      "entries": [
+        {
+          "path": "WhateverGreen.kext\\Contents\\MacOS\\WhateverGreen",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "kext",
+          "fat": false
+        },
+        {
+          "path": "WhateverName.app\\Contents\\MacOS\\libWhateverName.dylib",
+          "archs": [
+            "x86_64",
+            "i386"
+          ],
+          "filetype": "dylib",
+          "fat": true
+        }
+      ]
+    },
+    {
+      "root": "D:\\macos\\_downloads\\VirtualSMC-1.3.7-RELEASE",
+      "files_seen": 17,
+      "macho_files": 10,
+      "fat_files": 2,
+      "thin_files": 8,
+      "per_arch": {
+        "x86_64": 10,
+        "i386": 2
+      },
+      "per_filetype": {
+        "kext": 6,
+        "executable": 3,
+        "dylib": 1
+      },
+      "combos": {
+        "x86_64": 8,
+        "i386+x86_64": 2
+      },
+      "entries": [
+        {
+          "path": "Kexts\\SMCBatteryManager.kext\\Contents\\MacOS\\SMCBatteryManager",
+          "archs": [
+            "x86_64",
+            "i386"
+          ],
+          "filetype": "kext",
+          "fat": true
+        },
+        {
+          "path": "Kexts\\SMCDellSensors.kext\\Contents\\MacOS\\SMCDellSensors",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "kext",
+          "fat": false
+        },
+        {
+          "path": "Kexts\\SMCLightSensor.kext\\Contents\\MacOS\\SMCLightSensor",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "kext",
+          "fat": false
+        },
+        {
+          "path": "Kexts\\SMCProcessor.kext\\Contents\\MacOS\\SMCProcessor",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "kext",
+          "fat": false
+        },
+        {
+          "path": "Kexts\\SMCSuperIO.kext\\Contents\\MacOS\\SMCSuperIO",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "kext",
+          "fat": false
+        },
+        {
+          "path": "Kexts\\VirtualSMC.kext\\Contents\\MacOS\\VirtualSMC",
+          "archs": [
+            "x86_64",
+            "i386"
+          ],
+          "filetype": "kext",
+          "fat": true
+        },
+        {
+          "path": "Tools\\libaistat.dylib",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "dylib",
+          "fat": false
+        },
+        {
+          "path": "Tools\\rtcread",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "executable",
+          "fat": false
+        },
+        {
+          "path": "Tools\\smc",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "executable",
+          "fat": false
+        },
+        {
+          "path": "Tools\\smcread",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "executable",
+          "fat": false
+        }
+      ]
+    },
+    {
+      "root": "D:\\macos\\_downloads\\AppleALC-1.9.7-RELEASE",
+      "files_seen": 5,
+      "macho_files": 3,
+      "fat_files": 2,
+      "thin_files": 1,
+      "per_arch": {
+        "x86_64": 3,
+        "i386": 2
+      },
+      "per_filetype": {
+        "executable": 1,
+        "kext": 1,
+        "object": 1
+      },
+      "combos": {
+        "i386+x86_64": 2,
+        "x86_64": 1
+      },
+      "entries": [
+        {
+          "path": "alc-verb",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "executable",
+          "fat": false
+        },
+        {
+          "path": "AppleALC.kext\\Contents\\MacOS\\AppleALC",
+          "archs": [
+            "x86_64",
+            "i386"
+          ],
+          "filetype": "kext",
+          "fat": true
+        },
+        {
+          "path": "AppleALCU.kext\\Contents\\MacOS\\AppleALCU",
+          "archs": [
+            "i386",
+            "x86_64"
+          ],
+          "filetype": "object",
+          "fat": true
+        }
+      ]
+    },
+    {
+      "root": "D:\\macos\\_downloads\\VoodooPS2Controller-2.3.7-RELEASE",
+      "files_seen": 11,
+      "macho_files": 5,
+      "fat_files": 0,
+      "thin_files": 5,
+      "per_arch": {
+        "x86_64": 5
+      },
+      "per_filetype": {
+        "kext": 5
+      },
+      "combos": {
+        "x86_64": 5
+      },
+      "entries": [
+        {
+          "path": "VoodooPS2Controller.kext\\Contents\\MacOS\\VoodooPS2Controller",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "kext",
+          "fat": false
+        },
+        {
+          "path": "VoodooPS2Controller.kext\\Contents\\PlugIns\\VoodooInput.kext\\Contents\\MacOS\\VoodooInput",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "kext",
+          "fat": false
+        },
+        {
+          "path": "VoodooPS2Controller.kext\\Contents\\PlugIns\\VoodooPS2Keyboard.kext\\Contents\\MacOS\\VoodooPS2Keyboard",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "kext",
+          "fat": false
+        },
+        {
+          "path": "VoodooPS2Controller.kext\\Contents\\PlugIns\\VoodooPS2Mouse.kext\\Contents\\MacOS\\VoodooPS2Mouse",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "kext",
+          "fat": false
+        },
+        {
+          "path": "VoodooPS2Controller.kext\\Contents\\PlugIns\\VoodooPS2Trackpad.kext\\Contents\\MacOS\\VoodooPS2Trackpad",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "kext",
+          "fat": false
+        }
+      ]
+    },
+    {
+      "root": "D:\\macos\\_downloads\\BrcmPatchRAM-2.7.2-RELEASE",
+      "files_seen": 115,
+      "macho_files": 8,
+      "fat_files": 0,
+      "thin_files": 8,
+      "per_arch": {
+        "x86_64": 8
+      },
+      "per_filetype": {
+        "kext": 8
+      },
+      "combos": {
+        "x86_64": 8
+      },
+      "entries": [
+        {
+          "path": "BlueToolFixup.kext\\Contents\\MacOS\\BlueToolFixup",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "kext",
+          "fat": false
+        },
+        {
+          "path": "BrcmFirmwareData.kext\\Contents\\MacOS\\BrcmFirmwareData",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "kext",
+          "fat": false
+        },
+        {
+          "path": "BrcmFirmwareRepo.kext\\Contents\\MacOS\\BrcmFirmwareRepo",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "kext",
+          "fat": false
+        },
+        {
+          "path": "BrcmNonPatchRAM.kext\\Contents\\MacOS\\BrcmNonPatchRAM",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "kext",
+          "fat": false
+        },
+        {
+          "path": "BrcmNonPatchRAM2.kext\\Contents\\MacOS\\BrcmNonPatchRAM2",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "kext",
+          "fat": false
+        },
+        {
+          "path": "BrcmPatchRAM.kext\\Contents\\MacOS\\BrcmPatchRAM",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "kext",
+          "fat": false
+        },
+        {
+          "path": "BrcmPatchRAM2.kext\\Contents\\MacOS\\BrcmPatchRAM2",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "kext",
+          "fat": false
+        },
+        {
+          "path": "BrcmPatchRAM3.kext\\Contents\\MacOS\\BrcmPatchRAM3",
+          "archs": [
+            "x86_64"
+          ],
+          "filetype": "kext",
+          "fat": false
+        }
+      ]
+    }
+  ]
+}
