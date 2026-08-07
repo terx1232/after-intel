@@ -33,17 +33,33 @@ of confident forum assertions.
 | 12 | Metal tracks hazards automatically by default; Vulkan requires explicit barriers. Metal→Vulkan must therefore synthesise a per-resource tracker that the API surface count does not show — a subsystem independently reported as the hottest code in a comparable project | [literature] `docs/06-metal-vulkan-divergence.md` |
 | 13 | MoltenVK's documented limitations amount to four narrow bullets, so Vulkan→Metal is effectively solved — which is why citing it as evidence for the reverse is a category error | [verified] MoltenVK user guide |
 
+| 14 | XNU's x86 boot handoff is 49 fields / exactly 4096 bytes: 12 EFI-dependent, 15 boot-security. arm64 is 13 fields, no EFI, no security state. The x86 entry contract is written in EFI's vocabulary, which is why the loader must be a UEFI application | [measured] `data/boot-protocol.json` |
+| 15 | The bootloader participates in the sealed-system-volume chain: it supplies the ARV root hash and manifest for both the system volume and Base System, plus the APFS volume key and SIP configuration | [verified] `pexpert/pexpert/i386/boot.h` |
+
 ## In progress
 
-- **Argument buffers, residency and heap aliasing.** Finding #12 left three
-  gaps marked [open]: how Metal's argument buffer tiers map onto Vulkan
-  descriptor sets and descriptor indexing, how residency interacts with
-  automatic tracking, and `MTLHeap` sub-allocation semantics. No solid public
-  analysis was located on the first pass.
+**Track: bootloader and porting the system to x86.**
+
+- **Can the published XNU actually be built for x86_64?** Finding #14 shows the
+  entry contract is public and satisfied. The next question is whether the
+  open-source kernel behind it is buildable standalone, or whether it needs
+  unpublished dependencies. Checkable; not yet checked.
 
 ## Queue
 
-1. **Local image audit** — run `macho_audit.py` against the Big Sur
+1. **XNU x86_64 build dependency audit** — enumerate what the published tree
+   needs that Apple does not publish (private headers, `Libsyscall` pieces,
+   AvailabilityInternal, firmware blobs). This bounds how much of "port the
+   system" is even startable.
+2. **Kernel collection / kernelcache format** — what the loader actually hands
+   over is a KC, not a bare kernel. `KC_hdrs_vaddr` in `boot_args` points at it.
+   Format is partly documented in OpenCore's `OcAppleKernelLib`, which is on
+   disk in `_downloads/OpenCorePkg-src-1.0.7`.
+3. **OpenCore x86-specific surface** — measure how much of OpenCorePkg is
+   architecture-bound, using the checkout already in `_downloads/`.
+4. **Argument buffers, residency and heap aliasing** — three gaps left [open] by
+   finding #12. Deferred behind the bootloader track at the user's direction.
+5. **Local image audit** — run `macho_audit.py` against the Big Sur
    `BaseSystem.dmg` in `_downloads/`. Big Sur is the first universal release, so
    it is the earliest point where the arm64/x86_64 ratio inside Apple's own
    shipped system becomes measurable. Blocked on reading APFS from Windows;

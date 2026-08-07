@@ -1,0 +1,590 @@
+{
+  "root": "D:\\macos\\gg-x86-recon\\_work\\xnu-tahoe",
+  "arches": {
+    "i386/x86_64": {
+      "present": true,
+      "header": "pexpert/pexpert/i386/boot.h",
+      "header_bytes": 7680,
+      "field_count": 49,
+      "fields_by_role": {
+        "core": 22,
+        "efi": 12,
+        "boot-security": 15
+      },
+      "computed_bytes": 4096,
+      "unresolved_fields": 0,
+      "asserted_size": 4096,
+      "nested_structs": {
+        "EfiMemoryRange": 40,
+        "Boot_VideoV1": 24,
+        "Boot_Video": 56,
+        "boot_icon_element": 32
+      },
+      "fields": [
+        {
+          "name": "Revision",
+          "type": "uint16_t",
+          "count": 1,
+          "bytes": 2,
+          "role": "core"
+        },
+        {
+          "name": "Version",
+          "type": "uint16_t",
+          "count": 1,
+          "bytes": 2,
+          "role": "core"
+        },
+        {
+          "name": "efiMode",
+          "type": "uint8_t",
+          "count": 1,
+          "bytes": 1,
+          "role": "efi"
+        },
+        {
+          "name": "debugMode",
+          "type": "uint8_t",
+          "count": 1,
+          "bytes": 1,
+          "role": "core"
+        },
+        {
+          "name": "flags",
+          "type": "uint16_t",
+          "count": 1,
+          "bytes": 2,
+          "role": "core"
+        },
+        {
+          "name": "CommandLine",
+          "type": "char",
+          "count": 1024,
+          "bytes": 1024,
+          "role": "core"
+        },
+        {
+          "name": "MemoryMap",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "efi"
+        },
+        {
+          "name": "MemoryMapSize",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "efi"
+        },
+        {
+          "name": "MemoryMapDescriptorSize",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "efi"
+        },
+        {
+          "name": "MemoryMapDescriptorVersion",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "efi"
+        },
+        {
+          "name": "VideoV1",
+          "type": "Boot_VideoV1",
+          "count": 1,
+          "bytes": 24,
+          "role": "core"
+        },
+        {
+          "name": "deviceTreeP",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "core"
+        },
+        {
+          "name": "deviceTreeLength",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "core"
+        },
+        {
+          "name": "kaddr",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "core"
+        },
+        {
+          "name": "ksize",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "core"
+        },
+        {
+          "name": "efiRuntimeServicesPageStart",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "efi"
+        },
+        {
+          "name": "efiRuntimeServicesPageCount",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "efi"
+        },
+        {
+          "name": "efiRuntimeServicesVirtualPageStart",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "efi"
+        },
+        {
+          "name": "efiSystemTable",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "efi"
+        },
+        {
+          "name": "kslide",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "core"
+        },
+        {
+          "name": "performanceDataStart",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "core"
+        },
+        {
+          "name": "performanceDataSize",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "core"
+        },
+        {
+          "name": "keyStoreDataStart",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "boot-security"
+        },
+        {
+          "name": "keyStoreDataSize",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "boot-security"
+        },
+        {
+          "name": "bootMemStart",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "core"
+        },
+        {
+          "name": "bootMemSize",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "core"
+        },
+        {
+          "name": "PhysicalMemorySize",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "core"
+        },
+        {
+          "name": "FSBFrequency",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "core"
+        },
+        {
+          "name": "pciConfigSpaceBaseAddress",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "efi"
+        },
+        {
+          "name": "pciConfigSpaceStartBusNumber",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "efi"
+        },
+        {
+          "name": "pciConfigSpaceEndBusNumber",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "efi"
+        },
+        {
+          "name": "csrActiveConfig",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "boot-security"
+        },
+        {
+          "name": "csrCapabilities",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "boot-security"
+        },
+        {
+          "name": "boot_SMC_plimit",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "core"
+        },
+        {
+          "name": "bootProgressMeterStart",
+          "type": "uint16_t",
+          "count": 1,
+          "bytes": 2,
+          "role": "core"
+        },
+        {
+          "name": "bootProgressMeterEnd",
+          "type": "uint16_t",
+          "count": 1,
+          "bytes": 2,
+          "role": "core"
+        },
+        {
+          "name": "Video",
+          "type": "Boot_Video",
+          "count": 1,
+          "bytes": 56,
+          "role": "core"
+        },
+        {
+          "name": "apfsDataStart",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "boot-security"
+        },
+        {
+          "name": "apfsDataSize",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "boot-security"
+        },
+        {
+          "name": "KC_hdrs_vaddr",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "boot-security"
+        },
+        {
+          "name": "arvRootHashStart",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "boot-security"
+        },
+        {
+          "name": "arvRootHashSize",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "boot-security"
+        },
+        {
+          "name": "arvManifestStart",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "boot-security"
+        },
+        {
+          "name": "arvManifestSize",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "boot-security"
+        },
+        {
+          "name": "bsARVRootHashStart",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "boot-security"
+        },
+        {
+          "name": "bsARVRootHashSize",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "boot-security"
+        },
+        {
+          "name": "bsARVManifestStart",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "boot-security"
+        },
+        {
+          "name": "bsARVManifestSize",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "boot-security"
+        },
+        {
+          "name": "__reserved4",
+          "type": "uint32_t",
+          "count": 692,
+          "bytes": 2768,
+          "role": "core"
+        }
+      ]
+    },
+    "arm64": {
+      "present": true,
+      "header": "pexpert/pexpert/arm64/boot.h",
+      "header_bytes": 2805,
+      "field_count": 13,
+      "fields_by_role": {
+        "core": 13,
+        "efi": 0,
+        "boot-security": 0
+      },
+      "computed_bytes": 1140,
+      "unresolved_fields": 0,
+      "asserted_size": null,
+      "nested_structs": {
+        "Boot_Video": 48
+      },
+      "fields": [
+        {
+          "name": "Revision",
+          "type": "uint16_t",
+          "count": 1,
+          "bytes": 2,
+          "role": "core"
+        },
+        {
+          "name": "Version",
+          "type": "uint16_t",
+          "count": 1,
+          "bytes": 2,
+          "role": "core"
+        },
+        {
+          "name": "virtBase",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "core"
+        },
+        {
+          "name": "physBase",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "core"
+        },
+        {
+          "name": "memSize",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "core"
+        },
+        {
+          "name": "topOfKernelData",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "core"
+        },
+        {
+          "name": "Video",
+          "type": "Boot_Video",
+          "count": 1,
+          "bytes": 48,
+          "role": "core"
+        },
+        {
+          "name": "machineType",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "core"
+        },
+        {
+          "name": "deviceTreeP",
+          "type": "void*",
+          "count": 1,
+          "bytes": 8,
+          "role": "core"
+        },
+        {
+          "name": "deviceTreeLength",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "core"
+        },
+        {
+          "name": "CommandLine",
+          "type": "char",
+          "count": 1024,
+          "bytes": 1024,
+          "role": "core"
+        },
+        {
+          "name": "bootFlags",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "core"
+        },
+        {
+          "name": "memSizeActual",
+          "type": "uint64_t",
+          "count": 1,
+          "bytes": 8,
+          "role": "core"
+        }
+      ]
+    },
+    "arm": {
+      "present": true,
+      "header": "pexpert/pexpert/arm/boot.h",
+      "header_bytes": 2684,
+      "field_count": 13,
+      "fields_by_role": {
+        "core": 13,
+        "efi": 0,
+        "boot-security": 0
+      },
+      "computed_bytes": 348,
+      "unresolved_fields": 0,
+      "asserted_size": null,
+      "nested_structs": {
+        "Boot_Video": 48
+      },
+      "fields": [
+        {
+          "name": "Revision",
+          "type": "uint16_t",
+          "count": 1,
+          "bytes": 2,
+          "role": "core"
+        },
+        {
+          "name": "Version",
+          "type": "uint16_t",
+          "count": 1,
+          "bytes": 2,
+          "role": "core"
+        },
+        {
+          "name": "virtBase",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "core"
+        },
+        {
+          "name": "physBase",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "core"
+        },
+        {
+          "name": "memSize",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "core"
+        },
+        {
+          "name": "topOfKernelData",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "core"
+        },
+        {
+          "name": "Video",
+          "type": "Boot_Video",
+          "count": 1,
+          "bytes": 48,
+          "role": "core"
+        },
+        {
+          "name": "machineType",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "core"
+        },
+        {
+          "name": "deviceTreeP",
+          "type": "void*",
+          "count": 1,
+          "bytes": 8,
+          "role": "core"
+        },
+        {
+          "name": "deviceTreeLength",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "core"
+        },
+        {
+          "name": "CommandLine",
+          "type": "char",
+          "count": 256,
+          "bytes": 256,
+          "role": "core"
+        },
+        {
+          "name": "bootFlags",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "core"
+        },
+        {
+          "name": "memSizeActual",
+          "type": "uint32_t",
+          "count": 1,
+          "bytes": 4,
+          "role": "core"
+        }
+      ]
+    }
+  }
+}

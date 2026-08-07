@@ -131,6 +131,9 @@ shader compiler, which is what applications actually call. See
 - [docs/06-metal-vulkan-divergence.md](docs/06-metal-vulkan-divergence.md) —
   where the two execution models diverge, and why MoltenVK's existence is not
   evidence that the reverse direction is comparable work
+- [docs/07-boot-protocol.md](docs/07-boot-protocol.md) — XNU's boot handoff
+  measured across architectures, and why the bootloader is the one component
+  that is already finished
 
 Every claim is tagged **[measured]**, **[verified]**, **[literature]** or
 **[open]** so a reader can tell an experiment from a citation from a guess.
@@ -159,6 +162,17 @@ mechanical descriptor plumbing from load-bearing encoder and device behaviour.
 
 ```bash
 python tools/metal_surface.py /path/to/metal-cpp --json out.json
+```
+
+### `tools/boot_protocol.py`
+
+Extracts XNU's `boot_args` handoff struct from `pexpert/pexpert/<arch>/boot.h`
+and compares the field inventory across architectures, classifying each field as
+core, EFI-dependent or boot-security. Self-validates against XNU's own
+compile-time size assertion.
+
+```bash
+python tools/boot_protocol.py /path/to/xnu --json out.json
 ```
 
 ### `tools/xnu_arch_check.py`
