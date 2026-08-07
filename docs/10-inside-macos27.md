@@ -66,7 +66,34 @@ All thirteen are **IM4P** (Image4 payload) containers, tag `krnl`, description
 magic). The `vma2` cache is 23 085 654 bytes against roughly 32 MB for the real
 Mac platforms — consistent with a VM kernel needing fewer drivers.
 
-### The vma2 kernel, unwrapped and read
+### All thirteen, unwrapped and read
+
+`tools/im4p_extract.py` parses the DER container and decompresses the payload.
+Run over every kernelcache in the package (`data/gg-kernelcaches.json`):
+
+| kernelcache | IM4P payload | kernel | arch | type | kexts |
+|---|---:|---:|---|---|---:|
+| mac13g | 32 531 724 | 121 585 664 | arm64e | fileset | 342 |
+| mac13j | 32 897 807 | 123 027 456 | arm64e | fileset | 345 |
+| mac14g | 33 166 830 | 123 731 968 | arm64e | fileset | 349 |
+| mac14j | 33 213 172 | 123 748 352 | arm64e | fileset | 353 |
+| mac15g | 32 958 186 | 122 912 768 | arm64e | fileset | 347 |
+| mac15j | 33 439 881 | 124 698 624 | arm64e | fileset | 355 |
+| mac15s | 32 950 102 | 122 765 312 | arm64e | fileset | 347 |
+| mac16g | 33 454 969 | 125 435 904 | arm64e | fileset | 363 |
+| mac16j | 33 338 960 | 124 452 864 | arm64e | fileset | 362 |
+| mac17g | 33 666 365 | 126 156 800 | arm64e | fileset | 370 |
+| mac17j | 32 018 221 | 121 389 056 | arm64e | fileset | 368 |
+| mac17p | 31 656 495 | 119 537 664 | arm64e | fileset | 362 |
+| **vma2** | 23 085 403 | 80 871 424 | arm64e | fileset | 216 |
+
+**Thirteen of thirteen are arm64e**, read from the `cputype` field of each
+decompressed Mach-O rather than inferred from a filename. Every one is an
+`MH_FILESET` kernel collection. The Mac platforms carry 342–370 bundled kexts
+in 119–126 MB; the virtual platform carries 216 in 81 MB, which is what a
+machine with no real hardware to drive looks like.
+
+### The vma2 kernel in detail
 
 `tools/im4p_extract.py` parses the DER container and decompresses the payload.
 For `kernelcache.release.vma2` (full output in `data/gg-vma2-kernel.json`):
@@ -166,12 +193,33 @@ other way.
 Stated explicitly, because the temptation to over-read a good measurement is the
 main risk here:
 
-- **The payload chunks and cryptexes are opaque containers.** `payload.NNN`,
-  the cryptexes, `.dmg.aea` (Apple Encrypted Archive) — none were opened. The
-  installed system's individual binaries were therefore **not** enumerated, and
-  this document cannot claim "zero x86 binaries in the installed system" as a
-  measured fact. What it can claim is that every system image in the package is
-  named arm64e and no x86 image exists to install.
+- **The payload containers were not opened**, so the installed system's
+  individual binaries were **not** enumerated. This document cannot claim "zero
+  x86 binaries in the installed system" as a measured fact. What it can claim is
+  that every system image is named arm64e, no x86 image exists to install, and
+  all thirteen kernels are arm64e by header read.
+
+  The blockers are now precise rather than vague, which is worth recording
+  because it tells the next person exactly what to attack. Probing the stored
+  members in place gives their formats directly:
+
+  | Member | Magic | What it is |
+  |---|---|---|
+  | `image_patches/cryptex-system-rosetta` | `RIDIFF10` | Apple binary delta |
+  | `image_patches/cryptex-system-arm64e` | `RIDIFF10` | Apple binary delta |
+  | `basesystem_patches/arm64eBaseSystem.dmg` | `BXDIFF50` | Apple binary delta |
+  | `payload.NNN` (×40+) | `pbzm` | chunked container |
+
+  The directory names are literal: `image_patches` and `basesystem_patches` hold
+  **patches**, not standalone images, in Apple's undocumented `RIDIFF`/`BXDIFF`
+  delta formats.
+
+  `pbzm` is structurally a `pbzx` derivative — same chunked layout, 8 MiB
+  chunks, big-endian `[uncompressed][compressed][data]` triples, and the header
+  parses cleanly as such (chunk 0: 8 388 608 → 7 258 876 bytes). But the
+  per-chunk codec is **not** xz, LZFSE, gzip or zlib; the payload carries no
+  magic this survey recognises. Identifying it is the concrete next step for
+  anyone wanting a binary census of the installed system. **[open]**
 - **94 members were undecodable** by the carve (unsupported compression or
   streamed sizes) and are unaccounted for.
 - The zip64 sentinel means one size figure above is a lower bound.

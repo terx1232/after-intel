@@ -46,6 +46,8 @@ of confident forum assertions.
 | 23 | The largest single item in the payload is `cryptex-system-rosetta` — the x86-on-ARM translation runtime. Apple's biggest x86 artifact in macOS 27 points inward, as every other one does | [measured] same |
 | 24 | `kernelcache.release.vma2` unwrapped: IM4P + LZFSE, 23 085 403 → 80 871 424 bytes, **arm64e** (cputype `0x0100000c`, PTRAUTH subtype), MH_FILESET with 216 bundled kexts. Architecture read from the header, not inferred from the name | [measured] `data/gg-vma2-kernel.json` |
 | 25 | The VM kernel's kexts include `AppleVirtualPlatform`, `AppleARMGIC` (confirming `VMAPPLE.h`), `AppleVirtIOStorage`, and **`AppleParavirtGPUIOGPUFamily`** — so VM graphics is Apple's own paravirtual GPU protocol, not virtio-gpu. Zero x86-related kexts | [measured] same |
+| 26 | All **13 of 13** kernelcaches unwrapped and read: every one is arm64e and `MH_FILESET`. Mac platforms carry 342–370 kexts in 119–126 MB; `vma2` carries 216 in 81 MB. Finding #20 no longer rests on filenames | [measured] `data/gg-kernelcaches.json` |
+| 27 | The payload containers are named formats, not mystery blobs: `RIDIFF10` and `BXDIFF50` are Apple binary deltas (hence the `*_patches/` directory names), and `payload.NNN` are `pbzm` — a `pbzx`-derived chunked container whose header parses cleanly but whose per-chunk codec is not xz, LZFSE, gzip or zlib | [measured] probe in place |
 
 ## In progress
 
@@ -57,10 +59,17 @@ of confident forum assertions.
   finding #21 rests on image *naming*, not on a binary census of the installed
   system. Establishing whether the containers are readable at all is the next
   step.
-- **Decode the remaining twelve kernelcaches.** `vma2` is done (finding #24);
-  the twelve Mac-platform caches have not been unwrapped individually, so
-  finding #20 is now header-measured for one of thirteen and naming-based for
-  the other twelve.
+- **Identify the `pbzm` per-chunk codec.** This is now the single thing standing
+  between us and a binary census of the installed macOS 27 system. The container
+  is understood (finding #27); the codec is not. Candidates worth testing:
+  Apple's LZBITMAP, or another `libcompression` algorithm. Everything else in
+  the package has been read.
+- **`AVPBooter.vmapple2.bin` on an Intel Mac.** Whether Tahoe on Intel ships the
+  ARM VM firmware at
+  `/System/Library/Frameworks/Virtualization.framework/Versions/A/Resources/`
+  is unverified and cannot be checked from this machine. If it does, the single
+  hard blocker on the emulation route is removed for anyone without Apple
+  silicon. Needs the user's MacBook Pro.
 
 ## Queue
 

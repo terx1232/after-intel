@@ -1,0 +1,150 @@
+{
+  "kernelcaches": [
+    {
+      "name": "kernelcache.release.mac13g",
+      "im4p_type": "krnl",
+      "im4p_payload": 32531724,
+      "kernel_bytes": 121585664,
+      "arch": "arm64e",
+      "cputype": 16777228,
+      "cpusubtype": -1073741822,
+      "filetype": "fileset",
+      "kexts": 342
+    },
+    {
+      "name": "kernelcache.release.mac13j",
+      "im4p_type": "krnl",
+      "im4p_payload": 32897807,
+      "kernel_bytes": 123027456,
+      "arch": "arm64e",
+      "cputype": 16777228,
+      "cpusubtype": -1073741822,
+      "filetype": "fileset",
+      "kexts": 345
+    },
+    {
+      "name": "kernelcache.release.mac14g",
+      "im4p_type": "krnl",
+      "im4p_payload": 33166830,
+      "kernel_bytes": 123731968,
+      "arch": "arm64e",
+      "cputype": 16777228,
+      "cpusubtype": -1073741822,
+      "filetype": "fileset",
+      "kexts": 349
+    },
+    {
+      "name": "kernelcache.release.mac14j",
+      "im4p_type": "krnl",
+      "im4p_payload": 33213172,
+      "kernel_bytes": 123748352,
+      "arch": "arm64e",
+      "cputype": 16777228,
+      "cpusubtype": -1073741822,
+      "filetype": "fileset",
+      "kexts": 353
+    },
+    {
+      "name": "kernelcache.release.mac15g",
+      "im4p_type": "krnl",
+      "im4p_payload": 32958186,
+      "kernel_bytes": 122912768,
+      "arch": "arm64e",
+      "cputype": 16777228,
+      "cpusubtype": -1073741822,
+      "filetype": "fileset",
+      "kexts": 347
+    },
+    {
+      "name": "kernelcache.release.mac15j",
+      "im4p_type": "krnl",
+      "im4p_payload": 33439881,
+      "kernel_bytes": 124698624,
+      "arch": "arm64e",
+      "cputype": 16777228,
+      "cpusubtype": -1073741822,
+      "filetype": "fileset",
+      "kexts": 355
+    },
+    {
+      "name": "kernelcache.release.mac15s",
+      "im4p_type": "krnl",
+      "im4p_payload": 32950102,
+      "kernel_bytes": 122765312,
+      "arch": "arm64e",
+      "cputype": 16777228,
+      "cpusubtype": -1073741822,
+      "filetype": "fileset",
+      "kexts": 347
+    },
+    {
+      "name": "kernelcache.release.mac16g",
+      "im4p_type": "krnl",
+      "im4p_payload": 33454969,
+      "kernel_bytes": 125435904,
+      "arch": "arm64e",
+      "cputype": 16777228,
+      "cpusubtype": -1073741822,
+      "filetype": "fileset",
+      "kexts": 363
+    },
+    {
+      "name": "kernelcache.release.mac16j",
+      "im4p_type": "krnl",
+      "im4p_payload": 33338960,
+      "kernel_bytes": 124452864,
+      "arch": "arm64e",
+      "cputype": 16777228,
+      "cpusubtype": -1073741822,
+      "filetype": "fileset",
+      "kexts": 362
+    },
+    {
+      "name": "kernelcache.release.mac17g",
+      "im4p_type": "krnl",
+      "im4p_payload": 33666365,
+      "kernel_bytes": 126156800,
+      "arch": "arm64e",
+      "cputype": 16777228,
+      "cpusubtype": -1073741822,
+      "filetype": "fileset",
+      "kexts": 370
+    },
+    {
+      "name": "kernelcache.release.mac17j",
+      "im4p_type": "krnl",
+      "im4p_payload": 32018221,
+      "kernel_bytes": 121389056,
+      "arch": "arm64e",
+      "cputype": 16777228,
+      "cpusubtype": -1073741822,
+      "filetype": "fileset",
+      "kexts": 368
+    },
+    {
+      "name": "kernelcache.release.mac17p",
+      "im4p_type": "krnl",
+      "im4p_payload": 31656495,
+      "kernel_bytes": 119537664,
+      "arch": "arm64e",
+      "cputype": 16777228,
+      "cpusubtype": -1073741822,
+      "filetype": "fileset",
+      "kexts": 362
+    },
+    {
+      "name": "kernelcache.release.vma2",
+      "im4p_type": "krnl",
+      "im4p_payload": 23085403,
+      "kernel_bytes": 80871424,
+      "arch": "arm64e",
+      "cputype": 16777228,
+      "cpusubtype": -1073741822,
+      "filetype": "fileset",
+      "kexts": 216
+    }
+  ],
+  "arch_tally": {
+    "arm64e": 13
+  }
+}
