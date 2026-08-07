@@ -137,6 +137,9 @@ shader compiler, which is what applications actually call. See
 - [docs/08-building-xnu-for-x86.md](docs/08-building-xnu-for-x86.md) — whether
   the published kernel still builds for Intel, and the surprise that it is the
   easier of Apple's two targets
+- [docs/09-emulation-path.md](docs/09-emulation-path.md) — the alternative to
+  porting: translate ARM at runtime instead. Why Apple's VM platform is a far
+  better emulation target than real Apple silicon, and where that road ends
 
 Every claim is tagged **[measured]**, **[verified]**, **[literature]** or
 **[open]** so a reader can tell an experiment from a citation from a guess.

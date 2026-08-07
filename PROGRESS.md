@@ -38,6 +38,8 @@ of confident forum assertions.
 
 | 16 | Building XNU for Intel needs no Kernel Debug Kit; building for Apple silicon does, plus a per-SoC platform identifier. Apple's README states this outright. The open-source kernel is *more* self-sufficient on x86 than on ARM | [verified] XNU `README.md` |
 | 17 | All four declared XNU build dependencies (DTrace, AvailabilityVersions, libdispatch, xnu headers) are published; DTrace is marked optional. The real gate is that the build needs Xcode, i.e. a Mac | [verified] XNU `README.md` |
+| 18 | Apple's VM platform (VMAPPLE) uses standard GICv3 and PL011 rather than Apple's AIC and custom UART, and paravirtualises PAC and CTRR with no secure monitor. It is a far cleaner emulation target than real Apple silicon | [verified] `pexpert/pexpert/arm64/VMAPPLE.h` |
+| 19 | Emulating a weak-ordered ARM guest on a strongly-ordered x86 host is the favourable direction for memory ordering; no hardware assist is needed, unlike x86-on-ARM which required Apple to add a TSO mode | [verified] architecture semantics |
 
 ## In progress
 
