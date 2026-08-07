@@ -17,6 +17,42 @@ Two ways to confirm this without taking anyone's word for it:
 The same applies to VMware Workstation, Hyper-V and Parallels on x86. They are
 virtualisers, not emulators.
 
+## Neither can bare metal, and here is the proof
+
+Booting the image on a real x86 PC removes the hypervisor but not the problem.
+The image is arm64e machine code and an x86 CPU has no decoder for it.
+
+The kernel's entry point in the shipped `vma2` collection begins with these
+bytes:
+
+```
+fc 0e 00 14 ...
+```
+
+As ARM64 that is `14000efc` - a plain unconditional branch, the normal way a
+kernel entry jumps to its real start.
+
+An x86-64 CPU reads the same bytes one at a time:
+
+| byte | as x86-64 |
+|---|---|
+| `fc` | `CLD`, harmless |
+| `0e` | **invalid opcode in 64-bit mode** - it was `PUSH CS` in 16- and 32-bit mode and was removed |
+
+So the processor faults on the **second byte**: `#UD`, with no IDT, no handler
+and no operating system, which means a triple fault and an immediate reset.
+Nothing reaches the screen.
+
+No BIOS setting, boot mode or flag changes this. It is not a configuration
+problem; the silicon has no circuit that understands the encoding.
+
+There is also a practical argument against bare metal even setting that aside.
+Under QEMU, `-d int,mmu,guest_errors` says which address and which structure
+the kernel disagreed with. On real hardware there is no log, no exception
+trace, and no way to halt the CPU and read registers. Bare metal is **strictly
+worse** than emulation here, not more authentic - it produces a black screen
+and a reboot carrying no information at all.
+
 ## QEMU with TCG can
 
 TCG is QEMU's dynamic binary translator. It genuinely executes ARM64 guest code
