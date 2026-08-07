@@ -113,6 +113,24 @@ shader compiler, which is what applications actually call. See
 
 ---
 
+## Documents
+
+- [PROGRESS.md](PROGRESS.md) — work log, queue, and a list of this repo's own
+  known methodological limitations
+- [docs/01-patchers-not-drivers.md](docs/01-patchers-not-drivers.md) — what the
+  kext bundle metadata reveals about the stack
+- [docs/02-hardware-targets.md](docs/02-hardware-targets.md) — which hardware is
+  actually easy to write drivers for, and where the wall really is
+- [docs/03-air-format.md](docs/03-air-format.md) — the state of knowledge on
+  Metal's shader format, and why the shader compiler is the *tractable* part
+- [docs/04-apple-x86-artifacts.md](docs/04-apple-x86-artifacts.md) — what x86
+  material Apple still ships, and which of it is any use
+
+Every claim is tagged **[measured]**, **[verified]**, **[literature]** or
+**[open]** so a reader can tell an experiment from a citation from a guess.
+
+---
+
 ## Tools
 
 ### `tools/macho_audit.py`
