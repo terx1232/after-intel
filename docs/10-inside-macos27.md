@@ -66,10 +66,47 @@ All thirteen are **IM4P** (Image4 payload) containers, tag `krnl`, description
 magic). The `vma2` cache is 23 085 654 bytes against roughly 32 MB for the real
 Mac platforms — consistent with a VM kernel needing fewer drivers.
 
-The architecture of the Mach-O *inside* those containers was **not** confirmed
-here: it needs LZFSE decompression, which the standard library does not provide.
-So finding #1 rests on platform naming and container inventory, not on a header
-read. Marked **[open]** and queued.
+### The vma2 kernel, unwrapped and read
+
+`tools/im4p_extract.py` parses the DER container and decompresses the payload.
+For `kernelcache.release.vma2` (full output in `data/gg-vma2-kernel.json`):
+
+```
+payload      : 23 085 403 bytes, lzfse (bvx2)
+decompressed : 80 871 424 bytes (3.50x)
+
+architecture    : arm64e   (cputype 0x0100000c, cpusubtype 0xc0000002)
+file type       : fileset (MH_FILESET, 12)
+load commands   : 227 (16 216 bytes)
+segments        : 7
+fileset entries : 216
+```
+
+So the architecture is no longer an inference from a filename. The `cputype`
+field was read out of the decompressed Mach-O header: **arm64e**, with the
+pointer-authentication ABI bits set in the subtype. The kernel collection
+bundles 216 kexts, beginning with `com.apple.kernel`.
+
+What those 216 contain is itself informative:
+
+| Looking for | Found |
+|---|---|
+| the platform driver | `com.apple.driver.AppleVirtualPlatform` |
+| interrupt controller | `com.apple.driver.AppleARMGIC` — the GICv3 driver, exactly as `VMAPPLE.h` declares |
+| storage | `com.apple.iokit.AppleVirtIOStorage` |
+| **graphics** | **`com.apple.driver.AppleParavirtGPUIOGPUFamily`** |
+| anything x86 | **nothing — zero matches** |
+
+The graphics entry is the one that matters and it corrects
+[docs/09-emulation-path.md](09-emulation-path.md), which assumed the VM guest
+would talk to virtio-gpu. It does not. It talks to **Apple's own
+paravirtualised GPU interface**. That cuts both ways: a paravirtualised device
+has a defined guest/host protocol rather than silicon to emulate, which is
+better than an Apple GPU — but the protocol is Apple's, undocumented, and on a
+real Mac the host side is implemented by Virtualization.framework forwarding
+into the real Metal driver. Anyone emulating vmapple on x86 would have to
+implement that host side themselves. Graphics is not free on this path either;
+it is a separate reverse-engineering project.
 
 ## Finding 2: every system image is named arm64e
 

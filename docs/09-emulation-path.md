@@ -55,7 +55,20 @@ Read that list against the blockers above:
 | Apple's modified PAC algorithm | **`HAS_PARAVIRTUALIZED_PAC`** — pointer authentication is provided through a hypervisor interface rather than secret silicon behaviour. |
 | CTRR / KTRR text protection | **`HAS_PARAVIRTUALIZED_CTRR`**, and `NO_MONITOR` — no secure monitor firmware layer at all. |
 | Heterogeneous P/E cores | **`NO_ECORE`** — homogeneous CPU. |
-| Undocumented Apple GPU | virtio devices, which are open standards. |
+| Undocumented Apple GPU | a **paravirtualised** GPU, not real silicon — see the correction below. |
+
+> **Correction, added after measuring the shipped kernel.** The row above
+> originally said "virtio devices, which are open standards". That was wrong.
+> The `vma2` kernel collection in the macOS 27 installer contains
+> `com.apple.driver.AppleParavirtGPUIOGPUFamily` — Apple's own paravirtualised
+> GPU interface, not virtio-gpu. Storage really is virtio
+> (`com.apple.iokit.AppleVirtIOStorage`), but graphics is not. A paravirtual
+> device still beats emulating an Apple GPU, because a defined guest/host
+> protocol exists rather than silicon behaviour — but the protocol is Apple's
+> and undocumented, and on a real Mac the host half is implemented by
+> Virtualization.framework forwarding into the Metal driver. Emulating vmapple
+> on x86 means implementing that host half. See
+> [docs/10-inside-macos27.md](10-inside-macos27.md).
 
 The remaining CPU requirements — SME, SME2, SSBS2, PAN3, 16K pages — are all
 publicly specified ARM architecture extensions, not Apple inventions.

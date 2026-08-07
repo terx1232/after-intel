@@ -44,6 +44,8 @@ of confident forum assertions.
 | 21 | Every system image in the package is named arm64e — `arm64eBaseSystem.dmg`, `cryptex-system-arm64e`, `arm64eSURamDisk.dmg` — with no x86 counterpart anywhere in 1 842 members | [measured] same |
 | 22 | Exactly 3 Mach-O binaries are directly visible in the 16.46 GiB payload; the only two carrying x86_64 slices both belong to `UpdateBrainService`, i.e. update infrastructure rather than the installed system | [measured] `data/gg-member-archs.json` |
 | 23 | The largest single item in the payload is `cryptex-system-rosetta` — the x86-on-ARM translation runtime. Apple's biggest x86 artifact in macOS 27 points inward, as every other one does | [measured] same |
+| 24 | `kernelcache.release.vma2` unwrapped: IM4P + LZFSE, 23 085 403 → 80 871 424 bytes, **arm64e** (cputype `0x0100000c`, PTRAUTH subtype), MH_FILESET with 216 bundled kexts. Architecture read from the header, not inferred from the name | [measured] `data/gg-vma2-kernel.json` |
+| 25 | The VM kernel's kexts include `AppleVirtualPlatform`, `AppleARMGIC` (confirming `VMAPPLE.h`), `AppleVirtIOStorage`, and **`AppleParavirtGPUIOGPUFamily`** — so VM graphics is Apple's own paravirtual GPU protocol, not virtio-gpu. Zero x86-related kexts | [measured] same |
 
 ## In progress
 
@@ -55,12 +57,10 @@ of confident forum assertions.
   finding #21 rests on image *naming*, not on a binary census of the installed
   system. Establishing whether the containers are readable at all is the next
   step.
-- **Decode a kernelcache.** Format now identified: all 13 are IM4P (Image4)
-  containers, tag `krnl`, payload LZFSE-compressed (`bvx2`). `vma2` is
-  23 085 654 bytes against ~32 MB for real Mac platforms. Reading the Mach-O
-  inside needs an LZFSE decompressor, which the Python standard library does
-  not have — so the architecture *inside* the containers is still **[open]**
-  and finding #20 rests on naming plus inventory, not on a header read.
+- **Decode the remaining twelve kernelcaches.** `vma2` is done (finding #24);
+  the twelve Mac-platform caches have not been unwrapped individually, so
+  finding #20 is now header-measured for one of thirteen and naming-based for
+  the other twelve.
 
 ## Queue
 
