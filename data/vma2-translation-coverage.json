@@ -1,0 +1,42 @@
+{
+  "instructions": 10559488,
+  "translated": {
+    "ldr": 902882,
+    "add": 901866,
+    "movz": 845150,
+    "bl": 564418,
+    "movk": 492653,
+    "stp": 429174,
+    "ldp": 319064,
+    "b.cond": 305693,
+    "b": 278248,
+    "str": 243516,
+    "blraa": 169919,
+    "cmp": 156792,
+    "pac/aut": 130714,
+    "sub": 101466,
+    "retaa/retab": 83554,
+    "nop": 74737,
+    "ret": 43222,
+    "braa": 38060,
+    "(zero)": 16196,
+    "isb": 956,
+    "br": 548,
+    "dmb": 499,
+    "dsb": 116
+  },
+  "failed": {
+    "undecoded": 4449802,
+    "system_register": 10082,
+    "tlb_cache": 113,
+    "exception_model": 48
+  },
+  "reasons": {
+    "undecoded": "not in this translator's subset (NEON, atomics, bitfield, extended-register forms, ...)",
+    "system_register": "mrs: reads ARM system state that has no x86 analogue",
+    "exception_model": "svc/hvc/smc: exception-level entry, not a call",
+    "tlb_cache": "dc/ic: ARM maintenance granularity and coherence rules differ from INVLPG/WBINVD"
+  },
+  "translated_total": 6099443,
+  "failed_total": 4460045
+}
