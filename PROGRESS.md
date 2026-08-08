@@ -857,3 +857,29 @@ Recording these because a repo that only lists its strengths is advertising.
 
   The failure remains at 0xa009a1c. Nothing about TrustCache follows from the
   stack contents.
+
+  **Conditional trap, everything from one guest, and it contradicts itself.**
+  `cond_trap.py` diverts the call at 0xa009a1c into a stub that freezes only
+  when x0 is zero, so the failing iteration is caught rather than the first
+  healthy one. At that freeze:
+
+      x00 = 0                        the argument phystokv rejects
+      x02 = 0xfffffdf004000000       the address being walked
+      physmap_base = 0xfffffdf003a78000     (walked address is 0x588000 ABOVE it)
+      root  = [0xfffffe00078991d0] = 0xfffffe000781c000
+      L1[0x7df] = 0x3800000047824003        valid
+      L2[0x2]   = 0x60000040000601          valid
+
+  The masking instruction is `and x0, x8, #imm` with N=1, immr=52, imms=35,
+  which is bits 47:12. `0x3800000047824003 & 0xFFFFFFFFF000` is 0x47824000, not
+  zero. So every input is present and correct, the address is inside the
+  aperture rather than below it, both table levels resolve, and the argument is
+  still zero.
+
+  Note this also disposes of "the address is below the aperture" for the second
+  time, now from a single guest with the dump verified complete: it is above.
+
+  Something between reading the entry and masking it is not what the static
+  listing shows. Resolving it needs the value of x8 at 0xa009a18, captured in
+  the same freeze - which means a stub that saves registers rather than one
+  that only tests them.
