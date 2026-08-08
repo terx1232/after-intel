@@ -471,6 +471,71 @@ def translate(w: int, pc: int) -> tuple:
             return "ldr", pre + [f"{movsz} {SCRATCH}, {mem}",
                                  f"mov  {dst}, {SCRATCH}"]
         return "ldr", pre + [f"{movsz} {dst}, {mem}"]
+
+    # Unscaled and indexed forms: LDUR/STUR, and pre/post-index which also
+    # write the computed address back into the base register.
+    if (w & 0x3B200000) == 0x38000000 and not ((w >> 26) & 1):
+        size = (w >> 30) & 3
+        opc = (w >> 22) & 3
+        mode = (w >> 10) & 3          # 0 unscaled, 1 post-index, 3 pre-index
+        rt, rn = w & 0x1F, (w >> 5) & 0x1F
+        imm = sextract(w, 12, 9)
+        if mode == 2:
+            raise Unsupported("undecoded", "unprivileged load/store form")
+        width = {0: "byte", 1: "word", 2: "dword", 3: "qword"}[size]
+        movsz = {0: "movzx", 1: "movzx", 2: "mov", 3: "mov"}[size]
+        base = hostreg(rn)
+        if is_mem(base):
+            raise Unsupported("undecoded", "indexed form with a spilled base")
+        out = []
+        if mode == 3:                                   # pre-index: update first
+            out.append(f"add  {base}, {imm}")
+            mem = f"{width} [{base}]"
+        else:
+            mem = f"{width} [{base}{imm:+#x}]" if imm else f"{width} [{base}]"
+        if opc == 0:
+            src = hostreg(rt)
+            if is_mem(src):
+                out += [f"mov  {SCRATCH}, {src}", f"mov  {mem}, {SCRATCH}"]
+            else:
+                out.append(f"mov  {mem}, {src}")
+            mn = "stur" if mode == 0 else "str.idx"
+        else:
+            dst = hostreg(rt)
+            if is_mem(dst):
+                out += [f"{movsz} {SCRATCH}, {mem}", f"mov  {dst}, {SCRATCH}"]
+            else:
+                out.append(f"{movsz} {dst}, {mem}")
+            mn = "ldur" if mode == 0 else "ldr.idx"
+        if mode == 1:                                   # post-index: update after
+            out.append(f"add  {base}, {imm}")
+        return mn, out
+
+    # Register-offset addressing: x86 encodes base+index directly.
+    if (w & 0x3B200C00) == 0x38200800 and not ((w >> 26) & 1):
+        size = (w >> 30) & 3
+        opc = (w >> 22) & 3
+        rt, rn, rm = w & 0x1F, (w >> 5) & 0x1F, (w >> 16) & 0x1F
+        scale = size if ((w >> 12) & 1) else 0
+        width = {0: "byte", 1: "word", 2: "dword", 3: "qword"}[size]
+        movsz = {0: "movzx", 1: "movzx", 2: "mov", 3: "mov"}[size]
+        base, index = hostreg(rn), hostreg(rm)
+        if is_mem(base) or is_mem(index):
+            raise Unsupported("undecoded",
+                              "register-offset form with a spilled operand")
+        mem = (f"{width} [{base}+{index}*{1 << scale}]" if scale
+               else f"{width} [{base}+{index}]")
+        if opc == 0:
+            src = hostreg(rt)
+            if is_mem(src):
+                return "str.reg", [f"mov  {SCRATCH}, {src}",
+                                   f"mov  {mem}, {SCRATCH}"]
+            return "str.reg", [f"mov  {mem}, {src}"]
+        dst = hostreg(rt)
+        if is_mem(dst):
+            return "ldr.reg", [f"{movsz} {SCRATCH}, {mem}",
+                               f"mov  {dst}, {SCRATCH}"]
+        return "ldr.reg", [f"{movsz} {dst}, {mem}"]
     if (w & 0xFFC00000) == 0xA9800000 or (w & 0xFFC00000) == 0xA9000000:
         rt, rn, rt2 = w & 0x1F, (w >> 5) & 0x1F, (w >> 10) & 0x1F
         imm = sextract(w, 15, 7) * 8
@@ -501,6 +566,72 @@ def translate(w: int, pc: int) -> tuple:
             else:
                 out.append(f"mov  {dst}, [{base}+{slot:#x}]")
         return "ldp", out
+
+    # ---- multiply, divide, variable shift, conditional select --------------
+    # MADD/MSUB with XZR as the addend are MUL and MNEG, which is how multiply
+    # nearly always appears.
+    if (w & 0x7FE00000) == 0x1B000000:
+        rd, rn, rm, ra = w & 0x1F, (w >> 5) & 0x1F, (w >> 16) & 0x1F, (w >> 10) & 0x1F
+        sub = (w >> 15) & 1
+        out = move(hostreg(rd), hostreg(rn)) if rd != rn else []
+        out.append(f"imul {hostreg(rd)}, {hostreg(rm)}")
+        if ra != 31:
+            out.append(f"{'sub' if sub else 'add'}  {hostreg(rd)}, {hostreg(ra)}")
+        return "mul" if ra == 31 else ("msub" if sub else "madd"), out
+
+    # UDIV / SDIV. x86 division is fixed-register and needs rdx:rax cleared,
+    # so this is more than a one-liner even though it is a direct mapping.
+    if (w & 0x7FE0FC00) in (0x1AC00800, 0x1AC00C00):
+        signed = (w & 0x400) != 0
+        rd, rn, rm = w & 0x1F, (w >> 5) & 0x1F, (w >> 16) & 0x1F
+        return ("sdiv" if signed else "udiv", [
+            f"mov  rax, {hostreg(rn)}",
+            "cqo" if signed else "xor  rdx, rdx",
+            f"mov  {SCRATCH}, {hostreg(rm)}",
+            f"{'idiv' if signed else 'div'} {SCRATCH}",
+        ] + move(hostreg(rd), "rax"))
+
+    # Variable shifts: the count must be in cl on x86.
+    if (w & 0x7FE0F000) == 0x1AC02000:
+        op = (w >> 10) & 3
+        rd, rn, rm = w & 0x1F, (w >> 5) & 0x1F, (w >> 16) & 0x1F
+        sh = {0: "shl", 1: "shr", 2: "sar", 3: "ror"}[op]
+        out = [f"mov  rcx, {hostreg(rm)}"]
+        if rd != rn:
+            out += move(hostreg(rd), hostreg(rn))
+        out.append(f"{sh:<4} {hostreg(rd)}, cl")
+        return ("lslv", "lsrv", "asrv", "rorv")[op], out
+
+    # CSEL and friends: x86 cmov, with the increment/invert/negate variants
+    # expanded around it.
+    if (w & 0x1FE00000) == 0x1A800000:
+        rd, rn, rm = w & 0x1F, (w >> 5) & 0x1F, (w >> 16) & 0x1F
+        cond = (w >> 12) & 0xF
+        op2 = ((w >> 30) & 1) << 1 | ((w >> 10) & 1)
+        cc = ["e", "ne", "b", "ae", "s", "ns", "o", "no",
+              "a", "be", "ge", "l", "g", "le", "mp", "mp"][cond]
+        names = {0: "csel", 1: "csinc", 2: "csinv", 3: "csneg"}
+        out = move(hostreg(rd), hostreg(rn))
+        src = hostreg(rm)
+        if op2 == 0:
+            out.append(f"cmov{cc} {hostreg(rd)}, {src}")
+        else:
+            extra = {1: "inc", 2: "not", 3: "neg"}[op2]
+            out += [f"mov  {SCRATCH}, {src}", f"{extra:<4} {SCRATCH}",
+                    f"cmov{cc} {hostreg(rd)}, {SCRATCH}"]
+        return names[op2], out
+
+    # CLZ / RBIT / REV
+    if (w & 0x7FFFFC00) in (0x5AC01000, 0x5AC00000, 0x5AC00C00):
+        rd, rn = w & 0x1F, (w >> 5) & 0x1F
+        kind = (w >> 10) & 0x3F
+        if kind == 4:
+            return "clz", move(hostreg(rd), hostreg(rn)) + [
+                f"lzcnt {hostreg(rd)}, {hostreg(rd)}"]
+        if kind == 3:
+            return "rev", move(hostreg(rd), hostreg(rn)) + [
+                f"bswap {hostreg(rd)}"]
+        raise Unsupported("undecoded", "rbit has no single x86 instruction")
 
     # ---- logical immediate -------------------------------------------------
     # arm64 encodes logical immediates as a bitmask pattern (N, immr, imms)
