@@ -1569,3 +1569,15 @@ so x3 holds the message. Reading it back has not worked yet: the monitor in this
 QEMU has no string format, and reading it as bytes produced nothing printable,
 so either the address is not text or the read is wrong. x2 read correctly as
 "%s", which shows the technique works and the problem is specific to x3.
+
+The byte-order fix in `dis.ps1` works - x2 now reads back as `"%s"` correctly,
+stopping at the NUL instead of running into the next string. x3 at
+0xfffffe4c360272b8 still reads as unreadable, and that address has the same shape
+as the kernel stack (0xfffffe..027xxx), so it is a stack address whose read is
+failing rather than a bad pointer. Earlier stack reads through the monitor
+succeeded with `x/2xg`, so the difference is in the read itself, not the address.
+
+That is where this session ends. `dis.ps1` now: kills stale QEMU, waits for the
+dump to complete, reads registers, walks the stack through the monitor, decodes
+strings from registers with correct byte order, and hunts for the mapped PL011.
+Every one of those exists because a measurement went wrong without it.
