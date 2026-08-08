@@ -1434,3 +1434,25 @@ resting point are `kPEDisableScreen`, `iBoot version: %s`, `BootCLUT`,
 Next: read that variadic argument off the stack at the halt. The technique is
 established - freeze, then walk the frame - but the format being bare `%s` means
 the message is a pointer in the argument area rather than a static string.
+
+**The kernel is now running on dynamically allocated, randomised stacks.** SP at
+the halt reads 0xfffffe8530027120 on one run and 0xfffffeab3c027120 on the next -
+different every boot, and far outside the linear physmap. That is a real sign the
+VM subsystem is working: the kernel has left its bootstrap stack and is
+allocating properly mapped ones.
+
+Two consequences for method:
+
+* A RAM dump with a fixed offset cannot reach that stack. It has to be read
+  through the monitor, which uses QEMU's own translation. `dis.ps1` now does
+  this automatically from whatever SP reports.
+* Stack addresses join the aperture slide in being un-comparable across runs.
+
+Stack contents at the halt:
+
+    [sp+0x20]  0xfffffdf0410d7f78    an address in the physical aperture
+    [sp+0x28]  0xfffffe000ab49288    kernel address, repeated at +0x38
+    [sp+0x48]  0xaddbfe0009eaf3e4    PAC-signed return -> 0xfffffe0009eaf3e4
+
+`[sp+0x00]` is zero, so the `%s` argument is not in this frame and the chain has
+to be walked. The return address gives the next frame: 0xfffffe0009eaf3e4.
