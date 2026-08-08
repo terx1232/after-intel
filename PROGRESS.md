@@ -1608,3 +1608,30 @@ something other than what was assumed.
 registers it saves and where it reads its arguments from, the same way
 `find_gicr_pe_base` was settled. Four attempts to read the message by assuming
 the layout have now failed, and each one cost a boot.
+
+**0x9e92d78 is a trace record writer, not panic.** Its prologue settles it
+without another boot:
+
+    mrs  x8, TPIDR_EL1            per-cpu pointer
+    ldr  x10, [x8, #0x190]
+    add  x10, x9, x10, lsl #16    x10 = buffer + index * 0x10000
+    str  w0, [x10, #8]
+    ldr  x11, [sp, #0]            an argument off the stack
+    stp  x1, x2, [x10, #0x10]     registers stored into the record
+    stp  x3, x5, [x10, #0x20]
+    stp  x7, x11, [x10, #0x30]
+    str  x4, [x10]
+
+It writes the incoming registers into a fixed-size per-cpu record in a ring
+buffer. That is tracing, not panicking. `x0 = 3`, `x1`, `x2` are values being
+recorded, not panic arguments, and every attempt to read a message out of them
+was chasing the wrong call.
+
+It also explains `0xe7ffdeff`: it sits in the middle of this routine, and
+replacing it with `nop` removed every exception, which is consistent with a
+marker or barrier in a trace path rather than an instruction with semantics.
+
+So the halt at 0x9e921bc, reached from 0x9e9216c right after this trace call,
+may not be a panic at all. That has to be established before anything else:
+the whole "read the panic message" line of work assumed a panic that has not
+been shown to exist.
