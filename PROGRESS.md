@@ -1539,3 +1539,33 @@ and 0xfffffe0009e3a68c, the latter in the exception vector region. So the
 current stop is an exception path, not a `panic()` call, which is a different
 shape of failure from everything before it and needs the exception log read
 rather than a message hunted.
+
+**The kernel is alive and servicing interrupts.** With the serial device fixes
+in, a `-d int` capture over 25 seconds records 736 lines:
+
+    56x  FIQ            timer interrupts, each followed by a clean
+                        "Exception return from AArch64 EL1 to AArch64 EL1"
+    41x  Data Abort     page faults, also returning cleanly
+     4x  Hypervisor Call
+
+Every exception is taken *and returned from*. So the GIC delivers interrupts,
+the timer fires, and the fault handlers work. The interrupts arrive at
+0xfffffe0009e92034, which is inside a bounded TLB invalidation loop -
+`tlbi` with CRn=8, stepping by 4 for 0x1000 iterations - so the kernel is doing
+ordinary bulk work, slowly, under TCG.
+
+That is a different class of state from everything before: not a halt, but a
+running kernel. It still ends at the halt afterwards.
+
+**The panic arguments are located.** Freezing the entry to the panic machinery
+at 0x9e92168 gives:
+
+    x00 = 3
+    x01 = 0xfffffe0007063190   "panic"
+    x02 = 0xfffffe000723102d   "%s"
+    x03 = 0xfffffe38100272b8   the argument to that %s
+
+so x3 holds the message. Reading it back has not worked yet: the monitor in this
+QEMU has no string format, and reading it as bytes produced nothing printable,
+so either the address is not text or the read is wrong. x2 read correctly as
+"%s", which shows the technique works and the problem is specific to x3.
