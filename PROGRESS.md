@@ -126,8 +126,28 @@ of confident forum assertions.
   physBase at the true base of RAM. The first walk then succeeds: the entry
   reads `0x2000000047820003` instead of zero.
 
-  The panic persists, so a *later* call over a different range still finds an
-  empty entry. Which range is the next measurement.
+  The panic persists, and freezing inside `phystokv` itself - replacing its
+  `bl panic` at 0xa008d84 with `b .` so registers survive - shows it comes from
+  a **different** call site: x30 unstrips to 0xfffffe000a009a20, so the call is
+  at 0xa009a1c in function 0xa0098e0, not the 0xa009bec that was trapped
+  before.
+
+  The address being walked is measured, not inferred: `0xfffffdf038000000`,
+  carried in x1 and x2. Against `gVirtBase = 0xfffffe0000000000` that is
+
+      gVirtBase - 0xfc8000000
+
+  and `0xfc8000000` is exactly what x20 holds. So the kernel is walking an
+  address **63 GiB below virtBase** on a machine with 4 GiB of RAM. Nearby
+  registers are the same shape: x25 = 0x2008000000, x24 = gVirtBase + 64 GiB,
+  x21 = 0xfffffff038000000, and x26 = 0xfffffffffe000000 = -x23 with
+  x23 = 0x2000000.
+
+  This is no longer a missing mapping. An address that far outside RAM comes
+  from a computation producing an impossible value, and the next step is to
+  find which input to that computation we are supplying wrongly - the
+  magnitudes involved (63 GiB, 128 GiB) match nothing in this machine's
+  4 GiB layout.
 
   Superseded detail, kept because the reasoning is reusable: the index
   `ubfx x9, x2, #36, #11`, so the level 1 index is bits [46:36] of the address
