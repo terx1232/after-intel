@@ -381,8 +381,32 @@ of confident forum assertions.
   inside the table at 0x47824000, reached by the walker that does not allocate.
   init_ptpages builds only level 1 pages, by its own comment; the levels below
   are filled by whoever maps the aperture, through the *allocating* walker at
-  arm_vm_init.c:629-639. Which mapping was expected to have run first is the
-  next step.
+  arm_vm_init.c:629-639.
+
+  **The hole is located, and the aperture itself is correct.** The level 2
+  table at 0x47824000 holds 128 non-empty entries at indices 0x1C through 0x9B.
+  128 blocks of 32 MiB is exactly 4 GiB, and `[0x1C] = 0x60000040000601` is a
+  block descriptor for physical 0x40000000, i.e. gPhysBase. So the physical
+  aperture is mapped fully and correctly.
+
+  The failing address, 0xfffffdf016000000, has level 2 index **0xB** - below
+  the mapped range, not inside a gap in it. And it sits below `physmap_base`
+  (0xfffffdf0375ac000) by 0x215ac000.
+
+  The relationship that matters:
+
+      physmap_base - slide = 0xfffffdf000000000
+      failing address      = 0xfffffdf000000000 + 0x16000000
+
+  So the address is computed from the **unslid** aperture base while the
+  aperture was mapped at the **slid** one. `physmap_slide` comes from
+  `early_random()`, and something is reading the base from before
+  `physmap_base += physmap_slide` was applied.
+
+  That is a far more specific thing to look for than anything earlier in this
+  entry, and it suggests a concrete experiment: if `early_random()` returns
+  zero the slide is zero and the two bases coincide. Whether that makes the
+  boot proceed would confirm the reading directly.
 
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
