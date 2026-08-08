@@ -151,11 +151,23 @@ def parse(buf: bytes, off: int = 0):
 # machine, and are NOT claimed to match any real configuration.
 # --------------------------------------------------------------------------
 
-def minimal_vmapple_tree(*, ram_base: int = 0x8_0000_0000,
+# Defaults are QEMU's `virt` machine as it actually reports itself, read out of
+# `-machine dumpdtb` with fdt_read.py rather than guessed:
+#
+#   RAM            0x40000000 (+0x100000000)
+#   GICv3 dist     0x08000000 (+0x10000)
+#   GICv3 redist   0x080a0000 (+0xf60000)
+#   PL011 UART     0x09000000 (+0x1000)
+#
+# For reference, the real vmapple machine in QEMU upstream places them at
+# 0x10000000 / 0x10010000 / 0x20010000 with RAM at 0x70000000. Those are the
+# values to use once a vmapple machine is available; this build has none.
+
+def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
                          ram_size: int = 4 << 30,
-                         gic_dist: int = 0x0000_0000,
-                         gic_redist: int = 0x0004_0000,
-                         uart_base: int = 0x0010_0000,
+                         gic_dist: int = 0x0800_0000,
+                         gic_redist: int = 0x080A_0000,
+                         uart_base: int = 0x0900_0000,
                          ncpus: int = 1) -> Node:
     root = Node("device-tree")
     root.set_str("compatible", "AppleVirtualPlatformARM")
@@ -197,7 +209,7 @@ def minimal_vmapple_tree(*, ram_base: int = 0x8_0000_0000,
     gic.set_u32("#interrupt-cells", 3)
     gic.set_u32("interrupt-controller", 1)
     gic.props["reg"] = struct.pack("<QQQQ", gic_dist, 0x10000,
-                                   gic_redist, 0x20000)
+                                   gic_redist, 0xF60000)
 
     psci = arm_io.add(Node("psci"))
     psci.set_str("compatible", "ARM,psci")
