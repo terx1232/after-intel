@@ -194,11 +194,26 @@ of confident forum assertions.
 
   and `gVirtBase + 0xE000000` is a perfectly ordinary kernel address.
   `0x1000000000` is `1 << 36`, and 36 is exactly the level 1 index shift for
-  this granule. So what is happening is that **one whole level 1 entry is being
-  subtracted** - an index off by one, or a sign issue in that field - not a
-  region we failed to supply. That reframes the search from "what memory is
-  missing" to "which computation decrements the index", which is a much smaller
-  thing to look for.
+  this granule.
+
+  **The arithmetic is now read, not guessed.** At 0xa0099a0 the walker does
+
+      cb1503f4    sub  x20, xzr, x21
+
+  Register 31 in a shifted-register `sub` is XZR, not SP, so that is a
+  negation: `x20 = -x21`. And x21 is the function's second argument, saved by
+  `mov x21, x2` at 0xa00992c. The measured values agree exactly:
+  `-0xfffffff00e000000 = 0xff2000000`.
+
+  So the walked address is `gVirtBase + x2`, and at the failing call
+  `x2 = 0xfffffff00e000000`, which as a signed value is **-0xFF2000000**, about
+  -63.8 GiB. The second argument is negative. Some caller computed a size or
+  offset by subtracting and went below zero.
+
+  It is not the call site at 0xa00922c: that one passes `movz x2, #0`. So
+  0xa0098e0 has more than one caller and the failing one is elsewhere. Finding
+  which caller passes a negative second argument is the remaining step, and it
+  is now a search for one subtraction rather than for a missing region.
 
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
