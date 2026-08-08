@@ -1895,3 +1895,39 @@ kernel checks only the name and the checksum - the signature byte is not
 validated at all - and our image satisfies both. So the failure comes from a
 different check inside handler creation, and the next step is to find which,
 now that the message arrives as text.
+
+**NVRAM accepted.** Three defects, each named by the kernel itself once the
+serial console was printing:
+
+1. `IONVRAMCHRPHandler creation failed` with a valid image. The store hangs off
+   **/chosen**, not /options - `IONVRAM.cpp` does
+   `IORegistryEntry::fromPath("/chosen", gIODTPlane)` and reads `bankSizeKey`
+   and `proxyDataKey` from there. The handler was being handed nothing at all;
+   the image had never been the problem.
+
+2. `header adler 0x7AD10967 != calculated_adler 0x9AC90968`. The kernel printed
+   both values, which located the fault exactly. `adler32_with_version` starts
+   at `offsetof(struct apple_nvram_header, generation)` = **20**, not at the end
+   of the 32-byte header:
+
+       chrp header  0..15
+       adler       16..19
+       generation  20..23    <- checksum starts here, covering itself
+       padding     24..31
+
+3. With those fixed the checksum matches, the handler is created, and the boot
+   moves on.
+
+**The new panic is from a different subsystem entirely:**
+
+    panic: non-sensical crypto hash method
+
+That is the sealed-system-volume chain - the ARV material a real loader supplies
+and which our `/chosen/manifest-properties` and `/chosen/asmb` nodes are
+deliberately empty of. It is the blocker that was flagged in advance as needing
+material from outside rather than more reverse engineering.
+
+Worth noting how fast these three went compared to everything before them. With
+the console working, each failure named itself and the fix followed from reading
+one function. The whole of stage 5 was spent extracting single messages from
+memory dumps.

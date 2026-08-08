@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 nvram_image.py -- build a CHRP NVRAM image the kernel will accept.
 
@@ -52,6 +52,8 @@ import zlib
 
 BLOCK = 0x10                     # CHRP length field counts 16-byte blocks
 APPLE_HEADER_SIZE = 0x20         # chrp header + adler + generation + padding
+ADLER_START = 0x14               # offsetof(struct apple_nvram_header, generation)
+GENERATION = 1
 
 SIG_APPLE = 0x5A                 # Apple header partition signature
 SIG_SYSTEM = 0xA0                # system partition
@@ -99,8 +101,22 @@ def build(size: int, v2: bool = True) -> bytes:
     # The Apple header describes itself only; its length field counts its own
     # blocks, not the whole store.
     hdr = chrp_header(SIG_APPLE, apple_blocks, apple_name)
-    adler = zlib.adler32(bytes(out[APPLE_HEADER_SIZE:])) & 0xFFFFFFFF
-    out[0:APPLE_HEADER_SIZE] = hdr + struct.pack("<II", adler, 1) + b"\x00" * 8
+    out[0:APPLE_HEADER_SIZE] = hdr + struct.pack("<II", 0, GENERATION) + b"\x00" * 8
+
+    # The Adler runs from `generation` to the end of the store, not from the end
+    # of the header. `adler32_with_version` takes
+    # offsetof(struct apple_nvram_header, generation), which is 20:
+    #
+    #     chrp header  0..15
+    #     adler       16..19
+    #     generation  20..23   <- the checksum starts here, covering itself
+    #     padding     24..31
+    #
+    # Assuming it started at 32 produced "header adler 0x7AD10967 !=
+    # calculated_adler 0x9AC90968" - the kernel printed both values, which is
+    # how the range was found rather than guessed at.
+    adler = zlib.adler32(bytes(out[ADLER_START:])) & 0xFFFFFFFF
+    struct.pack_into("<I", out, 16, adler)
 
     return bytes(out)
 
@@ -138,7 +154,7 @@ def main(argv=None) -> int:
         print(f"\n  SELF-CHECK FAILED: checksum {recomputed:#04x} != {cksum:#04x}",
               file=sys.stderr)
         return 1
-    if zlib.adler32(img[APPLE_HEADER_SIZE:]) & 0xFFFFFFFF != adler:
+    if zlib.adler32(img[ADLER_START:]) & 0xFFFFFFFF != adler:
         print("\n  SELF-CHECK FAILED: adler does not match the body",
               file=sys.stderr)
         return 1
@@ -151,3 +167,4 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+

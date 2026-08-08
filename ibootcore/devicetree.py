@@ -278,12 +278,22 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     # `chrp_checksum` computes it, an Adler-32 over the body, and two empty
     # partitions. See nvram_image.py, which reads the layout out of
     # IONVRAMCHRPHandler.cpp rather than guessing it.
-    options = root.add(Node("options"))
-    options.props["nvram-proxy-data"] = nvram_data or _default_nvram(NVRAM_BYTES)
-    options.set_u32("nvram-total-size", NVRAM_BYTES)
-    options.set_u32("nvram-bank-size", NVRAM_BYTES)
-    options.set_u32("nvram-bank-count", 1)
-    options.set_u32("nvram-current-bank", 0)
+    root.add(Node("options"))
+
+    # The NVRAM store hangs off **/chosen**, not /options. IONVRAM.cpp does
+    #
+    #     entry = IORegistryEntry::fromPath("/chosen", gIODTPlane);
+    #     prop  = entry->copyProperty(bankSizeKey);
+    #     prop  = entry->copyProperty(proxyDataKey);
+    #
+    # and putting them on /options produced "IONVRAMCHRPHandler creation failed"
+    # with a perfectly valid image, because the handler was being handed
+    # nothing at all. The image was never the problem.
+    chosen.props["nvram-proxy-data"] = nvram_data or _default_nvram(NVRAM_BYTES)
+    chosen.set_u32("nvram-total-size", NVRAM_BYTES)
+    chosen.set_u32("nvram-bank-size", NVRAM_BYTES)
+    chosen.set_u32("nvram-bank-count", 1)
+    chosen.set_u32("nvram-current-bank", 0)
 
     memmap = chosen.add(Node("memory-map"))
     memmap.props["DeviceTree"] = b"\x00" * 16
