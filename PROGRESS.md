@@ -338,12 +338,35 @@ of confident forum assertions.
   only if `physmap_l1_entries` were 0, which
   `((size + SLIDE_RANGE) >> ARM_TT_L1_SHIFT) + 1` cannot produce.
 
-  So one of three things is true and none is established yet: the global is not
-  physmap_base; the shipped macOS 27 kernel differs here from the macOS 26
-  source being read; or `real_phys_size` at that moment is not what boot_args
-  carries. Fixing virtBase on the strength of this reading would be acting on
-  an unreconciled inference, which is the mistake this stage has already made
-  six times.
+  **Reconciled, and it inverts the conclusion.** Two constants settle it:
+
+      VM_MIN_KERNEL_ADDRESS     = (0ULL - (2ULL << 40)) = 0xfffffe0000000000
+      ARM64_PHYSMAP_SLIDE_RANGE = 1ULL << 30            = 1 GiB
+
+  So `0xfffffdf000000000` in the instruction stream is not
+  VM_MIN_KERNEL_ADDRESS itself. It is `VM_MIN_KERNEL_ADDRESS - (1 << 36)`,
+  folded by the compiler because `physmap_l1_entries` is 1 for this memory
+  size. Then:
+
+      physmap_l1_entries = ((4 GiB + 1 GiB) >> 36) + 1 = 1
+      physmap_base       = 0xfffffe0000000000 - 64 GiB = 0xfffffdf000000000
+                         + slide 0x375ac000            = 0xfffffdf0375ac000
+
+  which is the measured value exactly, and the slide is inside its 1 GiB range.
+
+  Therefore **physmap_base is correct, and so is our virtBase**: we set it to
+  0xfffffe0000000000, which *is* VM_MIN_KERNEL_ADDRESS, not a terabyte above
+  it. The previous entry here claimed the opposite and was wrong - it read the
+  folded constant as the unfolded one.
+
+  What is actually true is narrower and better. The kernel legitimately places
+  its physical aperture 64 GiB below VM_MIN_KERNEL_ADDRESS, in level 1 entry
+  0x7DF, and walks it with the non-allocating walker. XNU creates those tables
+  in `init_ptpages(cpu_tte, physmap_base, ROUND_L1(physmap_end), ...)`. So the
+  question is no longer what value is wrong - none of them are - but why that
+  entry is absent from the table being walked at the moment it is walked:
+  either the walk happens before init_ptpages runs, or the root the walker
+  loads is not the table init_ptpages populated.
 
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
