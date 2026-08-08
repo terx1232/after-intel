@@ -87,7 +87,15 @@ def main(argv=None) -> int:
     fb = parse_fb(args.fb)
     fb_addr = int(args.fb_addr, 0)
 
-    tree = devicetree.minimal_vmapple_tree(ram_base=phys_base,
+    # The device tree must agree with boot_args about where RAM starts. Passing
+    # the load address here while boot_args carried the true RAM base left the
+    # two describing different machines, with the tree claiming DRAM ran from
+    # the image for the full memory size and so past the real end of RAM.
+    ram_base = int(args.ram_base, 0) if args.ram_base else phys_base
+    if ram_base > phys_base:
+        ap.error("--ram-base cannot be above the load address")
+
+    tree = devicetree.minimal_vmapple_tree(ram_base=ram_base,
                                            ram_size=mem_size,
                                            ncpus=args.ncpus)
     if fb:
@@ -124,9 +132,6 @@ def main(argv=None) -> int:
     #
     # virtBase shifts by the same amount so that the kernel still lands on its
     # own link address: phystokv(load) == the kernel's vm_low.
-    ram_base = int(args.ram_base, 0) if args.ram_base else phys_base
-    if ram_base > phys_base:
-        ap.error("--ram-base cannot be above the load address")
     ba_virt_base = virt_base - (phys_base - ram_base)
 
     ba = bootargs.build(
