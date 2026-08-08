@@ -68,9 +68,22 @@ of confident forum assertions.
   so a translation table entry is empty during a page table walk. Unlike
   findings #34 and #35 this is not a missing property, and supplying one will
   not fix it; the question is which mapping the kernel expects to exist by that
-  point. Note that two `null_guard` diversions are still in this kernel, and a
-  bulk memory routine returning early on a null argument is a candidate cause -
-  ruling that in or out comes first.
+  point. Running the **unpatched** kernel against the same fixed tree settles
+  where this comes from: it does not reach `arm_vm_init` at all, but spins at
+  `movz x0, #0xC1000000; hvc #0; cbnz x0, .` with x0 = -1, because QEMU answers
+  unknown SMCCC calls with -1 per SMCCC 1.3.
+
+  So the three workarounds in this build form a chain, and each one pays for
+  the one before it: stubbing the paravirtual hypercalls gets past that spin
+  but leaves the pointers they were supposed to return still null; the two
+  `null_guard` diversions stop the resulting data abort but skip the work those
+  routines were doing; and the skipped work is what leaves a translation table
+  entry empty. `phystokv: illegal PA: 0x0` is the bill for all of it.
+
+  The honest fix is therefore not a fourth workaround. It is to **implement**
+  the `0xC1000000`-`0xC100FFFF` CPU service calls rather than stub them -
+  either in QEMU or by supplying their results in the guest. Everything above
+  this line in the boot is now clean; this is the one real blocker left.
 
 **Track: what is actually inside the shipped macOS 27 installer.**
 
