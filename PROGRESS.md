@@ -933,3 +933,32 @@ Recording these because a repo that only lists its strengths is advertising.
   who is supposed to create the 0x7E1 entry and why it did not happen here -
   and whether that is something a loader can pre-build or something the kernel
   does that our boot state prevented.
+
+  **And the code that should create it is identified too.**
+  `arm_vm_init.c:2321`, with a comment that describes the measurement exactly:
+
+      /*
+       * In this configuration, the bootstrap mappings (arm_vm_init) and
+       * the heap mappings occupy separate L1 regions.  Explicitly set up
+       * the heap L1 allocations here.
+       */
+      #if defined(ARM_LARGE_MEMORY)
+      init_ptpages(cpu_tte, KERNEL_PMAP_HEAP_RANGE_START & ~ARM_TT_L1_OFFMASK,
+                   VM_MAX_KERNEL_ADDRESS, FALSE, ...);
+
+  So XNU knows the bootstrap mappings and the heap occupy separate level 1
+  regions and populates the heap ones with a dedicated `init_ptpages` call. That
+  call did not take effect here, which is why entry 0x7E1 is empty.
+
+  The chain is now complete end to end, every link measured:
+
+      init_ptpages for the heap L1 range does not populate entry 0x7E1
+        -> a walk of KERNEL_PMAP_HEAP_RANGE_START (gVirtBase + 64 GiB) reads 0
+        -> masking 0 gives 0
+        -> phystokv(0) panics with "illegal PA: 0x0"
+        -> the early panic path prints nothing, since serial is not up
+        -> a shared halt routine spins, which looked like a silent hang
+
+  Remaining for the stage: why that `init_ptpages` call does not populate the
+  entry. Whether it runs at all is the first thing to check, with a freeze on
+  it, and `cpu_tte` at that moment is the second.
