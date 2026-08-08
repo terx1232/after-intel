@@ -909,3 +909,27 @@ Recording these because a repo that only lists its strengths is advertising.
   Next: identify what `gVirtBase + 64 GiB` is meant to be. It is one L1 entry
   past the kernel, which smells like the exclusive end of a range being walked
   inclusively, or `ROUND_L1` of something that lands on the boundary.
+
+  **Identified.** `osfmk/arm/pmap/pmap.h:252`:
+
+      #if defined(ARM_LARGE_MEMORY)
+      /* For large memory systems with no KTRR/CTRR such as virtual machines */
+      #define KERNEL_PMAP_HEAP_RANGE_START (VM_MIN_KERNEL_AND_KEXT_ADDRESS + ARM_TT_L1_SIZE)
+
+  `ARM_TT_L1_SIZE` at a 16 KiB granule is `1 << 36`, i.e. 64 GiB, so
+
+      KERNEL_PMAP_HEAP_RANGE_START = 0xfffffe0000000000 + 0x1000000000
+                                   = 0xfffffe1000000000
+
+  which is exactly the address in x24. The comment names our configuration
+  outright: large memory, no KTRR/CTRR, virtual machines.
+
+  So the kernel is walking the start of its own pmap heap range, one level 1
+  entry above the kernel itself, and that entry has never been created. Every
+  other value involved is correct, which is why nothing upstream ever measured
+  wrong.
+
+  That closes the identification for this stage. What remains is to establish
+  who is supposed to create the 0x7E1 entry and why it did not happen here -
+  and whether that is something a loader can pre-build or something the kernel
+  does that our boot state prevented.
