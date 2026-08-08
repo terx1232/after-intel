@@ -447,6 +447,23 @@ of confident forum assertions.
   the halt instead of at the failing instruction. Both cost more than the bugs
   they were meant to find.
 
+  **Clean measurement, one run, one build, no `-d`:**
+
+      physmap_base      = 0xfffffdf02d708000     unslid base + 0x2d708000
+      address walked    = 0xfffffdf016000000     unslid base + 0x16000000
+      difference        = -0x17708000            below the aperture start
+
+  So the earlier reading holds after all, now on evidence that does not cross
+  runs: the kernel walks an address **below the start of its own physical
+  aperture**, and both values are offsets from the same unslid base. The walked
+  address has level 2 index 0xB while the mapped range is 0x1C through 0x9B,
+  which is consistent - it is outside the aperture, not in a gap within it.
+
+  What has not been established is why anything computes an address below
+  physmap_base at all. That is the open question, and it is now backed by a
+  measurement that survives the methodological problems that invalidated the
+  earlier attempts at it.
+
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
   freeze on first arrival.
