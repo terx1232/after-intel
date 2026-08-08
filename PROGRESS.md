@@ -364,9 +364,25 @@ of confident forum assertions.
   0x7DF, and walks it with the non-allocating walker. XNU creates those tables
   in `init_ptpages(cpu_tte, physmap_base, ROUND_L1(physmap_end), ...)`. So the
   question is no longer what value is wrong - none of them are - but why that
-  entry is absent from the table being walked at the moment it is walked:
-  either the walk happens before init_ptpages runs, or the root the walker
-  loads is not the table init_ptpages populated.
+  entry is absent from the table being walked at the moment it is walked.
+
+  **It is not absent.** Reading the root table out of guest memory after the
+  load-offset fix:
+
+      root = 0xfffffe000781c000
+      [0x7df] = 0x3800000047824003     the physical aperture
+      [0x7e0] = 0x2000000047820003     the kernel
+
+  Both level 1 entries exist, and `init_ptpages` at arm_vm_init.c:1982 runs
+  before the segment work that leads to the failing call. So the level 1 story
+  is finished, and the load-offset fix finished it.
+
+  The remaining failure is **deeper in the walk** - a hole at level 2 or 3
+  inside the table at 0x47824000, reached by the walker that does not allocate.
+  init_ptpages builds only level 1 pages, by its own comment; the levels below
+  are filled by whoever maps the aperture, through the *allocating* walker at
+  arm_vm_init.c:629-639. Which mapping was expected to have run first is the
+  next step.
 
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
