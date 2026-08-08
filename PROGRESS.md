@@ -169,9 +169,32 @@ of confident forum assertions.
   format string out of the frozen frame settles it directly and shows it had
   not.
 
-  The impossible address persists and shifted slightly with the device tree
-  fix: x21 now reads `0xfffffff026000000` where it read `0xfffffff038000000`
-  before. So that fix moved the value without removing the cause.
+  **The addresses being walked lie below gVirtBase.** Freezing the failing call
+  itself - `b .` at 0xa009a1c, rather than at the panic or at a neighbouring
+  site, which is what earlier attempts got wrong - gives registers that relate
+  exactly:
+
+      x20 = 0xff2000000                     (64 GiB - 224 MiB)
+      x01 = 0xfffffdf00e000000 = gVirtBase - x20
+
+  That matters because `phystokv(pa) = pa - gPhysBase + gVirtBase`, so any
+  valid physical address produces a virtual address **at or above** gVirtBase.
+  An address below it cannot have come from phystokv, and it lands in level 1
+  entry 0x7DF - the one immediately below the kernel's own 0x7E0, and the one
+  that has no table.
+
+  So the kernel wants virtual space *beneath* gVirtBase and we have given it
+  none. Our layout puts gVirtBase only 0x7004000 below the kernel's link base,
+  with nothing under it.
+
+  x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
+  failing one comes later; catching it needs a conditional trap rather than a
+  freeze on first arrival.
+
+  Earlier notes read x21 at the panic frame and treated it as this address. It
+  belongs to the printing function's frame, not the walk, and its variation
+  with memSize (0x38000000 / 0x26000000 / 0x08000000 at 4G and 2G) is not
+  evidence about the walk. Measure at 0xa009a1c, not at the panic.
 
   A `startup_bootstrap` string found near the stack was noted earlier as a sign
   of progress. It is not evidence: the serial test contradicts it, and the
