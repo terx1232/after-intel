@@ -1841,3 +1841,31 @@ a wrong answer gets checked, an absent one gets believed.
 address, but the port stays silent, and the reason is no longer a mystery: the
 current halt arrives through 0x9e9216c, which does **not** print, rather than
 0x9e91e60, which does. The patched routine is never called on this path.
+
+## Serial output works
+
+`early_console.py`, pointed at the mapped UART and patched onto the path that
+actually executes, prints. The port carries the string the kernel had in x1:
+
+    panic
+
+Five bytes, clean, no faults. So the chain is proved end to end: the device tree
+describes the UART correctly, `ml_io_map` maps it at 0xfffffe000c000000, the
+driver is set up, and writes reach QEMU.
+
+**The failed attempt was worth more than the successful one.** The first version
+built the address with a single `movz`, which covers 16 bits at one shift and
+silently truncated 0xfffffe000c000000 to 0x0c000000 - unmapped. The store faulted
+and **XNU printed its own 3060-byte crash report** through its own console:
+
+    Kernel data abort. at pc 0xfffffe0009e92d88, lr 0xfffffe0009e9216c
+      x0: 0xfffffe0007063191  x2: 0x000000000c000000
+      esr: 0x96000005  far: 0x000000000c000018
+
+which proves the kernel's native console is alive too. It simply is not used on
+the halt path currently taken - that path traces and stops without printing.
+
+Two things follow. Any failure can now be made to print by patching the executed
+path, so the excavation from memory dumps that this whole stage required is over.
+And the kernel's own console will produce a full boot log the moment the boot
+reaches a path that uses it.

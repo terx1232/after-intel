@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 early_console.py -- give the kernel a working console before it has one.
 
@@ -85,21 +85,37 @@ def b(pc: int, target: int) -> int:
 RET = 0xD65F03C0
 
 
+def movk(rd: int, imm16: int, hw: int) -> int:
+    return 0xF2800000 | (hw << 21) | ((imm16 & 0xFFFF) << 5) | (rd & 0x1F)
+
+
+def load_addr(rd: int, value: int) -> list:
+    """Four instructions, always, so the routine's layout is fixed.
+
+    A single `movz` only covers 16 bits at one shift. The first version of this
+    used `movz x2, uart >> 16, lsl #16`, which silently truncated a mapped
+    kernel address like 0xfffffe000c000000 to 0x0c000000 - an unmapped physical
+    address. The kernel then took a data abort on the store and printed its own
+    register dump, which is how the serial console got proved working.
+    """
+    out = [movz(rd, value & 0xFFFF, 0)]
+    for hw in (1, 2, 3):
+        out.append(movk(rd, (value >> (16 * hw)) & 0xFFFF, hw))
+    return out
+
+
 def build(at: int, uart: int) -> list:
     """Emit the routine, resolving its own branches against `at`."""
-    if uart & 0xFFFF:
-        raise ValueError("UART base must be 16-bit aligned for a single movz")
-    nxt = at + 4                 # `next` label
-    wait = at + 12               # `wait` label
-    done = at + 28               # `done` label
-    return [
-        movz(2, uart >> 16, 1),                      # movz x2, base>>16, lsl 16
+    nxt = at + 16                # `next` label, after the four-word address load
+    wait = at + 24               # `wait` label
+    done = at + 40               # `done` label
+    return load_addr(2, uart) + [
         ldrb_post(1, 0, 1),                          # next: ldrb w1, [x0], #1
-        cbz_w(1, at + 8, done),                      # cbz w1, done
+        cbz_w(1, at + 20, done),                     # cbz w1, done
         ldr_w(3, 2, PL011_FR),                       # wait: ldr w3, [x2, #0x18]
-        tbnz_w(3, PL011_FR_TXFF_BIT, at + 16, wait),  # tbnz w3, #5, wait
+        tbnz_w(3, PL011_FR_TXFF_BIT, at + 28, wait),  # tbnz w3, #5, wait
         str_w(1, 2, PL011_DR),                       # str w1, [x2]
-        b(at + 24, nxt),                             # b next
+        b(at + 36, nxt),                             # b next
         RET,                                         # done: ret
     ]
 
@@ -126,7 +142,7 @@ def main(argv=None) -> int:
         return 2
 
     words = build(at, uart)
-    labels = ["movz x2, uart", "next: ldrb w1, [x0], #1", "cbz  w1, done",
+    labels = ["movz x2, uart", "movk x2", "movk x2", "movk x2", "next: ldrb w1, [x0], #1", "cbz  w1, done",
               "wait: ldr  w3, [x2, #0x18]", "tbnz w3, #5, wait",
               "str  w1, [x2]", "b    next", "done: ret"]
 
@@ -156,3 +172,4 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
