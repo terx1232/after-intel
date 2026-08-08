@@ -1692,3 +1692,26 @@ asmb nodes carry sealed-system-volume material - the ARV root hash and manifest 
 real loader supplies, per finding #15. Inventing values there would be worse than
 leaving them absent, so the nodes exist to satisfy the lookups and their contents
 remain an open, honest problem.
+
+**The reset is a fault loop in an exception vector.** A `-d int,guest_errors`
+capture records **408 732** undefined-instruction exceptions, all at the same
+address, with the vector target equal to the faulting address:
+
+    Taking exception 1 [Undefined Instruction] on CPU 0
+    ...with ESR 0x0/0x2000000
+    ...with ELR 0x49e3d200
+    ...to EL1 PC 0x49e3d200
+
+The instruction at that address is `14000000`, a branch to itself, and it is
+**identical in Apple's unmodified kernel** - verified against `vma2.kernel`, so
+it is not one of our patches. Its position, VBAR + 0x200, is the synchronous
+exception vector for the current exception level.
+
+So after the NVRAM node went in, the machine reset, the kernel restarted with the
+MMU off, took a synchronous exception immediately, landed in the vector Apple
+fills with a deliberate spin, and stayed there.
+
+That is a different failure from anything before it and needs the *first*
+exception identified, not the 408732nd. The log's early entries, before the loop
+establishes itself, are where to look - and `-d int` writes them in order, so the
+head of the file is the evidence.
