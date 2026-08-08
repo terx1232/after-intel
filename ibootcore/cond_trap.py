@@ -99,27 +99,42 @@ def main(argv=None) -> int:
     (orig,) = struct.unpack_from("<I", data, off)
     callee = bl_target(orig, site)
 
-    pad = find_padding(bytes(data), text["fileoff"], text["filesize"], 16, off)
+    pad = find_padding(bytes(data), text["fileoff"], text["filesize"], 32, off)
     if pad is None:
         print("no padding in __TEXT_EXEC", file=sys.stderr)
         return 2
     stub = vb + pad
 
+    # Registers to preserve into the freeze. The stub never returns on the
+    # failing path, so clobbering callee-saved registers is harmless, and it
+    # makes scratch values readable in `info registers` -- which is the only way
+    # to see what a caller-saved register held at the moment of failure.
+    save = [(25, 8), (26, 9), (27, 1)]
+
     words = [
-        encode_cbz(args.reg, stub, stub),          # cbz xN, self
+        encode_cbz(args.reg, stub, stub + 16),     # cbz xN, save path
         encode_b(stub + 4, callee, link=True),     # bl callee
         encode_b(stub + 8, site + 4),              # b back
+        0xD503201F,                                # nop
     ]
+    for i, (dst, src) in enumerate(save):
+        words.append(0xAA0003E0 | (src << 16) | dst)   # mov xDST, xSRC
+    words.append(encode_b(stub + 16 + len(save) * 4,
+                          stub + 16 + len(save) * 4))  # b self
     for i, w in enumerate(words):
         struct.pack_into("<I", data, pad + i * 4, w)
     struct.pack_into("<I", data, off, encode_b(site, stub))
 
     print(f"\n  call site {site:#x}: bl {callee:#x}")
     print(f"  stub at   {stub:#x} ({stub - site:+#x} away)\n")
-    for i, (w, t) in enumerate(zip(words, [
-            f"cbz  x{args.reg}, self   <- freezes only on zero",
-            f"bl   {callee:#x}",
-            f"b    {site + 4:#x}"])):
+    texts = [f"cbz  x{args.reg}, +0x10   <- only on zero",
+             f"bl   {callee:#x}",
+             f"b    {site + 4:#x}",
+             "nop"]
+    texts += [f"mov  x{d}, x{s}   <- preserve into the freeze"
+              for d, s in save]
+    texts.append("b    self   <- freeze with registers intact")
+    for i, (w, t) in enumerate(zip(words, texts)):
         print(f"    {stub + i * 4:#018x}  {w:08x}  {t}")
 
     # Read back rather than trust the writes.

@@ -883,3 +883,29 @@ Recording these because a repo that only lists its strengths is advertising.
   listing shows. Resolving it needs the value of x8 at 0xa009a18, captured in
   the same freeze - which means a stub that saves registers rather than one
   that only tests them.
+
+  **Resolved.** Extending the stub to preserve scratch registers into the
+  freeze - it never returns on the failing path, so clobbering callee-saved
+  registers is free - gives the values that were previously invisible:
+
+      x25 = 0                       the table entry read: ZERO
+      x26 = 0x7E1                   the index actually used
+      x24 = 0xfffffe1000000000      the address actually walked
+
+  The index is 0x7E1, not 0x7DF, because the `ubfx` was mis-decoded: in
+  `d364bb09` the Rn field is **24**, so the instruction is
+  `ubfx x9, x24, #36, #11` and the address comes from x24, not x2. That checks
+  out exactly: `(0xfffffe1000000000 >> 36) & 0x7FF = 0x7E1`.
+
+  So the walked address is `gVirtBase + 64 GiB`, one level 1 entry **above** the
+  kernel's own 0x7E0, and that entry is empty. Every previous attempt compared
+  the wrong address against the wrong table entry, which is why the inputs kept
+  measuring correct while the argument stayed zero.
+
+  The whole "below the aperture" family of readings was an artifact of taking x2
+  for the walked address. It is above, not below, and it is above *gVirtBase*
+  rather than relative to physmap_base at all.
+
+  Next: identify what `gVirtBase + 64 GiB` is meant to be. It is one L1 entry
+  past the kernel, which smells like the exclusive end of a range being walked
+  inclusively, or `ROUND_L1` of something that lands on the boundary.
