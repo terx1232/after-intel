@@ -41,6 +41,8 @@ VGA = 0xB8000
 ATTR = 0x0A
 MONITOR_ORG = 0x8000
 GUEST_REGS = 0x20000          # r15 points here: the guest register file
+LINE_BUF   = 0x21000          # the typed line, NUL-terminated
+BLOCK_SLOT = 0x80             # where the block address parks, past x0..x15
 
 # arm64 words the bench knows, with what they should do to the guest state.
 DEMO_WORDS = [
@@ -63,6 +65,9 @@ SCAN = {
     0x24: "j", 0x25: "k", 0x26: "l",
     0x2C: "z", 0x2D: "x", 0x2E: "c", 0x2F: "v", 0x30: "b", 0x31: "n",
     0x32: "m", 0x39: " ", 0x1C: "\n", 0x0E: "\b",
+    # Without these the xN=HEX command cannot be typed at all: the first
+    # attempt turned "x1=5" into "x15" and reported a bad line.
+    0x0D: "=", 0x0C: "-", 0x27: ";", 0x34: ".",
 }
 
 
@@ -119,21 +124,52 @@ def build_monitor() -> bytes:
     a.mov_label("rsi", "s_banner")
     a.call("puts")
 
+    # Input is line-based rather than per-keystroke. The first version
+    # dispatched on each character, which made c, r, l and h both commands and
+    # hex digits, so half the instruction words could not be typed at all.
     a.label("prompt")
     a.mov_label("rsi", "s_prompt")
     a.call("puts")
-    a.mov_imm("r12", 0)                    # r12 = accumulated hex value
-    a.mov_imm("r13", 0)                    # r13 = digits seen
+    a.mov_imm("r13", LINE_BUF)             # r13 = write position
 
     a.label("readkey")
     a.call("getkey")                       # -> al
-    a.cmp8_imm("al", 0x0A)                 # Enter?
+    a.cmp8_imm("al", 0x0A)
     a.jcc("e", "line_done")
-    a.push("rax")
+    a.cmp8_imm("al", 0x08)                 # backspace
+    a.jcc("e", "do_backspace")
+    a.mov8_store("r13", "al")
+    a.inc("r13")
     a.call("putc")
-    a.pop("rax")
+    a.jmp("readkey")
 
-    # single-letter commands only make sense as the first character
+    a.label("do_backspace")
+    a.mov_rr("rax", "r13")
+    a.mov_imm("rdx", LINE_BUF)
+    a.alu_rr("cmp", "rax", "rdx")
+    a.jcc("e", "readkey")                  # nothing to erase
+    a.dec("r13")
+    a.alu_imm("sub", "rdi", 2)
+    a.mov_imm("rax", 0x20)
+    a.mov8_store("rdi", "al")
+    a.jmp("readkey")
+
+    a.label("line_done")
+    a.mov_imm("rax", 0)
+    a.mov8_store("r13", "al")              # NUL-terminate
+    a.call("newline")
+    a.mov_imm("r11", LINE_BUF)             # r11 = parse cursor
+    a.mov_rr("rax", "r13")
+    a.mov_imm("rdx", LINE_BUF)
+    a.alu_rr("sub", "rax", "rdx")
+    a.mov_rr("r14", "rax")                 # r14 = length
+    a.alu_imm("cmp", "r14", 0)
+    a.jcc("e", "prompt")
+
+    # one-character lines are commands
+    a.alu_imm("cmp", "r14", 1)
+    a.jcc("ne", "not_cmd")
+    a.mov8_load("al", "r11")
     a.cmp8_imm("al", ord("r"))
     a.jcc("e", "cmd_regs")
     a.cmp8_imm("al", ord("h"))
@@ -142,25 +178,67 @@ def build_monitor() -> bytes:
     a.jcc("e", "cmd_clear")
     a.cmp8_imm("al", ord("l"))
     a.jcc("e", "cmd_list")
+    a.jmp("bad_line")
 
-    # otherwise treat it as a hex digit
-    a.movzx8("rax", "al")
-    a.alu_imm("sub", "rax", ord("0"))
-    a.alu_imm("cmp", "rax", 9)
-    a.jcc("be", "hex_ok")
-    a.alu_imm("sub", "rax", ord("a") - ord("0") - 10)
-    a.label("hex_ok")
-    a.shift_imm("shl", "r12", 4)
-    a.alu_rr("or", "r12", "rax")
-    a.alu_imm("add", "r13", 1)
-    a.jmp("readkey")
-
-    a.label("line_done")
-    a.call("newline")
-    a.alu_imm("cmp", "r13", 0)
-    a.jcc("e", "prompt")
+    a.label("not_cmd")
+    # "xN=HHHH..." sets a guest register before running anything
+    a.mov8_load("al", "r11")
+    a.cmp8_imm("al", ord("x"))
+    a.jcc("e", "cmd_set")
+    # otherwise it should be a hex instruction word
+    a.alu_imm("cmp", "r14", 8)
+    a.jcc("ne", "bad_line")
+    a.call("parse_hex")                    # r11 -> rax
+    a.mov_rr("r12", "rax")
     a.call("run_word")
     a.jmp("prompt")
+
+    a.label("bad_line")
+    a.mov_label("rsi", "s_bad")
+    a.call("puts")
+    a.jmp("prompt")
+
+    # --- xN=HEX -----------------------------------------------------------
+    a.label("cmd_set")
+    a.inc("r11")
+    a.mov8_load("al", "r11")
+    a.movzx8("rbx", "al")
+    a.alu_imm("sub", "rbx", ord("0"))
+    a.alu_imm("cmp", "rbx", 3)
+    a.jcc("a", "bad_line")                 # only x0..x3 are displayed
+    a.inc("r11")
+    a.mov8_load("al", "r11")
+    a.cmp8_imm("al", ord("="))
+    a.jcc("ne", "bad_line")
+    a.inc("r11")
+    a.call("parse_hex")
+    a.shift_imm("shl", "rbx", 3)
+    a.alu_rr("add", "rbx", "r15")
+    a.mov_store("rbx", "rax")
+    a.call("dump_regs")
+    a.jmp("prompt")
+
+    # --- parse_hex: NUL-terminated hex at r11 -> rax -----------------------
+    a.label("parse_hex")
+    a.push("rcx")
+    a.mov_imm("rax", 0)
+    a.label("ph_next")
+    a.mov8_load("cl", "r11")
+    a.cmp8_imm("cl", 0)
+    a.jcc("e", "ph_end")
+    a.movzx8("rcx", "cl")
+    a.alu_imm("sub", "rcx", ord("0"))
+    a.alu_imm("cmp", "rcx", 9)
+    a.jcc("be", "ph_digit")
+    a.alu_imm("sub", "rcx", ord("a") - ord("0") - 10)
+    a.label("ph_digit")
+    a.shift_imm("shl", "rax", 4)
+    a.alu_rr("or", "rax", "rcx")
+    a.inc("r11")
+    a.jmp("ph_next")
+    a.label("ph_end")
+    a.pop("rcx")
+    a.ret()
 
     a.label("cmd_regs")
     a.call("newline")
@@ -204,12 +282,22 @@ def build_monitor() -> bytes:
     a.jmp("rw_loop")
 
     a.label("rw_found")
+    # The block address cannot stay in a register: every one of x0..x3 maps to
+    # a host register that is about to be loaded from the shadow file. Park it
+    # in memory and call indirectly through there.
     a.mov_load("rax", "rbx", 8)
-    a.call_reg("rax")
-    # The translator keeps x0..x12 in host registers, so after the block runs
-    # the results are in rax/rbx/rcx/rdx, not in the shadow file. Spill them
-    # before dumping -- the first version read the file directly and showed
-    # zeros for work that had actually happened.
+    a.mov_store("r15", "rax", BLOCK_SLOT)
+
+    # Load the guest state into the host registers the translator uses. Without
+    # this the xN= command set values the block never saw, because the
+    # translator keeps x0..x12 in host registers.
+    a.mov_load("rdx", "r15", 24)           # x3
+    a.mov_load("rcx", "r15", 16)           # x2
+    a.mov_load("rbx", "r15", 8)            # x1
+    a.mov_load("rax", "r15", 0)            # x0
+    a.call_mem("r15", BLOCK_SLOT)
+
+    # Spill the results back: the other half of the same round trip.
     a.mov_store("r15", "rax", 0)           # x0
     a.mov_store("r15", "rbx", 8)           # x1
     a.mov_store("r15", "rcx", 16)          # x2
@@ -338,8 +426,10 @@ def build_monitor() -> bytes:
     string("s_prompt", "> ")
     string("s_help",
            "type 8 hex digits: run that arm64 word\n"
+           "xN=HEX   set guest register x0..x3\n"
            "r regs   l list   c clear   h help\n")
     string("s_unknown", "no translation built in for that word\n")
+    string("s_bad", "?  try h\n")
     string("s_x", "x")
     string("s_eq", " = ")
     listing = "".join(f"{w:08x}  {d}\n" for w, d in DEMO_WORDS)
