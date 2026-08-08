@@ -275,7 +275,20 @@ def translate(w: int, pc: int) -> tuple:
         if 0x18 <= crm_op2 <= 0x1F or 0x38 <= crm_op2 <= 0x3F:
             return "pac/aut", ["; pac/aut -> no-op (PAC modelled as identity)"]
         return "nop", ["nop"]
-    if (w & 0xFFFE0000) == 0xDAC10000:
+    # Register form of PAC/AUT: dp-1source with opcode2 == 1. The mask here
+    # used to be 0xFFFE0000 against 0xDAC10000, which cannot match: bit 16 is
+    # cleared by that mask and opcode2 occupies bits 16 to 20. It silently
+    # missed every one of them -- 100,263 instructions, a third of everything
+    # still undecoded. Same class of error as the MOVZ mask earlier.
+    if (w & 0xFFE00000) == 0xDAC00000 and ((w >> 16) & 0x1F) == 1:
+        rd = w & 0x1F
+        # Authenticating is the identity here, but the result register still
+        # has to hold the address, so a plain move is the honest translation
+        # when source and destination differ.
+        rn = (w >> 5) & 0x1F
+        if rn != 31 and rd != rn:
+            return "pac/aut", move(hostreg(rd), hostreg(rn)) + [
+                "; pac/aut -> identity (PAC modelled as a no-op)"]
         return "pac/aut", ["; pac/aut -> no-op (PAC modelled as identity)"]
     if w in (0xD65F0BFF, 0xD65F0FFF):
         return "retaa/retab", ["ret"]
@@ -566,6 +579,66 @@ def translate(w: int, pc: int) -> tuple:
             else:
                 out.append(f"mov  {dst}, [{base}+{slot:#x}]")
         return "ldp", out
+
+    # ---- extended-register add/sub ----------------------------------------
+    # `sf op S 01011 opt 1 Rm option imm3 Rn Rd`: the second operand is
+    # zero- or sign-extended from a narrower width before use. x86 does the
+    # extension with movzx/movsx into the scratch.
+    if (w & 0x1FE00000) == 0x0B200000:
+        opc = (w >> 29) & 3
+        rd, rn, rm = w & 0x1F, (w >> 5) & 0x1F, (w >> 16) & 0x1F
+        option = (w >> 13) & 7
+        shift = (w >> 10) & 7
+        ext = {0: ("movzx", "b"), 1: ("movzx", "w"), 2: ("mov", "d"),
+               3: ("mov", ""), 4: ("movsx", "b"), 5: ("movsx", "w"),
+               6: ("movsx", "d"), 7: ("mov", "")}[option]
+        out = [f"{ext[0]} {SCRATCH}, {hostreg(rm)}   ; extend {ext[1] or 'x'}"]
+        if shift:
+            out.append(f"shl  {SCRATCH}, {shift}")
+        dst = hostreg(rd)
+        if rd != rn:
+            out += move(dst, hostreg(rn))
+        x86op = ("add", "add", "sub", "sub")[opc]
+        if rd == 31 and opc in (1, 3):
+            return "cmp.ext", out[:-0 or None] + [f"cmp  {hostreg(rn)}, {SCRATCH}"]
+        out.append(f"{x86op:<4} {dst}, {SCRATCH}")
+        return ("add.ext", "adds.ext", "sub.ext", "subs.ext")[opc], out
+
+    # ADC / SBC: x86 has adc and sbb with the same meaning.
+    if (w & 0x1FE0FC00) == 0x1A000000:
+        opc = (w >> 29) & 3
+        rd, rn, rm = w & 0x1F, (w >> 5) & 0x1F, (w >> 16) & 0x1F
+        out = move(hostreg(rd), hostreg(rn)) if rd != rn else []
+        out.append(f"{'sbb' if opc & 2 else 'adc'}  {hostreg(rd)}, {hostreg(rm)}")
+        return "sbc" if opc & 2 else "adc", out
+
+    # MOVN: move the inverted immediate.
+    if (w & 0x7F800000) == 0x12800000:
+        rd, imm, hw = w & 0x1F, (w >> 5) & 0xFFFF, (w >> 21) & 3
+        val = ~(imm << (16 * hw)) & 0xFFFFFFFFFFFFFFFF
+        dst = hostreg(rd)
+        if is_mem(dst):
+            return "movn", [f"mov  {SCRATCH}, {val:#x}", f"mov  {dst}, {SCRATCH}"]
+        return "movn", [f"mov  {dst}, {val:#x}"]
+
+    # ---- acquire/release and exclusive access ------------------------------
+    # LDAR and STLR are ordinary loads and stores on x86: the host memory model
+    # already provides the ordering they ask for. This is the one place where
+    # the direction of translation is in our favour.
+    if (w & 0x3FFFFC00) == 0x08DFFC00 or (w & 0x3FFFFC00) == 0x089FFC00:
+        size = (w >> 30) & 3
+        load = (w & 0x00400000) != 0
+        rt, rn = w & 0x1F, (w >> 5) & 0x1F
+        width = {0: "byte", 1: "word", 2: "dword", 3: "qword"}[size]
+        base = hostreg(rn)
+        if is_mem(base):
+            raise Unsupported("undecoded", "acquire/release with spilled base")
+        mem = f"{width} [{base}]"
+        if load:
+            return "ldar", [f"mov  {hostreg(rt)}, {mem}"
+                            "                ; x86 loads are already acquire"]
+        return "stlr", [f"mov  {mem}, {hostreg(rt)}"
+                        "                ; x86 stores are already release"]
 
     # ---- multiply, divide, variable shift, conditional select --------------
     # MADD/MSUB with XZR as the addend are MUL and MNEG, which is how multiply

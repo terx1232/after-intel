@@ -10,13 +10,13 @@
     "movk": 492653,
     "stp": 429174,
     "str": 412528,
+    "pac/aut": 373125,
     "cmp": 321993,
     "ldp": 319064,
     "b.cond": 305693,
     "b": 278248,
     "cbz": 266270,
     "blraa": 169919,
-    "pac/aut": 130714,
     "sub": 130419,
     "cbnz": 89331,
     "retaa/retab": 83554,
@@ -35,6 +35,7 @@
     "subs.shift": 23735,
     "csinc": 23337,
     "lsr": 22809,
+    "movn": 22054,
     "lsl": 20323,
     "(zero)": 16196,
     "mul": 14479,
@@ -67,7 +68,11 @@
     "br": 548,
     "dmb": 499,
     "adds.shift": 487,
+    "adc": 438,
+    "stlr": 364,
     "msr": 312,
+    "ldar": 304,
+    "sbc": 157,
     "ands.shift": 139,
     "asrv": 125,
     "dsb": 116,
@@ -79,11 +84,11 @@
     "svc": 1
   },
   "failed": {
-    "undecoded": 792352
+    "undecoded": 526624
   },
   "reasons": {
     "undecoded": "not in this translator's subset (NEON, atomics, bitfield, extended-register forms, ...)"
   },
-  "translated_total": 9767136,
-  "failed_total": 792352
+  "translated_total": 10032864,
+  "failed_total": 526624
 }
