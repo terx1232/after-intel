@@ -1,32 +1,42 @@
 {
   "instructions": 10559488,
   "translated": {
-    "ldr": 902882,
-    "add": 901866,
+    "ldr": 1288461,
+    "mov": 1131015,
+    "add": 1097619,
     "movz": 845150,
     "bl": 564418,
+    "adrp": 544775,
     "movk": 492653,
     "stp": 429174,
+    "str": 412528,
+    "cmp": 321993,
     "ldp": 319064,
     "b.cond": 305693,
     "b": 278248,
-    "str": 243516,
     "blraa": 169919,
-    "cmp": 156792,
     "pac/aut": 130714,
-    "sub": 101466,
+    "sub": 130419,
     "retaa/retab": 83554,
     "nop": 74737,
+    "eor": 69047,
     "ret": 43222,
     "braa": 38060,
+    "orr": 21201,
+    "and": 20033,
     "(zero)": 16196,
+    "subs": 5601,
+    "tst": 5286,
+    "adds": 2031,
     "isb": 956,
+    "adr": 604,
     "br": 548,
     "dmb": 499,
+    "ands": 422,
     "dsb": 116
   },
   "failed": {
-    "undecoded": 4449802,
+    "undecoded": 1705289,
     "system_register": 10082,
     "tlb_cache": 113,
     "exception_model": 48
@@ -37,6 +47,6 @@
     "exception_model": "svc/hvc/smc: exception-level entry, not a call",
     "tlb_cache": "dc/ic: ARM maintenance granularity and coherence rules differ from INVLPG/WBINVD"
   },
-  "translated_total": 6099443,
-  "failed_total": 4460045
+  "translated_total": 8843956,
+  "failed_total": 1715532
 }

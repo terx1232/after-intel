@@ -201,29 +201,96 @@ def translate(w: int, pc: int) -> tuple:
         return "movk", [f"and  {hostreg(rd)}, {mask:#x}",
                         f"or   {hostreg(rd)}, {imm << (16 * hw):#x}"]
 
-    # ---- loads and stores -------------------------------------------------
-    if (w & 0xFFC00000) == 0xF9400000:      # LDR (unsigned offset, 64-bit)
-        rt, rn, imm = w & 0x1F, (w >> 5) & 0x1F, ((w >> 10) & 0xFFF) * 8
-        # x86 addresses memory through a register, so a spilled base has to be
-        # staged first, and a spilled destination staged back.
-        base, pre = hostreg(rn), []
-        if is_mem(base):
-            pre, base = [f"mov  {SCRATCH}, {base}"], SCRATCH
-        dst = hostreg(rt)
+    # ---- PC-relative address formation ------------------------------------
+    # ADR/ADRP are how arm64 forms addresses at all, so they are everywhere.
+    # Both fold to a constant here because the translation is static and the
+    # guest address is known at translate time.
+    if (w & 0x9F000000) in (0x10000000, 0x90000000):
+        rd = w & 0x1F
+        immlo = (w >> 29) & 3
+        immhi = (w >> 5) & 0x7FFFF
+        imm = (immhi << 2) | immlo
+        if imm & (1 << 20):
+            imm -= 1 << 21
+        if w & 0x80000000:                       # ADRP: page-aligned
+            target = ((pc & ~0xFFF) + (imm << 12)) & 0xFFFFFFFFFFFFFFFF
+            mn = "adrp"
+        else:
+            target = (pc + imm) & 0xFFFFFFFFFFFFFFFF
+            mn = "adr"
+        dst = hostreg(rd)
         if is_mem(dst):
-            return "ldr", pre + [f"mov  {SCRATCH}, [{base}+{imm:#x}]",
-                                 f"mov  {dst}, {SCRATCH}"]
-        return "ldr", pre + [f"mov  {dst}, [{base}+{imm:#x}]"]
-    if (w & 0xFFC00000) == 0xF9000000:      # STR (unsigned offset, 64-bit)
-        rt, rn, imm = w & 0x1F, (w >> 5) & 0x1F, ((w >> 10) & 0xFFF) * 8
+            return mn, [f"mov  {SCRATCH}, {target:#x}", f"mov  {dst}, {SCRATCH}"]
+        return mn, [f"mov  {dst}, {target:#x}"]
+
+    # ---- data processing, register form -----------------------------------
+    # `sf opc S 01011 shift N Rm imm6 Rn Rd` for add/sub, 01010 for logical.
+    # Only the unshifted forms are handled: a shifted operand needs a scratch
+    # to hold the shifted value, and those are a small minority.
+    if (w & 0x1F000000) in (0x0B000000, 0x0A000000):
+        logical = (w & 0x1F000000) == 0x0A000000
+        opc = (w >> 29) & 3
+        shift = (w >> 22) & 3
+        imm6 = (w >> 10) & 0x3F
+        rm, rn, rd = (w >> 16) & 0x1F, (w >> 5) & 0x1F, w & 0x1F
+        if shift or imm6:
+            raise Unsupported("undecoded",
+                              "shifted-register form needs a scratch operand")
+        names = (("and", "orr", "eor", "ands") if logical
+                 else ("add", "adds", "sub", "subs"))
+        x86op = (("and", "or", "xor", "and") if logical
+                 else ("add", "add", "sub", "sub"))[opc]
+        mn = names[opc]
+
+        # MOV Xd, Xm is ORR Xd, XZR, Xm -- extremely common, worth its own path
+        if logical and opc == 1 and rn == 31:
+            return "mov", move(hostreg(rd), hostreg(rm))
+        # CMP is SUBS with Rd == XZR; CMN is ADDS with Rd == XZR
+        if rd == 31 and opc in (1, 3):
+            a, b_ = hostreg(rn), hostreg(rm)
+            if is_mem(a) and is_mem(b_):
+                return ("cmp" if not logical else "tst",
+                        [f"mov  {SCRATCH}, {a}", f"cmp  {SCRATCH}, {b_}"])
+            return ("cmp" if not logical else "tst", [f"cmp  {a}, {b_}"])
+
+        out = []
+        dst, src = hostreg(rd), hostreg(rm)
+        if rd != rn:
+            out += move(dst, hostreg(rn))
+        if is_mem(dst) and is_mem(src):
+            out += [f"mov  {SCRATCH}, {src}", f"{x86op:<4} {dst}, {SCRATCH}"]
+        else:
+            out.append(f"{x86op:<4} {dst}, {src}")
+        return mn, out
+
+    # ---- loads and stores -------------------------------------------------
+    # Unsigned-offset load/store, all four operand sizes:
+    #   `size 111 V 01 opc imm12 Rn Rt`, V=0 for the integer register file.
+    # The scale of imm12 is the access size, which is what `size` selects.
+    if (w & 0x3B000000) == 0x39000000 and not ((w >> 26) & 1):
+        size = (w >> 30) & 3
+        opc = (w >> 22) & 3
+        rt, rn = w & 0x1F, (w >> 5) & 0x1F
+        imm = ((w >> 10) & 0xFFF) << size
+        width = {0: "byte", 1: "word", 2: "dword", 3: "qword"}[size]
+        movsz = {0: "movzx", 1: "movzx", 2: "mov", 3: "mov"}[size]
         base, pre = hostreg(rn), []
         if is_mem(base):
             pre, base = [f"mov  {SCRATCH}, {base}"], SCRATCH
-        src = hostreg(rt)
-        if is_mem(src):
-            return "str", pre + [f"mov  {SCRATCH}, {src}",
-                                 f"mov  [{base}+{imm:#x}], {SCRATCH}"]
-        return "str", pre + [f"mov  [{base}+{imm:#x}], {src}"]
+        mem = f"{width} [{base}+{imm:#x}]"
+
+        if opc == 0:                                   # store
+            src = hostreg(rt)
+            if is_mem(src):
+                return "str", pre + [f"mov  {SCRATCH}, {src}",
+                                     f"mov  {mem}, {SCRATCH}"]
+            return "str", pre + [f"mov  {mem}, {src}"]
+
+        dst = hostreg(rt)                              # load
+        if is_mem(dst):
+            return "ldr", pre + [f"{movsz} {SCRATCH}, {mem}",
+                                 f"mov  {dst}, {SCRATCH}"]
+        return "ldr", pre + [f"{movsz} {dst}, {mem}"]
     if (w & 0xFFC00000) == 0xA9800000 or (w & 0xFFC00000) == 0xA9000000:
         rt, rn, rt2 = w & 0x1F, (w >> 5) & 0x1F, (w >> 10) & 0x1F
         imm = sextract(w, 15, 7) * 8
