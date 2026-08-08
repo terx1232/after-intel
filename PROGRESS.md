@@ -1797,3 +1797,20 @@ separate command from the image, and nothing checks that the address it carries
 matches the one the image reports. Any change that resizes the device tree
 silently invalidates it. `build_image.py` should emit the trampoline itself, or
 at minimum the two should be checked against each other before a run.
+
+**`pl011_uart_setup` is now reached.** Located by its own panic string
+("Unable to find the 'reg' property on the PL011 UART devicetree node" at
+0xfffffe00070db82c, referenced from 0xa75e390, function starting at
+0xfffffe000a75deb0), a freeze on its entry fires: PC stops there.
+
+So the device tree is finally correct enough that XNU selects our PL011 and
+calls its driver setup. All four device tree fixes were needed together: the
+`serial-device` phandle in `/defaults`, `AAPL,phandle` on the UART node, the
+lower-case `arm,pl011` compatible string, and `reg` as an offset from arm-io's
+ranges base.
+
+The port is still silent. The mapped-PL011 scan finds nothing, but it also finds
+nothing at the GIC addresses which are certainly mapped, so the scan itself is
+broken rather than the mapping being absent. Fix the scan before concluding
+anything from it - this is the same class of mistake as the four apparatus
+faults already recorded, and it would be the fifth.
