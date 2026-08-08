@@ -1249,6 +1249,32 @@ Recording these because a repo that only lists its strengths is advertising.
   the candidate from source, but it must be located in the binary and frozen
   rather than assumed, since assuming is what produced every wrong turn above.
 
+## Stage 6 - started, device tree requirements
 
+With stage 5 passed the kernel walks into platform init and states each missing
+piece by name. Requirements found and satisfied so far, all read out of the
+shipped kernel's own strings rather than guessed:
 
+| requirement | source | status |
+|---|---|---|
+| `defaults` node must exist | `pe_serial.c:831`, unconditional panic | added |
+| GIC node must be at `/arm-io/gic` | string at 0xfffffe00070dae04, next to the error | renamed from `interrupt-controller` |
+| GIC `reg` must be exactly 32 bytes | "expecting 32 bytes but got %u bytes" | already correct, four 64-bit values |
 
+**Current blocker:** `%s: cannot find GICR base for core %u`, from
+`find_gicr_pe_base`. The strings following it in the binary are `/cpus`,
+`state`, `running`, so it walks the cpu nodes.
+
+Two guesses were tried and both failed, recorded so they are not repeated:
+
+* `gicr-base`, `gicr-stride`, `gicr-count`, `gicr-bases` on the gic node -
+  invented names, the kernel never looks for them. Removed.
+* `reg-private` on each cpu node, taken from the kernel's string table at
+  0xfffffe0007137142 - a real Apple property name, but it did not satisfy this
+  lookup. Left in place since it is legitimate, but it is not the answer.
+
+**Do not guess a third time.** Disassemble `find_gicr_pe_base` and read what it
+looks up. Note also that GICv3 discovery normally scans redistributor frames
+matching GICR_TYPER affinity against MPIDR, in which case the answer may not be
+a device tree property at all but the cpu node's `reg` failing to match QEMU's
+MPIDR for core 0.

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 devicetree.py -- build and serialise Apple flattened device trees.
 
@@ -42,6 +42,10 @@ import struct
 import sys
 
 PROP_NAME_LEN = 32
+
+# GICv3 gives every core two 64 KiB redistributor frames, GICR_CTRL and
+# GICR_SGI, laid out contiguously from the redistributor base.
+GICR_STRIDE = 0x20000
 
 # How many bytes of entropy the kernel demands in /chosen/random-seed. The
 # kernel states the figure itself when it disagrees.
@@ -298,6 +302,17 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
         c.set_u32("memory-frequency", bus_hz)
         c.set_u32("peripheral-frequency", timebase_hz)
         c.set_u32("fixed-frequency", timebase_hz)
+        # `find_gicr_pe_base` walks /cpus looking for each core's redistributor,
+        # and `reg-private` is Apple's name for a CPU's private register region.
+        # Read out of the kernel's own string table (0xfffffe0007137142) rather
+        # than guessed - the previous guess put invented properties on the gic
+        # node and the kernel ignored them.
+        #
+        # GICv3 gives each core two 64 KiB frames, GICR_CTRL and GICR_SGI, laid
+        # out contiguously from the redistributor base.
+        c.props["reg-private"] = struct.pack("<QQ",
+                                             gic_redist + i * GICR_STRIDE,
+                                             GICR_STRIDE)
 
     # This node gates the whole platform expert. pe_arm_get_soc_base_phys()
     # does, without checking either result:
@@ -334,12 +349,32 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     arm_io.set_u32("#size-cells", 2)
     arm_io.props["ranges"] = struct.pack("<QQQ", 0, soc_base, soc_size)
 
-    gic = arm_io.add(Node("interrupt-controller"))
+    # The node must be named `gic`, not `interrupt-controller`. The kernel looks
+    # it up by path and says so in its own error string, which sits immediately
+    # before the message in the binary:
+    #
+    #     0xfffffe00070dae04  '/arm-io/gic'
+    #     0xfffffe00070dae10  '%s: cannot find GIC node in DT @%s:%d'
+    #
+    # Read out of the shipped kernel rather than guessed, which matters here:
+    # finding #31 records that AppleARMGIC yields zero property names from its
+    # cstring sections, so this node cannot be reconstructed from the driver.
+    gic = arm_io.add(Node("gic"))
     gic.set_str("compatible", "ARM,gicv3")
     gic.set_u32("#interrupt-cells", 3)
     gic.set_u32("interrupt-controller", 1)
     gic.props["reg"] = struct.pack("<QQQQ", gic_dist, 0x10000,
                                    gic_redist, 0xF60000)
+    # The kernel checks this exactly: "incorrect reg property size in GIC DT
+    # node; expecting 32 bytes but got %u bytes". Four 64-bit values, which is
+    # what the two pairs above give.
+    #
+    # The per-core redistributor base does NOT live here. `find_gicr_pe_base`
+    # panics with "cannot find GICR base for core %u", and the strings that
+    # follow it in the binary are `/cpus`, `state`, `running` - so it walks the
+    # cpu nodes. An earlier attempt invented `gicr-base`, `gicr-stride` and
+    # friends on this node; they changed nothing, because the kernel never looks
+    # for them. See the cpu nodes for where it actually looks.
 
     psci = arm_io.add(Node("psci"))
     psci.set_str("compatible", "ARM,psci")
@@ -528,3 +563,4 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
