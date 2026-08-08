@@ -484,8 +484,19 @@ of confident forum assertions.
       x11 = 0x40000000             gPhysBase
 
   so x8 arrives from a stack slot already holding a value beneath the aperture.
-  Tracing what wrote that slot is the next step - and every launcher should
-  kill stale processes before starting, which is the first thing to fix.
+
+  The launchers now kill stale processes before starting. With that in place
+  and no `-d`, serial output is still **zero bytes**, so the kernel genuinely
+  does not reach serial init - that conclusion survives the apparatus fixes.
+
+  The slot itself is the lead. `ldr x8, [x9, #8]` with x9 a stack address, and
+  `+8` on a struct pointer, matches the `.va` field of a `ptov_table` entry;
+  `arm_vm_init.c:1528` assigns `temp_ptov_table[ptov_index].va = physmap_base`.
+  The slot holds 0xfffffdf01311c000, below physmap_base, so either a later
+  entry is slid downward on purpose or one is being filled from something other
+  than physmap_base. `arm_vm_physmap_slide` is the function to read next, and
+  the field offsets of `ptov_table` should be confirmed from the source rather
+  than inferred from the `+8`.
 
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
