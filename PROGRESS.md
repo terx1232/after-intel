@@ -1278,3 +1278,31 @@ looks up. Note also that GICv3 discovery normally scans redistributor frames
 matching GICR_TYPER affinity against MPIDR, in which case the answer may not be
 a device tree property at all but the cpu node's `reg` failing to match QEMU's
 MPIDR for core 0.
+
+**`find_gicr_pe_base` disassembled, at 0xfffffe000a75beb4.** It references only
+two strings: `/arm-io/gic` and `reg`. No per-cpu property is involved at all,
+which is why `reg-private` changed nothing - that guess was wrong for a reason
+now visible rather than merely unproductive.
+
+The `reg` layout is confirmed correct as we emit it:
+
+    bl 0xa75a5e0              SecureDTGetProperty(node, "reg", ...)
+    cmp w8, #0x1f             size must be 32
+    bl 0xa75c5d4              -> x20
+    ldp x9,  x1,  [x8]        reg[0] = GICD base, reg[1] = GICD size
+    ldp x24, x19, [x8, #16]   reg[2] = GICR base, reg[3] = GICR size
+    add x0, x24, x20          GICR base + x20
+
+so reg[0..3] mean exactly what this tree already puts there, and the 32-byte
+demand is met by four 64-bit values.
+
+The remaining unknown is the helper at 0xa75c5d4 whose result is added to the
+GICR base. It references `name`, `defaults`, `serial-device` - the serial
+strings - so it is a generic device tree search helper being passed `"name"` as
+an argument, not a GICR-specific routine. An intermediate reading of it as the
+per-core offset computation was wrong.
+
+Next: disassemble past 0xa75bf88 to find which comparison produces the panic,
+and freeze it to read the value being rejected. The reg property is not the
+problem, so the failure is in what that helper returns or in a bound check
+after it.
