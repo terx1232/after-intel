@@ -995,3 +995,29 @@ Recording these because a repo that only lists its strengths is advertising.
   The empty level 1 entry, the aperture, the addresses and the tables were all
   correct throughout. The single defect is that the page allocator's cursor is
   zero when the heap level 1 tables are built.
+
+  **Confirmed in memory.** Reading the globals adjacent to physmap_base, from
+  the same frozen guest:
+
+      0xfffffe00079258e0  0x0000000100000000    4 GiB - real_phys_size, set
+      0xfffffe0007925900  0                     zero
+      0xfffffe0007925908  0                     zero
+      0xfffffe0007925910  0                     zero
+      0xfffffe0007925918  0                     zero
+      0xfffffe0007925920  0xfffffdf003a78000    physmap_base, set
+
+  `real_phys_size` and `physmap_base` both hold correct values while four
+  adjacent slots are zero, and `avail_start` is declared among them
+  (arm_vm_init.c:338-345 declares first_avail, static_memory_end, avail_start,
+  avail_end, real_avail_end, real_phys_size, physmap_base, physmap_end in that
+  order).
+
+  Both are assigned inside `arm_vm_init`: `real_phys_size` at line 1829,
+  `avail_start` at line 1941. The first took effect and the second did not,
+  which is the whole defect stated as narrowly as the evidence allows.
+
+  These are `SECURITY_READ_ONLY_LATE` variables, so they live in a segment that
+  is writable early and locked later. A write that lands before the lock works;
+  one that arrives after is dropped. Whether our page tables make that segment
+  read-only too early is the next thing to test, and it would explain a silently
+  dropped store with no exception - which matches the zero exception count.
