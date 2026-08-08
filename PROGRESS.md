@@ -111,7 +111,38 @@ Also: `-d in_asm` logs blocks as *translated*, not each time they execute, so a
 block's presence never proves it ran on a given pass. And nothing may be
 compared across runs: the aperture slide differs every boot.
 
-**Leading hypothesis, stated so it can be killed quickly.** A runaway loop. If
+**CONFIRMED AND ROOT-CAUSED.** Freezing the call at 0xa00cb24 and reading the
+arguments to the granular walk:
+
+    x00 = 0xfffffdf01c000000    start, inside the aperture (L1 0x7DF)
+    x01 = 0x2004be04000         length: 2.00 TiB
+    x02 = 0xfffffff01c000000    pa_offset, negative as expected
+
+A 2 TiB walk starting in 0x7DF steps up through 0x7E0 and into the unmapped
+0x7E1, which is exactly the observed failure. The runaway loop is real.
+
+And the length decomposes exactly:
+
+    0x2004be04000 = 0x4be04000 - 0xfffffe0000000000   (mod 2^64)
+                    ^ our device tree  ^ gVirtBase = VM_MIN_KERNEL_ADDRESS
+
+`2 << 40` is VM_MIN_KERNEL_ADDRESS itself, so this is `segLOWEST - gVirtBase`
+with `segLOWEST` holding the **physical** address of our device tree.
+
+The path: we put a physical address in `boot_args.deviceTreeP`; XNU copies it to
+`PE_state.deviceTreeHead`; `arm_vm_init` assigns
+`segEXTRADATA = (vm_offset_t)PE_state.deviceTreeHead` and lets that become
+`segLOWEST`; then `arm_vm_physmap_slide(temp_ptov_table, gVirtBase,
+segLOWEST - gVirtBase, ...)` subtracts a virtual base from a physical address.
+
+So the defect is ours, in the loader, and it is a physical-versus-virtual
+mix-up in one field. Everything the kernel did with it was correct.
+
+Note this also explains the 0x200 that kept appearing in the upper bits of
+values through this whole investigation and was dismissed twice as a tagged
+pointer: it is the top of `2 << 40` surviving the wrap.
+
+**Superseded hypothesis, kept for the reasoning:** A runaway loop. If
 the `size` passed to `arm_vm_page_granular_prot` is far too large, then
 `while (align_start < align_end)` steps upward through level 1 entries, crosses
 0x7DF (the aperture) and 0x7E0 (the kernel), reaches 0x7E1 which is unmapped,
@@ -1173,5 +1204,6 @@ Recording these because a repo that only lists its strengths is advertising.
   0x7E1 before this walk, and why it has not run. `init_ptpages` at line 2327 is
   the candidate from source, but it must be located in the binary and frozen
   rather than assumed, since assuming is what produced every wrong turn above.
+
 
 
