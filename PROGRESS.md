@@ -1021,3 +1021,27 @@ Recording these because a repo that only lists its strengths is advertising.
   one that arrives after is dropped. Whether our page tables make that segment
   read-only too early is the next thing to test, and it would explain a silently
   dropped store with no exception - which matches the zero exception count.
+
+  **And the reason is ordering, not a lost write.** The stores into those slots
+  are at 0xa020f78, 0xa020f80, 0xa020f8c and 0xa021110. Freezing the first one
+  leaves PC at the halt, so **execution never reaches the assignment**.
+  `avail_start` is zero because nothing has written it yet, not because a write
+  was dropped - which also disposes of the read-only-too-early theory from the
+  previous entry without needing to test it.
+
+  So the allocation at arm_vm_init.c:2327 runs *before* line 1941. Source order
+  does not constrain that: 2327 sits inside a function defined later in the file
+  but called earlier. And it is inside
+  `#if defined(KERNEL_INTEGRITY_KTRR) || CTRR || PV_CTRR`, which is active for
+  us: VMAPPLE paravirtualises CTRR per `VMAPPLE.h`, finding #18.
+
+  That gives the stage its answer in one sentence: the kernel builds the heap
+  level 1 tables through a code path gated on kernel integrity, and on this
+  platform that path runs before the page allocator's cursor is initialised, so
+  the first allocation it attempts calls `phystokv(0)`.
+
+  What is still open is why the ordering differs here from real hardware, and
+  the honest candidates are narrow now: either the integrity path is being
+  entered when it should not be, or something it depends on completes earlier on
+  a real machine. Both are checkable by freezing the entry to that function and
+  reading what selected it.
