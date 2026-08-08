@@ -578,6 +578,20 @@ of confident forum assertions.
   the code never checked against which path actually runs. A freeze yields
   register values, not control flow, and those are different evidence.
 
+  Following that with a freeze on `ldp x8, x13, [x13, #8]` at 0xa00ca64, the
+  next candidate source for x8, shows PC at the halt instead: **that
+  instruction does not execute either.** The region around 0xa00ca50-0xa00ca9c
+  is largely dead on this path, and reading it was never going to explain
+  anything.
+
+  **Method, stated so it is not repeated a ninth time.** A freeze proves an
+  instruction *was* reached; the halt proves it was not. Reading a listing
+  proves nothing about either. Before analysing any instruction here, establish
+  it is on the executed path - either by freezing it, or by capturing the trace
+  with QEMU's `-d in_asm` over a bounded window and reading the path rather
+  than guessing it. Bisecting with freezes works too and costs one boot per
+  probe, which is cheap next to the eight retractions guessing has cost.
+
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
   freeze on first arrival.
