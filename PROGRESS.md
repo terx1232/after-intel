@@ -1,4 +1,4 @@
-# Work log and queue
+﻿# Work log and queue
 
 Running record of what has been established, what is in progress, and what is
 queued. Every claim in this repository is tagged with how it was arrived at:
@@ -822,3 +822,27 @@ Recording these because a repo that only lists its strengths is advertising.
 - Nothing in `docs/03-air-format.md` has been reproduced here. There is no Mac
   and no Metal toolchain in this environment, so it is literature review and is
   labelled as such throughout.
+
+  **Redone, first measurement with the corrected apparatus.** Freezing on the
+  `bl panic` inside phystokv:
+
+      x00 = 0xfffffe000705c287    the format string
+      x01 = x02 = 0xfffffdf030000000
+      x03 = 0xfffffff030000000
+      x04 = 0
+
+  `panic()` is variadic and Apple's ABI passes variadic arguments on the stack,
+  not in registers. So x1-x4 are not the arguments and never were - every
+  earlier reading of them as `__func__`, `pa`, `gPhysBase`, `size` was wrong on
+  that ground alone.
+
+  The stack at that instant holds something more useful. `[sp+0x00]` and
+  `[sp+0x08]` decode as ASCII to `"\0emory-m"` + `"ap"`, the string
+  **`memory-map`**. That is the node name in
+  `SecureDTLookupEntry(NULL, "chosen/memory-map", &memory_map)` at
+  arm_vm_init.c:1318, the lookup immediately preceding the TrustCache block
+  where phystokv is called.
+
+  So the failure sits in the TrustCache path, the same place the first device
+  tree fix of this stage touched. Whether the `memory-map` entries now supplied
+  are the wrong shape, rather than merely absent, is what to check next.
