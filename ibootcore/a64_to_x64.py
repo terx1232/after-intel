@@ -137,6 +137,36 @@ def sextract(value: int, lo: int, width: int) -> int:
     return v
 
 
+def decode_bitmask(n: int, imms: int, immr: int, width: int):
+    """Decode an arm64 logical-immediate (N, imms, immr) into its value.
+
+    arm64 does not carry logical immediates literally: it encodes a repeating
+    bit pattern. The element size comes from the position of the highest clear
+    bit in NOT(imms) with N prepended, the number of set bits from imms, and
+    the rotation from immr. Returns None for the encodings the architecture
+    leaves unallocated.
+    """
+    combined = (n << 6) | (~imms & 0x3F)
+    length = combined.bit_length() - 1
+    if length < 1:
+        return None
+    esize = 1 << length
+    if esize > width:
+        return None
+    levels = esize - 1
+    s = imms & levels
+    r = immr & levels
+    if s == levels:
+        return None
+    pattern = (1 << (s + 1)) - 1
+    # rotate right by r within the element
+    pattern = ((pattern >> r) | (pattern << (esize - r))) & ((1 << esize) - 1)
+    value = 0
+    for i in range(width // esize):
+        value |= pattern << (i * esize)
+    return value & ((1 << width) - 1)
+
+
 class Unsupported(Exception):
     def __init__(self, category: str, why: str):
         super().__init__(why)
@@ -278,6 +308,33 @@ def translate(w: int, pc: int) -> tuple:
               "a", "be", "ge", "l", "g", "le", "mp", "mp"][cond]
         return "b.cond", [f"j{cc}  L_{target:x}"]
 
+    # CBZ / CBNZ: compare a register against zero and branch.
+    if (w & 0x7F000000) == 0x34000000 or (w & 0x7F000000) == 0x35000000:
+        nz = (w & 0x01000000) != 0
+        rt = w & 0x1F
+        target = pc + (sextract(w, 5, 19) << 2)
+        loc = hostreg(rt)
+        cmp_ = ([f"cmp  {SCRATCH}, 0"] if not is_mem(loc)
+                else [f"mov  {SCRATCH}, {loc}", f"cmp  {SCRATCH}, 0"])
+        if not is_mem(loc):
+            cmp_ = [f"cmp  {loc}, 0"]
+        return ("cbnz" if nz else "cbz",
+                cmp_ + [f"j{'ne' if nz else 'e'}  L_{target:x}"])
+
+    # TBZ / TBNZ: branch on one bit. x86 has BT, which sets CF from a bit.
+    if (w & 0x7F000000) == 0x36000000 or (w & 0x7F000000) == 0x37000000:
+        nz = (w & 0x01000000) != 0
+        rt = w & 0x1F
+        bit = ((w >> 26) & 0x20) | ((w >> 19) & 0x1F)
+        target = pc + (sextract(w, 5, 14) << 2)
+        loc = hostreg(rt)
+        pre = []
+        if is_mem(loc):
+            pre, loc = [f"mov  {SCRATCH}, {loc}"], SCRATCH
+        return ("tbnz" if nz else "tbz",
+                pre + [f"bt   {loc}, {bit}",
+                       f"j{'c' if nz else 'nc'}  L_{target:x}"])
+
     # ---- data processing (immediate) -------------------------------------
     sf = (w >> 31) & 1
     if (w & 0x7F800000) == 0x11000000:      # ADD (immediate)
@@ -345,8 +402,20 @@ def translate(w: int, pc: int) -> tuple:
         imm6 = (w >> 10) & 0x3F
         rm, rn, rd = (w >> 16) & 0x1F, (w >> 5) & 0x1F, w & 0x1F
         if shift or imm6:
-            raise Unsupported("undecoded",
-                              "shifted-register form needs a scratch operand")
+            # Shifted operand: stage the shift in the scratch register, then
+            # apply the operation. LSL/LSR/ASR map directly to shl/shr/sar.
+            sh = {0: "shl", 1: "shr", 2: "sar", 3: "ror"}[shift]
+            names_s = (("and", "orr", "eor", "ands") if logical
+                       else ("add", "adds", "sub", "subs"))
+            x86_s = (("and", "or", "xor", "and") if logical
+                     else ("add", "add", "sub", "sub"))[opc]
+            out = [f"mov  {SCRATCH}, {hostreg(rm)}",
+                   f"{sh:<4} {SCRATCH}, {imm6}"]
+            dst = hostreg(rd)
+            if rd != rn:
+                out += move(dst, hostreg(rn))
+            out.append(f"{x86_s:<4} {dst}, {SCRATCH}")
+            return names_s[opc] + ".shift", out
         names = (("and", "orr", "eor", "ands") if logical
                  else ("add", "adds", "sub", "subs"))
         x86op = (("and", "or", "xor", "and") if logical
@@ -432,6 +501,53 @@ def translate(w: int, pc: int) -> tuple:
             else:
                 out.append(f"mov  {dst}, [{base}+{slot:#x}]")
         return "ldp", out
+
+    # ---- logical immediate -------------------------------------------------
+    # arm64 encodes logical immediates as a bitmask pattern (N, immr, imms)
+    # rather than a literal. Decoding it is a small algorithm, and the result
+    # is a plain x86 immediate.
+    if (w & 0x1F800000) == 0x12000000:
+        opc = (w >> 29) & 3
+        n = (w >> 22) & 1
+        immr = (w >> 16) & 0x3F
+        imms = (w >> 10) & 0x3F
+        rn, rd = (w >> 5) & 0x1F, w & 0x1F
+        imm = decode_bitmask(n, imms, immr, 64 if (w >> 31) & 1 else 32)
+        if imm is None:
+            raise Unsupported("undecoded", "malformed logical immediate")
+        mn = ("and", "orr", "eor", "ands")[opc]
+        x86op = ("and", "or", "xor", "and")[opc]
+        if rd == 31 and opc == 3:                      # TST
+            loc = hostreg(rn)
+            return "tst", [f"test {loc}, {imm:#x}"]
+        out = []
+        dst = hostreg(rd)
+        if rd != rn:
+            out += move(dst, hostreg(rn))
+        out.append(f"{x86op:<4} {dst}, {imm:#x}")
+        return mn, out
+
+    # ---- bitfield: UBFM/SBFM, and the shift aliases built on them ----------
+    if (w & 0x1F800000) == 0x13000000:
+        opc = (w >> 29) & 3
+        immr = (w >> 16) & 0x3F
+        imms = (w >> 10) & 0x3F
+        rn, rd = (w >> 5) & 0x1F, w & 0x1F
+        width = 64 if (w >> 31) & 1 else 32
+        out = []
+        dst = hostreg(rd)
+        if rd != rn:
+            out += move(dst, hostreg(rn))
+        # LSL is UBFM with imms == immr-1 mod width; LSR is UBFM with
+        # imms == width-1; ASR is the SBFM form of the same.
+        if opc == 2 and imms == width - 1:
+            return "lsr", out + [f"shr  {dst}, {immr}"]
+        if opc == 0 and imms == width - 1:
+            return "asr", out + [f"sar  {dst}, {immr}"]
+        if opc == 2 and imms + 1 == immr:
+            return "lsl", out + [f"shl  {dst}, {(width - immr) % width}"]
+        raise Unsupported("undecoded",
+                          "general bitfield move needs shift-and-mask expansion")
 
     if w == 0:
         return "(zero)", ["; padding"]
