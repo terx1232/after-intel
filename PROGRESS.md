@@ -1480,3 +1480,27 @@ writes to a physical address that is unmapped once the MMU is on. The cheapest
 fix is to read the address `ml_io_map` returned for the UART out of a running
 guest and pass it as `--uart`. Until then every failure has to be excavated
 rather than read.
+
+**The UART is never mapped, which kills the cheapest console route.** Scanning
+24 pages from 0xfffffe000c000000 for a PL011 flag register - `FR` at +0x18,
+which reads a recognisable ~0x90 and cannot be confused with ordinary memory -
+finds nothing. The GIC mappings are in that range, so device mappings do land
+there; the UART simply is not among them.
+
+That follows from where the boot stops: the panic in `PE_init_platform`'s video
+setup happens before `ml_io_map` is ever called for the serial port, so there is
+no mapped address to read out and pass to `early_console.py --uart`.
+
+Two routes remain, and both are more work than the one just ruled out:
+
+* run the print before the MMU is enabled, where the physical address works.
+  The trampoline already runs in that state, so it could at least prove the UART
+  path end to end, though it cannot print the kernel's own messages;
+* install a device mapping ourselves at a known virtual address, which means
+  building page tables in the loader instead of letting the kernel build them.
+
+Worth checking first, because it is cheaper than either: whether XNU is even
+selecting our PL011. The `defaults` node we supply is empty, so no
+`serial-device` phandle is specified and the kernel picks its own. `VMAPPLE.h`
+lists PL011 as a platform feature, so support exists, but nothing has confirmed
+the kernel chose it rather than looking for an Apple UART or dockchannel.
