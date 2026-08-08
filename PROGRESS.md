@@ -636,6 +636,25 @@ of confident forum assertions.
   retractions now itself retracted. The pattern is consistent - every error came
   from reasoning about code without checking execution, in both directions.
 
+  **Measured before the ROUND_TWIG, freezing at 0xa00cac0:**
+
+      x08 = 0xfffffdf00b340000    the .va being adjusted
+      x11 = 0                     orig_offset
+      x12 = 0x1340000             new_offset
+
+  `new_offset > orig_offset`, so the `ROUND_TWIG(va) + orig_offset` branch is
+  the right one for these inputs and it is not the defect: `.va` arrives here
+  **already below physmap_base**, at 0xfffffdf00b340000 against a base of
+  0xfffffdf02d708000. Rounding it up cannot be what put it there.
+
+  **And a limitation of the trace that must be recorded before it misleads
+  again.** `-d in_asm` logs blocks as they are *translated*, not each time they
+  execute. A block appearing in the log proves it ran at least once, never that
+  it ran on a particular pass. So the earlier reasoning "block 2355 contains
+  the ptov_index == 0 store, therefore that branch was taken this time" does not
+  follow. Distinguishing passes needs `-d exec` or per-pass freezes, not the
+  block listing.
+
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
   freeze on first arrival.
