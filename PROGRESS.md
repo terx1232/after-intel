@@ -430,11 +430,22 @@ of confident forum assertions.
   both values taken from one build, which is a weaker requirement than the one
   stated above.
 
-  Unresolved and worth noting rather than papering over: freezing at 0xa00cb0c
-  through one launcher script stops with PC there, and through another the run
-  reaches the halt instead. The two scripts differ somewhere that matters, and
-  until that is understood any measurement taken through them carries that
-  doubt.
+  **The launcher discrepancy is resolved, and it matters for everything above.**
+  The same image, byte-verified to contain the freeze, gives PC at 0xa00cb0c
+  through one script and the halt through the other. The difference is that the
+  second passes `-d int,guest_errors` to QEMU. Logging every exception slows
+  TCG heavily, so within the fixed wait the guest has not reached the freeze,
+  and the register read returns a state that means nothing.
+
+  Practical consequence: **measurements must come from the launcher without
+  `-d`**, and any reading in this log taken through the logging launcher is
+  suspect until repeated. The logging build is still the right one for
+  capturing exceptions, but not for reading registers at a freeze.
+
+  This is the second time in this stage that a measurement apparatus, rather
+  than the kernel, produced a false result - the first being registers read at
+  the halt instead of at the failing instruction. Both cost more than the bugs
+  they were meant to find.
 
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
