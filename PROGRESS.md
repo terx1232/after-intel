@@ -1504,3 +1504,38 @@ selecting our PL011. The `defaults` node we supply is empty, so no
 `serial-device` phandle is specified and the kernel picks its own. `VMAPPLE.h`
 lists PL011 as a platform feature, so support exists, but nothing has confirmed
 the kernel chose it rather than looking for an Apple UART or dockchannel.
+
+**Why the serial port was silent all along: `/defaults` needed a
+`serial-device` phandle.** `serial_init` does
+
+    if (!get_serial_device_phandle(&phandle)) {
+        // XNU has not been configured to use a serial device
+        return 0;
+    }
+
+so an empty `defaults` node makes the kernel select **no serial device at all**
+and return before any driver runs. The node was originally added empty on the
+reasoning that the kernel would then pick its own - it does not, it gives up.
+That single missing property is why nothing was ever printed, through this
+entire bring-up.
+
+Three fixes went in together, all read from `pe_serial.c` rather than guessed:
+
+* `/defaults/serial-device` = a phandle, and `AAPL,phandle` on the UART node to
+  match. `SecureDTFindNodeWithPhandle` connects the two.
+* the compatible string is **`arm,pl011`**, lower case. The table at
+  `driver_setup_functions` spells it that way; ours said `ARM,pl011` and would
+  never have matched.
+* the UART's `reg` is an offset from arm-io's ranges base, exactly like the
+  GIC's: `pl011_uart_setup` maps `pe_arm_get_soc_base_phys() + reg->block_offset`.
+
+The port is still silent, so something before `serial_init` still stops the
+boot, but three real defects are gone and none of them was guessed.
+
+**State after those fixes.** Freezing the panic entry at 0xa79d9a8 does *not*
+fire, so that function is not being called; the CPU instead rests at
+0xfffffe000a01241c with PAC-signed returns on the stack to 0xfffffe000a0125fc
+and 0xfffffe0009e3a68c, the latter in the exception vector region. So the
+current stop is an exception path, not a `panic()` call, which is a different
+shape of failure from everything before it and needs the exception log read
+rather than a message hunted.

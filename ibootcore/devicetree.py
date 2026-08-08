@@ -51,6 +51,10 @@ GICR_STRIDE = 0x20000
 # kernel states the figure itself when it disagrees.
 RANDOM_SEED_BYTES = 256
 
+# Any non-zero value works; it only has to match between /defaults/serial-device
+# and the UART node's AAPL,phandle, which is how the kernel connects the two.
+UART_PHANDLE = 1
+
 
 def _pad4(n: int) -> int:
     return (-n) % 4
@@ -254,11 +258,23 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     # and that is an unconditional panic, not a fallback. The node has to exist
     # for the kernel to reach serial init at all.
     #
-    # It then looks for a "serial-device" phandle inside it. Leaving that out is
-    # deliberate: absent, the kernel treats no serial device as specified and
-    # picks its own, which is what we want while the tree describes PL011 rather
-    # than an Apple UART.
-    root.add(Node("defaults"))
+    # It then looks for a "serial-device" phandle inside it, and that is not
+    # optional either. `serial_init` does
+    #
+    #     if (!get_serial_device_phandle(&phandle)) {
+    #         // XNU has not been configured to use a serial device
+    #         return 0;
+    #     }
+    #
+    # so an empty `defaults` node means the kernel selects no serial device at
+    # all and returns before any driver runs. This node was first added empty on
+    # the reasoning that the kernel would then "pick its own"; it does not, it
+    # gives up. That is why the port stayed silent through this whole bring-up.
+    #
+    # The phandle names the UART node, which must carry a matching
+    # `AAPL,phandle`. `SecureDTFindNodeWithPhandle` looks it up by that value.
+    defaults = root.add(Node("defaults"))
+    defaults.set_u32("serial-device", UART_PHANDLE)
 
     memory = root.add(Node("memory"))
     memory.set_str("device_type", "memory")
@@ -393,10 +409,20 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     psci.set_str("compatible", "ARM,psci")
     psci.set_str("method", "hvc")
 
+    # Same offset convention as the GIC, and for the same reason.
+    # `pl011_uart_setup` does
+    #
+    #     ml_io_map(pe_arm_get_soc_base_phys() + reg->block_offset,
+    #               reg->block_size)
+    #
+    # so `reg` is relative to arm-io's ranges base. With an absolute address the
+    # kernel would map 0x08000000 + 0x09000000 and talk to nothing. It also
+    # asserts the property is exactly 16 bytes, one 64-bit offset and one size.
     uart = arm_io.add(Node("uart0"))
-    uart.set_str("compatible", "ARM,pl011")
+    uart.set_str("compatible", "arm,pl011")
     uart.set_str("device_type", "serial")
-    uart.set_reg(uart_base, 0x1000)
+    uart.set_reg(uart_base - soc_base, 0x1000)
+    uart.set_u32("AAPL,phandle", UART_PHANDLE)
 
     rtc = arm_io.add(Node("rtc"))
     rtc.set_str("compatible", "ARM,pl031")
@@ -576,4 +602,5 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
 
