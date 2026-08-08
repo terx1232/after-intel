@@ -229,9 +229,28 @@ of confident forum assertions.
   entry that has nothing in it, whose empty descriptor masks to zero and
   reaches phystokv as `illegal PA: 0x0`.
 
-  What remains is to establish what x8 and x9 actually are at that call - which
-  region of the kernel's own layout is being described - because a length that
-  large means one of the two endpoints is not where this port has put it.
+  Freezing just after the subtraction, at 0xa00cb0c, where both endpoints are
+  still live, gives them:
+
+      x01 = 0xfffffe0000000000     the end   - exactly gVirtBase
+      x08 = 0xfffffdf016000000     the start - already below gVirtBase
+      x02 = 0xfffffff016000000     the difference, negative
+
+  So the subtraction is not the defect. It computes `start - end` correctly for
+  the values it is given, and **x8 arrives already wrong**: a start below the
+  base of the kernel's virtual space, which nothing legitimate produces.
+
+  x09 at the same instant is `0x2004be04000`. Its low 32 bits, `0x4be04000`,
+  are the physical address of **our own device tree** for this build, with
+  `0x200` sitting in the bits above. That is a pointer carrying something in
+  its upper bits that does not belong there, and it is the first appearance of
+  one of our own placed addresses inside this computation.
+
+  Next: establish what puts `0x200` above that address, and whether x8 derives
+  from it. The suspicion worth testing first is the empty `chosen/memory-map`
+  node added earlier - real firmware fills it with `DTMemoryMapRange` entries
+  describing the device tree and boot args, and an empty node satisfies the
+  lookup without supplying the ranges the EXTRADATA code then reads.
 
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
