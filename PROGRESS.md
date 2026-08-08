@@ -460,9 +460,32 @@ of confident forum assertions.
   which is consistent - it is outside the aperture, not in a gap within it.
 
   What has not been established is why anything computes an address below
-  physmap_base at all. That is the open question, and it is now backed by a
-  measurement that survives the methodological problems that invalidated the
-  earlier attempts at it.
+  physmap_base at all.
+
+  **Third apparatus problem, and the worst of them: stray QEMU processes.**
+  Every launcher here uses a fixed monitor port. QEMU instances from earlier
+  runs were still alive - two of them, hours old - and a new launcher would
+  connect to whichever process already held the port, then report *that*
+  guest's registers, running an older image. The symptom that exposed it: a
+  build with a freeze at 0xa00caa0 reported PC at 0xa00cb0c, an address patched
+  in a different build entirely.
+
+  Killing them and re-running gives PC at 0xa00caa0, as placed.
+
+  **Any measurement in this log taken before this point may have come from a
+  stale guest.** The findings that are safe are the ones read out of the kernel
+  file statically, and the ones confirmed across more than one build. The
+  register readings need repeating with the port checked first.
+
+  With a verified-clean run, at the freeze just after `ldr x8, [x9, #8]`:
+
+      x08 = 0xfffffdf01311c000     already below physmap_base
+      x09 = 0xfffffe000abebe00     a stack address
+      x11 = 0x40000000             gPhysBase
+
+  so x8 arrives from a stack slot already holding a value beneath the aperture.
+  Tracing what wrote that slot is the next step - and every launcher should
+  kill stale processes before starting, which is the first thing to fix.
 
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
