@@ -257,11 +257,29 @@ of confident forum assertions.
   The fill is kept because supplying those ranges is correct on its own terms,
   but it is not this bug. x8 does not derive from the memory map.
 
-  So the remaining question is unchanged and now better isolated: what produces
-  x8 as a virtual address below gVirtBase. It is not the subtraction, not the
-  memory map, and not a missing region of address space (tested by lowering
-  virtBase as far as QEMU's dtb allows). The `0x200` riding above our device
-  tree address in x9 is the only unexplained thing still on the table.
+  **The bad value is stored, not computed.** Tracing writes to x8 in the
+  caller leads to
+
+      0xa00ca90   adrp x8, 0xfffffe0007925000
+      0xa00ca94   ldr  x8, [x8, #0x920]
+
+  and reading that global out of guest memory, alongside two neighbours whose
+  identity is certain from their contents:
+
+      [0xfffffe0007960000] = 0x40000000            gPhysBase
+      [0xfffffe000795c2f8] = 0xfffffe0000000000    gVirtBase
+      [0xfffffe0007925920] = 0xfffffdf0375ac000    below gVirtBase
+
+  So a global variable is holding a virtual address roughly 63.8 GiB below the
+  base of kernel virtual space, and everything downstream - the negative
+  length, the negation, the empty level 1 entry, `illegal PA: 0x0` - follows
+  from reading it. The defect is wherever that global is written, which is
+  earlier in boot than anything examined so far.
+
+  This also disposes of the `0x200` in x9 as a lead: x9 is loaded from
+  `[0xfffffe0007960000]`, which holds a clean `0x40000000`, so the value seen
+  in the register at the freeze was from a later reload and not the input to
+  this computation.
 
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
