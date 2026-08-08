@@ -281,6 +281,35 @@ of confident forum assertions.
   in the register at the freeze was from a later reload and not the input to
   this computation.
 
+  **The global has exactly one writer, and it settles the stage.** Resolving
+  every `adrp` to that page and checking the accesses through it: eleven loads,
+  one store, at 0xa00a090. The value stored is built immediately before it:
+
+      0xa00a080   movz x9, #0xfdf000000000
+      0xa00a084   movk x9, #0xffff000000000000     ; x9 = 0xfffffdf000000000
+      0xa00a088   sub  x8, x9, x8
+      0xa00a090   str  x8, [x21, #0x920]
+
+  `0xfffffdf000000000` is a **constant compiled into the kernel**, assembled
+  from immediates. It is not anything this port supplies, and it cannot be
+  changed by a loader.
+
+  And it is the whole answer to the empty entry:
+
+      (0xfffffdf000000000 >> 36) & 0x7FF  =  0x7DF
+
+  which is precisely the level 1 entry that was found empty, sitting one below
+  the kernel's own 0x7E0. So the kernel has a fixed virtual region a terabyte
+  below where our `gVirtBase` puts it, expects that region to be mapped, and
+  reaches it through the walker that does *not* allocate.
+
+  That reframes the stage completely. Nothing here is a wrong value we passed:
+  the address is the kernel's own constant. The question is why the early page
+  tables cover 0x7E0 and not 0x7DF - and since our kernel is linked at
+  0xfffffe0007004000, which is inside 0x7E0, while the constant is inside
+  0x7DF, the two can never share an entry. Both have to exist, and only one
+  does.
+
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
   freeze on first arrival.
