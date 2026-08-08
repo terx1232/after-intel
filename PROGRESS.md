@@ -1746,3 +1746,32 @@ DAIF fully masked, EL1t, and the V flag set.
 
 That is where the next session starts, and it should freeze at 0xfffffe0009e401cc
 and read x10, x11, x12 rather than reason about the encoding.
+
+**Operands at the faulting store, measured by freezing it:**
+
+    PC  = 0x49e401cc          physical, so the MMU is off
+    X00 = 0x47004000          our load address
+    X10 = 0x478a4118          the store target, inside the loaded image
+    X11 = 0x7dd               2013 iterations remaining
+    X12 = 0x0040000046000601  a block descriptor for physical 0x46000000
+    X13 = 0x2000000           32 MiB stride
+
+Every value is sane. 2013 iterations at 32 MiB is exactly 64 GiB, one level 1
+entry's worth, and the target is a valid physical address in our own image.
+The instruction encoding is valid and identical to Apple's.
+
+So "undefined instruction" is not describing an undefined encoding here.
+Possibilities worth testing, in order of cheapness:
+
+* this is the *second* boot, after a reset. On reset QEMU re-runs the
+  `-device loader` entries, so the CPU starts at the trampoline again with the
+  image restored - meaning the fault may be a consequence of restarting into a
+  state the kernel does not expect, not of this instruction at all;
+* ESR EC 0 also covers traps QEMU raises for unimplemented system behaviour,
+  which would point at the state around the store rather than the store;
+* the store target sits inside the loaded image and this early code writes page
+  tables over it. If the image and the table area overlap, the kernel is
+  overwriting its own text and the fault follows a page or two later.
+
+The third is measurable straight away: compare X10's range against the image
+extent this build reports.
