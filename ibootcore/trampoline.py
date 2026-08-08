@@ -59,7 +59,16 @@ def load_imm64(rd: int, value: int) -> list:
     return out
 
 
-MSR_DAIFSET_ALL = 0xD50343DF      # msr DAIFSet, #0xf
+# msr DAIFSet, #0xf -- MSR (immediate) is
+#     1101 0101 0000 0 op1(3) 0100 CRm(4) op2(3) 11111
+# with op1=011 and op2=110 selecting DAIFSet, and CRm carrying the imm4. The
+# first version of this line was 0xD50343DF, whose CRm field is 3, so it
+# assembled to `msr DAIFSet, #3` and masked only IRQ and FIQ. DAIFSC numbers
+# its bits D=3, A=2, I=1, F=0, so the debug mask stayed clear, and the kernel
+# panicked out of ml_set_interrupts_enabled_with_debug with
+# "debug exceptions enabled in kernel mode" -- correctly, about state we gave
+# it. CRm must be 0xF.
+MSR_DAIFSET_ALL = 0xD5034FDF      # msr DAIFSet, #0xf
 # msr MDSCR_EL1, xzr -- (op0=2, op1=0, CRn=0, CRm=2, op2=2), Rt=31.
 # The kernel panics out of machine_routines_common.c with "debug exceptions
 # enabled in kernel mode" if it finds debug enabled where firmware should have

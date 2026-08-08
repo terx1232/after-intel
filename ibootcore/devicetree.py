@@ -37,10 +37,15 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import os
 import struct
 import sys
 
 PROP_NAME_LEN = 32
+
+# How many bytes of entropy the kernel demands in /chosen/random-seed. The
+# kernel states the figure itself when it disagrees.
+RANDOM_SEED_BYTES = 256
 
 
 def _pad4(n: int) -> int:
@@ -168,7 +173,13 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
                          gic_dist: int = 0x0800_0000,
                          gic_redist: int = 0x080A_0000,
                          uart_base: int = 0x0900_0000,
-                         ncpus: int = 1) -> Node:
+                         ncpus: int = 1,
+                         timebase_hz: int = 62_500_000,
+                         cpu_hz: int = 2_400_000_000,
+                         bus_hz: int = 100_000_000,
+                         soc_base: int = 0x0800_0000,
+                         soc_size: int = 0x3800_0000,
+                         random_seed: bytes | None = None) -> Node:
     root = Node("device-tree")
     root.set_str("compatible", "AppleVirtualPlatformARM")
     root.set_str("model", "VirtualMac2,1")
@@ -178,15 +189,70 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     chosen = root.add(Node("chosen"))
     chosen.set_u64("dram-base", ram_base)
     chosen.set_u64("dram-size", ram_size)
-    chosen.set_u32("debug-enabled", 1)
+    # Leave debugging off. Setting this to 1 made the kernel enable debug
+    # exceptions and then panic out of machine_routines_common.c with
+    # "debug exceptions enabled in kernel mode" -- a complaint about state we
+    # had asked for ourselves.
+    chosen.set_u32("debug-enabled", 0)
+    # pexpert/gen/pe_gen.c reads /chosen/random-seed and panics with
+    # "no random seed" if the property is absent or empty. It copies the bytes
+    # out, counts the nulls, and zeroes the tree copy behind itself; an
+    # all-zero seed is not a panic but yields a zero-length seed, so the bytes
+    # have to be real. Entropy is taken at build time here. A loader shipping a
+    # constant in this field would be handing every boot the same kernel RNG
+    # seed, which is a real weakness, not a placeholder like the addresses
+    # elsewhere in this tree.
+    # 256 bytes, not 64: the kernel checks the length and says so plainly --
+    # "Expected 256 seed bytes from bootloader, but got 64."
+    chosen.props["random-seed"] = random_seed or os.urandom(RANDOM_SEED_BYTES)
     # chip-id / unique-chip-id are read by AppleVirtualPlatform.
     chosen.set_u32("chip-id", 0)
     chosen.set_u64("unique-chip-id", 0)
+
+    # arm_vm_init.c does
+    #
+    #     err = SecureDTLookupEntry(NULL, "chosen/memory-map", &memory_map);
+    #     assert(err == kSuccess);
+    #     err = SecureDTGetProperty(memory_map, "TrustCache", &trustCacheRange, ...);
+    #     if (err == kSuccess) { ... phystokv(trustCacheRange->paddr) ... }
+    #
+    # and that assert is compiled out of a release kernel. With no such node the
+    # lookup fails, memory_map keeps whatever was on the stack, and the property
+    # read walks it -- which is how this port ended up calling phystokv(0) and
+    # panicking with "illegal PA: 0x0".
+    #
+    # The node exists so the lookup succeeds and the property lookups then fail
+    # honestly. It is deliberately empty: there is no trust cache and no AuxKC
+    # here, and claiming either would be worse than admitting neither. The
+    # AuxKC path is guarded against a zero paddr; the TrustCache path is not.
+    chosen.add(Node("memory-map"))
 
     memory = root.add(Node("memory"))
     memory.set_str("device_type", "memory")
     memory.set_reg(ram_base, ram_size)
 
+    # pexpert/arm/pe_identify_machine.c walks "/cpus", skips any node whose
+    # "state" property does not compare equal to the string "running", and
+    # reads the clock rates from the ones that remain. Two things about that
+    # loop are unforgiving, and this tree got both wrong at first:
+    #
+    #   * "state" is compared with strncmp against "running". Writing it as a
+    #     u32 makes every CPU fail the test, so no node is ever examined.
+    #   * Nothing after the loop supplies a fallback. timebase_frequency_hz
+    #     stays whatever the defaults left, and wfe_timeout_configure then does
+    #         bit_index = flsll(ticks_per_event) - 1
+    #     which on a zero frequency yields 0xFFFFFFFF, decrements once more,
+    #     and panics in _enable_timebase_event_stream with
+    #     "invalid bit index (4294967294)" -- before serial init, so nothing is
+    #     printed and the kernel spins forever. That was this port's stage-4
+    #     hang, and it was our own device tree causing it.
+    #
+    # pe_identify_machine also divides by dec_clock_rate_hz, which is a copy of
+    # the timebase frequency, so a zero there is a divide by zero as well.
+    #
+    # 62500000 is QEMU's generic timer rate: GTIMER_SCALE is 16 ns, so
+    # 1e9 / 16 = 62.5 MHz. It has to agree with CNTFRQ_EL0 or the kernel's
+    # sense of time is wrong.
     cpus = root.add(Node("cpus"))
     cpus.set_u32("#address-cells", 1)
     cpus.set_u32("#size-cells", 0)
@@ -196,13 +262,48 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
         c.set_str("device_type", "cpu")
         c.set_u32("reg", i)
         c.set_u32("cpu-id", i)
-        c.set_u32("state", 0 if i == 0 else 1)
+        c.set_str("state", "running" if i == 0 else "waiting")
+        c.set_u32("timebase-frequency", timebase_hz)
+        c.set_u32("clock-frequency", cpu_hz)
+        c.set_u32("bus-frequency", bus_hz)
+        c.set_u32("memory-frequency", bus_hz)
+        c.set_u32("peripheral-frequency", timebase_hz)
+        c.set_u32("fixed-frequency", timebase_hz)
 
+    # This node gates the whole platform expert. pe_arm_get_soc_base_phys()
+    # does, without checking either result:
+    #
+    #     SecureDTFindEntry("name", "arm-io", &entryP)
+    #     SecureDTGetProperty(entryP, "device_type", &tmpStr, &prop_size)
+    #     strlcpy(gPESoCDeviceTypeBuffer, tmpStr, ...)
+    #     SecureDTGetProperty(entryP, "ranges", &ranges_prop, &prop_size)
+    #     gPESoCBasePhys = *(ranges_prop + 1)
+    #
+    # and pe_identify_machine returns immediately if that comes back zero --
+    # before it assigns any of its defaults, so gPEClockFrequencyInfo stays
+    # zeroed BSS. Everything downstream that needs a clock then reads zero.
+    #
+    # Two consequences for this tree:
+    #
+    #   * "ranges" is <child, parent, size> in 64-bit cells and the SoC base is
+    #     the *second* cell. The first version here was <0, 0, 4 GiB>, so the
+    #     base read back as zero and the kernel panicked in
+    #     _enable_timebase_event_stream long before serial init.
+    #   * "device_type" must exist. Its lookup is unchecked, so a missing
+    #     property leaves tmpStr holding uninitialised stack and strlcpy
+    #     copies from wherever that points.
+    #
+    # Child nodes below keep absolute addresses in "reg" rather than offsets
+    # from this base. On Apple hardware the offset convention matters because
+    # pe_serial.c computes soc_base_phys + block_offset for the Apple UART and
+    # for dockchannel; this tree declares neither of those, so nothing here
+    # consumes the offset form.
     arm_io = root.add(Node("arm-io"))
     arm_io.set_str("compatible", "arm-io,vmapple1")
+    arm_io.set_str("device_type", "arm-io")
     arm_io.set_u32("#address-cells", 2)
     arm_io.set_u32("#size-cells", 2)
-    arm_io.props["ranges"] = struct.pack("<QQQ", 0, 0, 1 << 32)
+    arm_io.props["ranges"] = struct.pack("<QQQ", 0, soc_base, soc_size)
 
     gic = arm_io.add(Node("interrupt-controller"))
     gic.set_str("compatible", "ARM,gicv3")
@@ -224,6 +325,94 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     rtc.set_str("compatible", "ARM,pl031")
 
     return root
+
+
+def check_timebase(tree: Node) -> bool:
+    """Run XNU's own event-stream arithmetic over this tree.
+
+    Reproduces pe_identify_machine's node filter and wfe_timeout_configure's
+    bit_index computation, so a tree that would panic the kernel fails here
+    instead of hanging silently in an emulator. The panic this guards against
+    prints nothing, because it happens before serial init.
+    """
+    print("\n  checking the tree against XNU's timebase arithmetic ...")
+
+    # pe_identify_machine bails before touching gPEClockFrequencyInfo unless
+    # pe_arm_get_soc_base_phys() is non-zero, so check that first: without it
+    # none of the clock arithmetic below is ever reached at runtime.
+    arm_io = next((n for _, n in tree.walk() if n.name == "arm-io"), None)
+    if arm_io is None:
+        print('    FAIL: no "arm-io" node; pe_arm_get_soc_base_phys returns 0')
+        return False
+    if "device_type" not in arm_io.props:
+        print('    FAIL: arm-io has no "device_type"; its lookup is unchecked '
+              "and strlcpy would copy from an uninitialised pointer")
+        return False
+    ranges = arm_io.props.get("ranges", b"")
+    if len(ranges) < 24:
+        print("    FAIL: arm-io ranges must be three 64-bit cells")
+        return False
+    soc_base = struct.unpack_from("<Q", ranges, 8)[0]   # *(ranges_prop + 1)
+    if soc_base == 0:
+        print("    FAIL: arm-io ranges gives SoC base 0, so "
+              "pe_identify_machine returns early and every clock stays zero")
+        return False
+    print(f"    SoC base from arm-io ranges: {soc_base:#x}")
+
+    chosen = next((n for _, n in tree.walk() if n.name == "chosen"), None)
+    seed = chosen.props.get("random-seed", b"") if chosen else b""
+    if len(seed) != RANDOM_SEED_BYTES:
+        print(f"    FAIL: random-seed is {len(seed)} bytes, kernel wants "
+              f"{RANDOM_SEED_BYTES}")
+        return False
+    if not any(seed):
+        print("    FAIL: random-seed is all zeros, which counts as no seed")
+        return False
+    print(f"    random-seed: {len(seed)} bytes")
+
+    cpus = next((n for _, n in tree.walk() if n.name == "cpus"), None)
+    if cpus is None:
+        print("    FAIL: no /cpus node")
+        return False
+
+    running = [c for c in cpus.children
+               if c.props.get("state", b"").split(b"\x00")[0] == b"running"]
+    if not running:
+        print('    FAIL: no cpu has state == "running"; pe_identify_machine '
+              "skips every node and the clock rates stay at their defaults")
+        return False
+    print(f"    cpus with state \"running\": {len(running)}")
+
+    cpu = running[0]
+    raw = cpu.props.get("timebase-frequency")
+    if raw is None:
+        print("    FAIL: the running cpu has no timebase-frequency")
+        return False
+    ticks_per_sec = int.from_bytes(raw, "little")
+    if ticks_per_sec == 0:
+        print("    FAIL: timebase-frequency is zero; XNU divides by it")
+        return False
+
+    events_per_sec = 1_000_000                     # USEC_PER_SEC
+    ticks_per_event = ticks_per_sec // events_per_sec
+    if ticks_per_event == 0:
+        print(f"    FAIL: {ticks_per_sec} Hz gives 0 ticks per event")
+        return False
+
+    bit_index = ticks_per_event.bit_length() - 1   # flsll(x) - 1
+    if ticks_per_event & ((1 << bit_index) - 1):
+        bit_index += 1
+    if bit_index != 0:
+        bit_index -= 1
+
+    print(f"    timebase {ticks_per_sec:,} Hz -> {ticks_per_event} ticks per "
+          f"event -> EVENTI bit index {bit_index}")
+    if bit_index >= 64:
+        print(f"    FAIL: _enable_timebase_event_stream would panic with "
+              f"invalid bit index ({bit_index})")
+        return False
+    print("    PASS: within range, no early panic")
+    return True
 
 
 def selftest() -> int:
@@ -260,6 +449,9 @@ def selftest() -> int:
     nprops, nchildren = struct.unpack_from("<II", blob, 0)
     if nprops != len(tree.props) or nchildren != len(tree.children):
         print("  FAIL: root header wrong")
+        ok = False
+
+    if not check_timebase(tree):
         ok = False
 
     print(f"  nodes: {len(orig)}, "
