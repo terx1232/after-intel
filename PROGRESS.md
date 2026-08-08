@@ -534,6 +534,26 @@ of confident forum assertions.
   over. Which entry is expected, and which caller was meant to fill it, is the
   next question.
 
+  **And that question has a complication that must not be skipped.**
+  `arm_vm_physmap_init` opens with
+
+      ptov_table_entry temp_ptov_table[PTOV_TABLE_SIZE];
+      bzero(temp_ptov_table, sizeof(temp_ptov_table));
+
+  The array is zeroed on entry, so an unfilled entry holds **zero**, not stack
+  residue. What was measured is residue that moves with the stack. Both cannot
+  describe the same slot, so exactly one of these is true:
+
+  * the slot x8 is loaded from is **not** in `temp_ptov_table` at all, and the
+    identification from the `+8` offset - which matched the struct layout but
+    was never confirmed to point at that array - is wrong; or
+  * the `bzero` did not run, or did not cover this slot.
+
+  The confirmed part stands: the value is stack-resident and not derived from
+  physmap_base. What it belongs to is not established. Distinguishing the two
+  requires finding what x9 points at, by tracing where x9 is set rather than by
+  matching an offset against a plausible struct.
+
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
   freeze on first arrival.
