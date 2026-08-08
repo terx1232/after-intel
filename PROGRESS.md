@@ -1715,3 +1715,34 @@ That is a different failure from anything before it and needs the *first*
 exception identified, not the 408732nd. The log's early entries, before the loop
 establishes itself, are where to look - and `-d int` writes them in order, so the
 head of the file is the evidence.
+
+**The first exception, which is the one that matters.** The head of the log,
+before the vector loop establishes itself:
+
+    Taking exception 1 [Undefined Instruction] on CPU 0
+    ...with ESR 0x0/0x2000000
+    ...with SPSR 0x200003c4
+    ...with ELR 0x49e401cc          <- the real fault
+    ...to EL1 PC 0x49e3d000
+
+Physical 0x49e401cc is 0xfffffe0009e401cc, and the instruction there is
+`f800854c` = `str x12, [x10], #8`, a post-indexed store. It is **byte-identical
+to Apple's unmodified kernel**, so it is not one of our patches. The
+surrounding code is a loop:
+
+    movz x13, #0x2000000
+    str  x12, [x10], #8      <- faults
+    add  x12, x12, x13
+    subs x11, x11, #1
+    b.ne back
+
+which is building page table entries with a 32 MiB stride.
+
+An ordinary store reported as an undefined instruction is not what it appears to
+be. ESR EC 0 is "unknown reason", which QEMU also emits for conditions other
+than a genuinely undefined encoding, so the encoding is probably fine and
+something about the machine state at that instant is not. SPSR reads 0x200003c4:
+DAIF fully masked, EL1t, and the V flag set.
+
+That is where the next session starts, and it should freeze at 0xfffffe0009e401cc
+and read x10, x11, x12 rather than reason about the encoding.
