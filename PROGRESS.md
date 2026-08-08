@@ -1306,3 +1306,31 @@ Next: disassemble past 0xa75bf88 to find which comparison produces the panic,
 and freeze it to read the value being rejected. The reg property is not the
 problem, so the failure is in what that helper returns or in a bound check
 after it.
+
+## Early console attempt - built, does not work, and the reason is instructive
+
+`ibootcore/early_console.py` replaces XNU's early print routine with nine
+instructions that write straight to a PL011 transmit register, so that panics
+appear as text instead of having to be excavated from memory dumps. It
+self-verifies: readback matches, and the internal branches resolve.
+
+It produces **no output**, on either the printing panic path or the current one.
+
+The reason is not the choice of path. It is that the MMU is on by the time any
+of this runs, and 0x09000000 is a **physical** address. Nothing maps it as a
+virtual address, so the stores go nowhere. XNU reaches devices through
+`ml_io_map`, which returns a virtual address chosen at runtime, and that address
+is not known ahead of time - which is exactly why the kernel's own early print
+cannot work either and says so in its message.
+
+So an early console needs one of:
+
+* the routine to run before the MMU is enabled, where physical addressing works;
+* a device mapping installed by our own page tables at a known virtual address,
+  which means building tables rather than letting the kernel build them; or
+* the value `ml_io_map` returned for the UART, read out of the guest after the
+  fact and then hardcoded into a second build.
+
+The third is the cheapest to try and is measurable: freeze after serial init,
+read the mapped address, rebuild with it. The tool is written to take `--uart`
+for exactly that.
