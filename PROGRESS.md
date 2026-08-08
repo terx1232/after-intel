@@ -1635,3 +1635,24 @@ So the halt at 0x9e921bc, reached from 0x9e9216c right after this trace call,
 may not be a panic at all. That has to be established before anything else:
 the whole "read the panic message" line of work assumed a panic that has not
 been shown to exist.
+
+**A pointer read that finally works: `gva2gpa` then `xp`.** Translate the
+virtual address, then read it *physically*. `xp` takes a physical address, so no
+page tables are involved and the output has exactly one form. That removed every
+parsing failure at once:
+
+    X02 -> gpa 0x4723102d  [656e616f6c007325 3a63696e61700065 74706d6574746120 6c616564206f7420]
+    X03 -> gpa 0x4d0df2b8  [fffffe9afe0272d0 fffffe9afe027b00 10a8fe0008443de8 fffffe9afe0272d8]
+    X07 -> gpa 0x48443de8  [a9bf7bfdd503237f ...]
+
+Decoding X02 little-endian gives `"%s"` followed by the neighbouring strings
+`"panic:"` and `" attempt to deal..."`, which confirms both the address and the
+byte order.
+
+X07 decodes to `d503237f a9bf7bfd` - `pacibsp; stp x29, x30, [sp, #-16]!` - a
+function prologue, so X07 is a code pointer.
+
+X03 holds **pointers**, not text: the first is 0xfffffe9afe0272d0, which is 0x18
+past x3's own address, so this is an argument-list structure pointing back into
+the same stack region. The message is therefore one dereference further on, and
+the technique to follow it now exists and is reliable.
