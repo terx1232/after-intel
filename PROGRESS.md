@@ -303,12 +303,32 @@ of confident forum assertions.
   below where our `gVirtBase` puts it, expects that region to be mapped, and
   reaches it through the walker that does *not* allocate.
 
-  That reframes the stage completely. Nothing here is a wrong value we passed:
-  the address is the kernel's own constant. The question is why the early page
-  tables cover 0x7E0 and not 0x7DF - and since our kernel is linked at
-  0xfffffe0007004000, which is inside 0x7E0, while the constant is inside
-  0x7DF, the two can never share an entry. Both have to exist, and only one
-  does.
+  **Named, from the source.** `arm_vm_init.c:1857`:
+
+      unsigned long physmap_l1_entries =
+          ((real_phys_size + ARM64_PHYSMAP_SLIDE_RANGE) >> ARM_TT_L1_SHIFT) + 1;
+      physmap_base = VM_MIN_KERNEL_ADDRESS - (physmap_l1_entries << ARM_TT_L1_SHIFT);
+      ...
+      physmap_base += physmap_slide;      // early_random()
+
+  which is exactly the `sub x8, x9, x8` and the store. So:
+
+  * the constant `0xfffffdf000000000` is **VM_MIN_KERNEL_ADDRESS**;
+  * the global at 0x7925920 is **physmap_base**, the physical aperture;
+  * this build has **ARM_LARGE_MEMORY** enabled, so the aperture is placed
+    below VM_MIN_KERNEL_ADDRESS rather than at `phystokv(topOfKernelData)`;
+  * the measured `0xfffffdf0375ac000` is VM_MIN_KERNEL_ADDRESS plus a random
+    slide of 0x375ac000, which makes it a **correct** value, not a corrupt one.
+
+  So the address was never wrong. It is below *our* gVirtBase, and that is the
+  defect: we set gVirtBase to 0xfffffe0000000000, a terabyte **above**
+  VM_MIN_KERNEL_ADDRESS. The kernel lays its virtual world out downward from
+  VM_MIN_KERNEL_ADDRESS, so anything it computes there falls beneath a base we
+  placed too high, into a level 1 entry nobody made.
+
+  Every earlier hypothesis failed because each one assumed we had passed a
+  wrong value. We had not. We had passed a wrong *base*, and every value
+  derived from it looked wrong in consequence.
 
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
