@@ -330,6 +330,21 @@ of confident forum assertions.
   wrong value. We had not. We had passed a wrong *base*, and every value
   derived from it looked wrong in consequence.
 
+  **Caveat, and it is a real one.** The identification rests on the constant
+  matching and the instruction sequence matching, but the arithmetic does not
+  reconcile. With `real_phys_size` of 4 GiB, `physmap_l1_entries` is at least 1,
+  so `physmap_base` must land at least 64 GiB *below* VM_MIN_KERNEL_ADDRESS.
+  The measured value, 0xfffffdf0375ac000, is 0x375ac000 *above* it. Those agree
+  only if `physmap_l1_entries` were 0, which
+  `((size + SLIDE_RANGE) >> ARM_TT_L1_SHIFT) + 1` cannot produce.
+
+  So one of three things is true and none is established yet: the global is not
+  physmap_base; the shipped macOS 27 kernel differs here from the macOS 26
+  source being read; or `real_phys_size` at that moment is not what boot_args
+  carries. Fixing virtBase on the strength of this reading would be acting on
+  an unreconciled inference, which is the mistake this stage has already made
+  six times.
+
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
   freeze on first arrival.
