@@ -1334,3 +1334,35 @@ So an early console needs one of:
 The third is the cheapest to try and is measurable: freeze after serial init,
 read the mapped address, rebuild with it. The tool is written to take `--uart`
 for exactly that.
+
+**The GICR panic condition, disassembled.** At 0xfffffe000a75bf8c:
+
+    mrs  x8, MPIDR_EL1           read MPIDR
+    and  w0, w8, #0xff           take Aff0, the low byte
+    ldr  x8, [x23, #0x6c8]       entry count
+    cbz  x8, -> panic            empty table panics immediately
+    movz x9, #0                  index
+    ldr  x10, [x22, #0x6c0]      table base
+    loop:
+      ldr  x12, [x11 + x9]       entry, table starts at base+8
+      lsr  x13, x12, #32
+      cmp  w0, w13, uxtb         match Aff0 against a byte in the entry
+      b.eq -> found
+      add  x9, x9, #0x20         stride 32 bytes
+      cmp  x9, x8
+      b.hs -> panic              exhausted
+
+So the kernel matches `MPIDR_EL1`'s Aff0 against a table of 32-byte per-core
+entries. The panic has two possible causes and they need different fixes:
+
+* the table is **empty**, so `cbz` takes it straight to the panic - meaning
+  whatever builds it from the device tree did not run or found nothing;
+* the table is populated but **no entry matches** Aff0 - meaning the cpu node
+  identifiers disagree with what QEMU reports in MPIDR. QEMU's virt gives core 0
+  an MPIDR of 0x80000000, so Aff0 is 0, and our cpu node has `reg` and `cpu-id`
+  both 0, which ought to match.
+
+**One measurement separates them:** freeze at 0xa75bf94 and read x8. Zero means
+the table was never built; non-zero means a match failure. Do that before
+touching the device tree again - the last two device tree guesses here both
+failed.
