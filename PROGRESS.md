@@ -1775,3 +1775,25 @@ Possibilities worth testing, in order of cheapness:
 
 The third is measurable straight away: compare X10's range against the image
 extent this build reports.
+
+**The store was innocent; the trampoline was passing a stale boot_args.**
+Reading boot_args at a hardcoded address gave all zeros, which exposed the real
+problem: adding `--fb` puts a framebuffer node in the device tree, the tree grows
+from 2 KiB to 11 992 bytes, and boot_args moves from 0x4be05000 to **0x4be07000**.
+The trampoline was still built for the old address and handed the kernel a
+pointer into the middle of the device tree.
+
+So every measurement taken with `--fb` was of a kernel given a garbage
+boot_args. The reset, the undefined instruction, the page-table store that
+looked like it was overwriting the kernel - all of it followed from that, and
+the store itself was doing exactly what it should.
+
+Rebuilding the trampoline with `--x0 0x4be07000` restores a normal boot: PC is a
+virtual address again, so the MMU comes up and the kernel reaches the same state
+as the non-framebuffer build.
+
+**The lesson is structural, not incidental.** The trampoline is built by a
+separate command from the image, and nothing checks that the address it carries
+matches the one the image reports. Any change that resizes the device tree
+silently invalidates it. `build_image.py` should emit the trampoline itself, or
+at minimum the two should be checked against each other before a run.
