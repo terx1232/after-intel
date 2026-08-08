@@ -516,7 +516,23 @@ of confident forum assertions.
   reading is that the slot being read has not been filled yet and holds stack
   residue that happens to look like a plausible address. That is a hypothesis,
   not a finding: it predicts the value should vary with anything that changes
-  the stack, and that prediction has not been tested.
+  the stack.
+
+  **Tested, and it holds.** Changing only the kernel command line:
+
+      physmap_base   0xfffffdf02d708000 -> 0xfffffdf02d708000   unchanged
+      x8             0xfffffdf01311c000 -> 0xfffffdf029604000   moved
+
+  physmap_base is identical byte for byte while x8 moves, so x8 is **not
+  derived from physmap_base**. It is uninitialised stack, and the prediction
+  that identified it was stated before the test rather than fitted afterwards.
+
+  So the kernel reads a `temp_ptov_table` slot that was never filled and uses
+  its contents as a virtual address. Correct code does not do that on a correct
+  machine, so some earlier step that should have populated those entries did
+  not run - and whatever prevents it is on our side, in the boot state we hand
+  over. Which entry is expected, and which caller was meant to fill it, is the
+  next question.
 
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
