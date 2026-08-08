@@ -403,10 +403,23 @@ of confident forum assertions.
   `early_random()`, and something is reading the base from before
   `physmap_base += physmap_slide` was applied.
 
-  That is a far more specific thing to look for than anything earlier in this
-  entry, and it suggests a concrete experiment: if `early_random()` returns
-  zero the slide is zero and the two bases coincide. Whether that makes the
-  boot proceed would confirm the reading directly.
+  That reading was tested and **does not hold up as stated**. Patching
+  `mov x9, x0` at 0xa00a068 to `mov x9, xzr`, on the theory that x0 carried the
+  random contribution, left the slide in place: physmap_base came back as
+  0xfffffdf02d708000, still offset, so that instruction is not where the
+  randomness enters.
+
+  More important, the slide **differs between boots** - 0x375ac000 on one run,
+  0x2d708000 on the next. That confirms `early_random()` is live, and it
+  undermines the arithmetic above: the failing address and physmap_base were
+  each measured once, in *different* runs, so the tidy relationship
+  `failing = physmap_base - slide + 0x16000000` may be an artifact of comparing
+  two boots with two different slides.
+
+  Both values have to be captured in the **same** freeze before anything is
+  concluded from their difference. That is the next measurement, and it is a
+  reminder that a randomised layout makes cross-run comparisons meaningless
+  unless the randomness is pinned first.
 
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
