@@ -1456,3 +1456,27 @@ Stack contents at the halt:
 
 `[sp+0x00]` is zero, so the `%s` argument is not in this frame and the chain has
 to be walked. The return address gives the next frame: 0xfffffe0009eaf3e4.
+
+**Stage 6 state at the end of this session.**
+
+Passed: the `defaults` node, the `/arm-io/gic` node name, the 32-byte `reg`
+check, and GIC initialisation itself - the last unlocked by emitting `reg` as
+offsets from arm-io's `ranges` base rather than absolute addresses.
+
+Reached: `PE_init_platform`'s video and progress setup. The kernel is on
+dynamically allocated, randomised stacks, which means the VM subsystem is
+genuinely working.
+
+Blocked on: a panic whose format string is a bare `%s`, so the text is a
+variadic argument that has to be found by walking the frame chain. `[sp+0x00]`
+is zero; the next return address is 0xfffffe0009eaf3e4. Reading each stack slot
+as a string through the monitor was attempted and printed nothing, so either the
+filter or the monitor pacing needs work - the technique is right, the
+implementation in `dis.ps1` is not finished.
+
+Also unresolved, and worth doing early because it makes everything after it
+easier: no serial output yet. `early_console.py` exists and self-verifies but
+writes to a physical address that is unmapped once the MMU is on. The cheapest
+fix is to read the address `ml_io_map` returned for the UART out of a running
+guest and pass it as `--uart`. Until then every failure has to be excavated
+rather than read.
