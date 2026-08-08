@@ -1581,3 +1581,30 @@ That is where this session ends. `dis.ps1` now: kills stale QEMU, waits for the
 dump to complete, reads registers, walks the stack through the monitor, decodes
 strings from registers with correct byte order, and hunts for the mapped PL011.
 Every one of those exists because a measurement went wrong without it.
+
+**Reading the panic text: what works and what does not.**
+
+`gva2gpa` is the reliable way to follow a pointer out of a register. Parsing the
+monitor's hex output directly failed in both directions - one word at a time
+timed out and looked like an unreadable address, one big read let the address
+prefixes into the match and produced garbage. Translating to a physical address
+and reading the RAM dump has no parsing at all, and `dis.ps1` now does that.
+
+With it working, none of the candidates is the message:
+
+    x02 -> gpa 0x4723102d   "%s", correct
+    x03 -> gpa 0x4d0df2b8   not text
+    x07 -> 0xfffffe0008443de8, contains `pacibsp` - a function pointer
+    [sp+0x00] = 0
+    0xfffffe000ab49288, which appears twice on the stack - zeros in the
+                        kernel file, so a BSS global
+
+So the assumed call signature is wrong. `x0 = 3, x1 = "panic", x2 = "%s"` does
+not map onto `panic(fmt, ...)`, and the variadic argument is not at `[sp]`
+either. Either 0x9e92d78 is not the panic entry, or its first arguments mean
+something other than what was assumed.
+
+**Do not guess the signature.** Disassemble 0x9e92d78's prologue and see which
+registers it saves and where it reads its arguments from, the same way
+`find_gicr_pe_base` was settled. Four attempts to read the message by assuming
+the layout have now failed, and each one cost a boot.
