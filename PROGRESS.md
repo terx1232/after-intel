@@ -416,10 +416,25 @@ of confident forum assertions.
   `failing = physmap_base - slide + 0x16000000` may be an artifact of comparing
   two boots with two different slides.
 
-  Both values have to be captured in the **same** freeze before anything is
-  concluded from their difference. That is the next measurement, and it is a
-  reminder that a randomised layout makes cross-run comparisons meaningless
-  unless the randomness is pinned first.
+  **That correction was itself wrong.** Re-measuring physmap_base on a second
+  run of the same build returns `0xfffffdf02d708000` byte for byte. The slide
+  is **deterministic**, not random per boot: TCG is deterministic and
+  `early_random()` has no entropy source here, so it produces the same value
+  every time. The two different slides seen earlier came from two different
+  *kernel builds*, not two boots of one.
+
+  So cross-run comparison is valid, provided the build is held fixed. What is
+  not valid is comparing across builds, and that is what happened. The
+  relationship `failing = physmap_base - slide + 0x16000000` is therefore
+  neither confirmed nor refuted by any of this - it needs re-measuring with
+  both values taken from one build, which is a weaker requirement than the one
+  stated above.
+
+  Unresolved and worth noting rather than papering over: freezing at 0xa00cb0c
+  through one launcher script stops with PC there, and through another the run
+  reaches the halt instead. The two scripts differ somewhere that matters, and
+  until that is understood any measurement taken through them carries that
+  doubt.
 
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
