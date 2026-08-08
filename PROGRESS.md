@@ -612,9 +612,29 @@ of confident forum assertions.
   writes physmap_base to `[x0, #8]` and x0 and x9 were both measured as
   0xfffffe000abebe00. Either they differ at that moment and the later
   measurement is misleading, or something between the store and the load
-  intervenes. The trace can answer this: block 2358 shows the path continues at
-  0xa00cae0, so the branch at 0xa00caac was taken and the blocks between hold
-  the answer.
+  intervenes.
+
+  **The trace answers it, and vindicates the ptov_table reading.** Block 2357:
+
+      0xa00cac0:  mov  w12, #0x1ffffff
+      0xa00cac4:  add  x8, x8, x12                     +0x1ffffff
+      0xa00cac8:  and  x8, x8, #0xfffffffffe000000     mask down
+      0xa00cacc:  orr  x8, x8, x11                     | orig_offset
+      0xa00cad0:  str  x8, [x9, #8]                    store back
+
+  `0x1ffffff` is `ARM_TT_TWIG_OFFMASK` at a 16 KiB granule, and add-then-mask
+  is `ROUND_TWIG`. That matches arm_vm_physmap_slide lines 1532-1539 exactly:
+
+      temp_ptov_table[i].va = ROUND_TWIG(temp_ptov_table[i].va) + orig_offset;
+
+  So `[x9, #8]` **is** `ptov_table[i].va`, this code **is**
+  `arm_vm_physmap_slide`, and the identification retracted earlier was correct
+  all along. The retraction was caused by generalising from the one freeze that
+  did not fire.
+
+  Score for this stage so far: eight inferences retracted, and one of those
+  retractions now itself retracted. The pattern is consistent - every error came
+  from reasoning about code without checking execution, in both directions.
 
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
