@@ -655,6 +655,26 @@ of confident forum assertions.
   follow. Distinguishing passes needs `-d exec` or per-pass freezes, not the
   block listing.
 
+  **A contradiction inside a single run, which undercuts the central premise.**
+  Freezing on the store at 0xa00ca98 fires, so the `ptov_index == 0` branch does
+  run. At that instant x8 holds 0xfffffdf00ebd0000, having just been loaded by
+  `ldr x8, [x8, #0x920]` from 0xfffffe0007925920. Dumping memory from the same
+  frozen guest reads 0xfffffdf02d708000 at that very address.
+
+  A register and the memory it was just loaded from disagree, with the CPU
+  stopped in between. One of these is true and none is established:
+
+  * the dump address translation is wrong for this build, so the dump is being
+    read at the wrong offset;
+  * physmap_base is written again between the load and the dump, which cannot
+    happen while the guest is frozen unless the freeze is not where it appears;
+  * the freeze fires on a different pass than the one whose registers are read.
+
+  Until this is resolved, **every comparison of x8 against physmap_base in this
+  entry is unsafe**, including the "address below the aperture" conclusion that
+  the last several commits were built on. That premise came from exactly this
+  comparison.
+
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
   freeze on first arrival.
