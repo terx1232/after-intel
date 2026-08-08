@@ -100,8 +100,19 @@ of confident forum assertions.
   assumes the entry exists (:737, :752). The level 1 entry is empty, meaning
   the virtual address being walked is not covered by the boot page tables.
 
-  Which address that is has not been established yet, and that is the next
-  measurement rather than the next guess.
+  Register state at the halt narrows it further. The index instruction is
+  `ubfx x9, x2, #36, #11`, so the level 1 index is bits [46:36] of the address
+  being walked, and the walker's first argument (x21) is
+  `0xfffffe0007004000` - the kernel collection base. But bits [46:36] of that
+  address are `0x7E0`, while the measured index (x9) is **0**, and the entry
+  read back (x8) is **0**.
+
+  An index of zero cannot come from a kernel virtual address: every address of
+  the form `0xfffffe...` has `0x7E0` in that field. So the value indexed was
+  not a kernel VA. Establishing what it actually was, and which of the walker's
+  arguments carried it, is the next step - x2 is clobbered by the call chain by
+  the time the halt is reached, so it has to be caught before the call rather
+  than read after it.
 
   Separating physBase from the load address did not cause this. It moved
   virtBase down by 0x9004000, so the physical aperture now starts below the
