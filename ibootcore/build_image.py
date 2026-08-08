@@ -53,7 +53,12 @@ def main(argv=None) -> int:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("kernel", help="decompressed kernel collection")
     ap.add_argument("--out", required=True)
-    ap.add_argument("--phys-base", default="0x800000000")
+    ap.add_argument("--phys-base", default="0x800000000",
+                    help="where the image is loaded")
+    ap.add_argument("--ram-base", default=None,
+                    help="where physical RAM starts, if that is not the load "
+                         "address; boot_args.physBase gets this and virtBase "
+                         "shifts to match")
     ap.add_argument("--mem-size", default="4G")
     ap.add_argument("--cmdline", default="-v debug=0x8 serial=3")
     ap.add_argument("--fb", default="", metavar="WxH",
@@ -107,9 +112,26 @@ def main(argv=None) -> int:
 
     video = (fb_addr, 1, w * 4, w, h, 32) if fb else (0, 0, 0, 0, 0, 0)
 
+    # physBase and the load address are not the same thing, and conflating them
+    # was a real defect. physBase describes where physical RAM *starts*; the
+    # load address is wherever the loader could find room. On QEMU's `virt`
+    # the machine puts its own generated dtb at the base of RAM, so the image
+    # has to sit above it -- and passing that higher address as physBase told
+    # the kernel that RAM began at the image, hiding every byte below it and
+    # claiming the same number of bytes past the true end of RAM. The panic
+    # says so out loud: "phys base 0x49004000, size 0x100000000" runs to
+    # 0x149004000 while RAM stops at 0x140000000.
+    #
+    # virtBase shifts by the same amount so that the kernel still lands on its
+    # own link address: phystokv(load) == the kernel's vm_low.
+    ram_base = int(args.ram_base, 0) if args.ram_base else phys_base
+    if ram_base > phys_base:
+        ap.error("--ram-base cannot be above the load address")
+    ba_virt_base = virt_base - (phys_base - ram_base)
+
     ba = bootargs.build(
-        virt_base=virt_base,
-        phys_base=phys_base,
+        virt_base=ba_virt_base,
+        phys_base=ram_base,
         mem_size=mem_size,
         top_of_kernel_data=phys_base + total,
         device_tree_p=dt_addr,
