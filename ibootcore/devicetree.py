@@ -55,6 +55,10 @@ RANDOM_SEED_BYTES = 256
 # and the UART node's AAPL,phandle, which is how the kernel connects the two.
 UART_PHANDLE = 1
 
+# IONVRAM refuses a zero-sized store. 8 KiB is the smallest size Apple's own
+# platforms use and is plenty for a store nothing has written to yet.
+NVRAM_BYTES = 0x2000
+
 
 def _pad4(n: int) -> int:
     return (-n) % 4
@@ -244,6 +248,27 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     # The values are filled in by the loader once it knows where it placed
     # things; sixteen zero bytes reserve the space so that adding them cannot
     # change the serialised size between passes.
+    # The routine that demanded `/product` walks a fixed list, and its panics
+    # name each entry: "failed to get chosen node", "...options node",
+    # "...defaults node", "...product node", "...manifest properties". The paths
+    # sit in the string table right beside those messages: /chosen, /defaults,
+    # /product, /chosen/manifest-properties, /chosen/asmb.
+    #
+    # Added empty. What belongs inside them is sealed-system-volume material -
+    # the ARV root hash and manifest a real loader supplies, per finding #15 -
+    # and inventing values there would be worse than leaving them out. The nodes
+    # exist so the lookups succeed; their contents are a separate problem.
+    chosen.add(Node("manifest-properties"))
+    chosen.add(Node("asmb"))
+    # IONVRAM panics with "NVRAM size is 0 bytes, possibly due to bad config
+    # with iBoot + xnu mismatch" when this is empty, so the buffer has to be
+    # real rather than the node merely present. Zeros are a valid empty store:
+    # the handler formats it on first use.
+    options = root.add(Node("options"))
+    options.props["nvram-proxy-data"] = b"\x00" * NVRAM_BYTES
+    options.set_u32("nvram-total-size", NVRAM_BYTES)
+    options.set_u32("nvram-bank-size", NVRAM_BYTES)
+
     memmap = chosen.add(Node("memory-map"))
     memmap.props["DeviceTree"] = b"\x00" * 16
     memmap.props["BootArgs"] = b"\x00" * 16
@@ -275,6 +300,17 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     # `AAPL,phandle`. `SecureDTFindNodeWithPhandle` looks it up by that value.
     defaults = root.add(Node("defaults"))
     defaults.set_u32("serial-device", UART_PHANDLE)
+
+    # "panic: failed to get product node" - read out of the guest at the point
+    # of failure, not guessed. `pe_init.c:478` reads `unique-model` and
+    # `sub-product-type` out of this node, and somewhere on the path taken here
+    # its absence is fatal rather than skipped.
+    product = root.add(Node("product"))
+    product.set_str("product-name", "VirtualMac2,1")
+    product.set_str("unique-model", "VirtualMac2,1")
+    product.set_str("sub-product-type", "VirtualMac2,1")
+    product.set_str("product-description", "Apple Virtual Machine")
+    product.set_str("product-id", "VirtualMac2,1")
 
     memory = root.add(Node("memory"))
     memory.set_str("device_type", "memory")
@@ -602,5 +638,6 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
 
 

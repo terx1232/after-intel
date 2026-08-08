@@ -1656,3 +1656,39 @@ X03 holds **pointers**, not text: the first is 0xfffffe9afe0272d0, which is 0x18
 past x3's own address, so this is an argument-list structure pointing back into
 the same stack region. The message is therefore one dereference further on, and
 the technique to follow it now exists and is reliable.
+
+## Stage 6 - into IOKit
+
+Following pointers with `gva2gpa` + `xp` finally made panic messages readable,
+and the kernel then named its own requirements one after another. Each was added
+and the next appeared:
+
+    panic: failed to get product node          -> added /product
+    panic: failed to get manifest properties   -> added /chosen/manifest-properties,
+                                                  /chosen/asmb, /options
+    NVRAM size is 0 bytes, possibly due to
+    bad config with iBoot + xnu mismatch       -> gave /options a real
+                                                  nvram-proxy-data buffer
+
+The routine driving these walks a fixed list, and the paths sit in the string
+table beside the messages: `/chosen`, `/defaults`, `/product`,
+`/chosen/manifest-properties`, `/chosen/asmb`.
+
+**The NVRAM message came from `IONVRAM.cpp`**, which is an IOKit driver. So the
+boot is past platform initialisation entirely and into driver matching - stage 6
+proper.
+
+After the NVRAM buffer went in the state changed shape again: PC reads
+0x0000000049e3d200, a **physical** address, which is 0xfffffe0009e3d200 in
+virtual terms - just past the kernel entry point, with the MMU off. That is a
+restart: the machine reset and the kernel began again.
+
+Whether that reset is a failure or the kernel deliberately re-entering is the
+next thing to establish, and it needs the exception log rather than a register
+read.
+
+**Nodes added this round, all empty of content on purpose.** The manifest and
+asmb nodes carry sealed-system-volume material - the ARV root hash and manifest a
+real loader supplies, per finding #15. Inventing values there would be worse than
+leaving them absent, so the nodes exist to satisfy the lookups and their contents
+remain an open, honest problem.
