@@ -962,3 +962,36 @@ Recording these because a repo that only lists its strengths is advertising.
   Remaining for the stage: why that `init_ptpages` call does not populate the
   entry. Whether it runs at all is the first thing to check, with a freeze on
   it, and `cpu_tte` at that moment is the second.
+
+  **The argument is `avail_start`, and this reframes the empty entry as
+  correct.** `init_ptpages` allocates the entries it finds missing:
+
+      if (*l1_tte == ARM_TTE_EMPTY) {
+          ptpage_vaddr = alloc_ptpage(static_map);
+          *l1_tte = (kvtophys(ptpage_vaddr) & ARM_TTE_TABLE_MASK) | ...;
+
+  so the measured `x25 = 0` is **expected**: the entry is empty because it is
+  about to be created. Nothing was wrong with it.
+
+  `alloc_ptpage` (arm_vm_init.c:480), in the `map_static == FALSE` branch that
+  line 2327 selects:
+
+      vaddr = phystokv(avail_start);
+      avail_start += ARM_PGBYTES;
+
+  So the value phystokv rejects is `avail_start`, and it is zero.
+  `avail_start` is assigned at arm_vm_init.c:1941 from
+  `args->topOfKernelData`, which our boot_args carries as 0x4bf04000 - verified
+  non-zero by reading the emitted structure back. So the assignment has not
+  happened by the time this call runs.
+
+  Corrected chain, replacing the one in the previous commit:
+
+      alloc_ptpage is called with avail_start still zero
+        -> phystokv(0) panics with "illegal PA: 0x0"
+        -> nothing prints, serial is not up
+        -> a shared halt routine spins, presenting as a silent hang
+
+  The empty level 1 entry, the aperture, the addresses and the tables were all
+  correct throughout. The single defect is that the page allocator's cursor is
+  zero when the heap level 1 tables are built.
