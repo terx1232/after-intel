@@ -692,6 +692,25 @@ of confident forum assertions.
   linking x8 to physmap_base and the slide. What survives is only what was read
   from a single frozen guest, or from the kernel file.
 
+  **The register-versus-memory contradiction is explained: the dump lags one
+  run.** In a single frozen guest, x8 freshly loaded from physmap_base reads
+  0xfffffdf003b50000 while the dump of that same address reads
+  0xfffffdf03a94c000 - which is exactly the x8 value the *previous* run
+  reported. The 256 MiB `pmemsave` does not finish before the script kills
+  QEMU, so the file left on disk is the one written by the run before.
+
+  That is the fourth apparatus fault in this stage, after registers read at the
+  halt, `-d` starving the guest, and stale QEMU processes holding the monitor
+  port. It means **every dump-derived figure in this entry belongs to the
+  preceding boot**, not the one whose registers were quoted beside it. The
+  physmap_base values, the level 1 and level 2 table contents, the panic
+  message searches: all need re-reading with the dump verified complete before
+  it is parsed.
+
+  The fix is to wait for `pmemsave` to finish - check the file size reaches the
+  requested length before closing the monitor - rather than sleeping a fixed
+  interval and hoping.
+
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
   freeze on first arrival.
