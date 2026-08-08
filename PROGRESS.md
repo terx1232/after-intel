@@ -155,19 +155,23 @@ of confident forum assertions.
     the stage is not complete. This is the decisive test, because the early
     panic path announces itself with "Kernel panicked very early before serial
     init, spinning forever..." - any bytes at all would mean we were past it.
-  * Searching all 256 MB of dumped RAM for panic text finds **nothing written
-    at runtime**: every candidate string counts the same in memory as in the
-    kernel file. The `illegal PA` message is gone, but no message replaced it.
-  * The stack buffer the early panic path formats into holds pointers, not
-    text, so that path did not run.
+  * The panic is **unchanged**. Freezing all five `bl` sites into the halt
+    routine with `b .` shows PC resting at 0xfffffe0009e91e60, the one site
+    that prints, and the format string it was handed - x19, saved from the
+    first argument at entry - reads
+    `"%s: illegal PA: 0x%llx; phys base 0x%llx, size 0x%llx @%s:%d"`.
+    Still phystokv.
 
-  So the halt is now reached *without* going through the printing path. The
-  shared halt routine has five `bl` call sites and only one of them formats a
-  message first; identifying which site is live now is the next measurement.
-  x30 reads 0xfffffe0009e91e64, which is both the return address of the
-  printing site's call and the branch target of the `cbnz` that skips it -
-  those two readings are indistinguishable from the register alone, and that
-  ambiguity has to be resolved before anything is concluded from it.
+  A note here previously said the `illegal PA` message was gone because a
+  search over 256 MB of dumped RAM found no panic text written at runtime.
+  That was wrong: the dump was taken before the text had been formatted, so
+  its absence said nothing about whether the panic had changed. Reading the
+  format string out of the frozen frame settles it directly and shows it had
+  not.
+
+  The impossible address persists and shifted slightly with the device tree
+  fix: x21 now reads `0xfffffff026000000` where it read `0xfffffff038000000`
+  before. So that fix moved the value without removing the cause.
 
   A `startup_bootstrap` string found near the stack was noted earlier as a sign
   of progress. It is not evidence: the serial test contradicts it, and the
