@@ -225,7 +225,20 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     # honestly. It is deliberately empty: there is no trust cache and no AuxKC
     # here, and claiming either would be worse than admitting neither. The
     # AuxKC path is guarded against a zero paddr; the TrustCache path is not.
-    chosen.add(Node("memory-map"))
+    # Real firmware does not leave this node empty. It fills it with
+    # DTMemoryMapRange entries -- {uint64 paddr; uint64 length;} -- naming the
+    # regions it placed, and the kernel reads them back to find the device tree
+    # and boot args in physical memory. An empty node satisfies the lookup that
+    # arm_vm_init does, which is why adding it stopped the TrustCache panic,
+    # but it supplies none of the ranges that the code after that lookup goes
+    # on to read.
+    #
+    # The values are filled in by the loader once it knows where it placed
+    # things; sixteen zero bytes reserve the space so that adding them cannot
+    # change the serialised size between passes.
+    memmap = chosen.add(Node("memory-map"))
+    memmap.props["DeviceTree"] = b"\x00" * 16
+    memmap.props["BootArgs"] = b"\x00" * 16
 
     memory = root.add(Node("memory"))
     memory.set_str("device_type", "memory")

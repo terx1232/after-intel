@@ -246,11 +246,22 @@ of confident forum assertions.
   its upper bits that does not belong there, and it is the first appearance of
   one of our own placed addresses inside this computation.
 
-  Next: establish what puts `0x200` above that address, and whether x8 derives
-  from it. The suspicion worth testing first is the empty `chosen/memory-map`
-  node added earlier - real firmware fills it with `DTMemoryMapRange` entries
-  describing the device tree and boot args, and an empty node satisfies the
-  lookup without supplying the ranges the EXTRADATA code then reads.
+  The `chosen/memory-map` node was the first suspicion, since it had been added
+  empty and real firmware fills it with `DTMemoryMapRange` entries describing
+  the device tree and boot args. Filling it properly - `build_image` now writes
+  both entries once the placements are known, and checks the tree did not
+  change size - **does not affect this at all**: x2 reads `0xfffffff016000000`
+  with the entries present, byte for byte what it read with the node empty, and
+  serial output is still zero.
+
+  The fill is kept because supplying those ranges is correct on its own terms,
+  but it is not this bug. x8 does not derive from the memory map.
+
+  So the remaining question is unchanged and now better isolated: what produces
+  x8 as a virtual address below gVirtBase. It is not the subtraction, not the
+  memory map, and not a missing region of address space (tested by lowering
+  virtBase as far as QEMU's dtb allows). The `0x200` riding above our device
+  tree address in x9 is the only unexplained thing still on the table.
 
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a

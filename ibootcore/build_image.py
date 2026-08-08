@@ -118,6 +118,23 @@ def main(argv=None) -> int:
     dt_addr = phys_base + dt_off
     ba_addr = phys_base + ba_off
 
+    # Now that the placements are known, write them into chosen/memory-map and
+    # serialise again. The entries were reserved at their final size, so this
+    # cannot move anything -- which is asserted rather than assumed, because if
+    # it did move, dt_addr and ba_addr would already be stale.
+    memmap = next((n for _, n in tree.walk() if n.name == "memory-map"), None)
+    if memmap is not None:
+        memmap.props["DeviceTree"] = struct.pack("<QQ", dt_addr, len(dt_blob))
+        memmap.props["BootArgs"] = struct.pack("<QQ", ba_addr,
+                                               bootargs.SIZEOF_BOOT_ARGS)
+        again = tree.serialise()
+        if len(again) != len(dt_blob):
+            raise SystemExit("device tree changed size when the memory map was "
+                             "filled in; the addresses above are now wrong")
+        dt_blob = again
+        print(f"  chosen/memory-map: DeviceTree {dt_addr:#x} +{len(dt_blob)}, "
+              f"BootArgs {ba_addr:#x} +{bootargs.SIZEOF_BOOT_ARGS}")
+
     video = (fb_addr, 1, w * 4, w, h, 32) if fb else (0, 0, 0, 0, 0, 0)
 
     # physBase and the load address are not the same thing, and conflating them
