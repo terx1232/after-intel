@@ -111,7 +111,23 @@ Also: `-d in_asm` logs blocks as *translated*, not each time they execute, so a
 block's presence never proves it ran on a given pass. And nothing may be
 compared across runs: the aperture slide differs every boot.
 
-**Next step.** Locate `init_ptpages` in the binary, freeze its call for the heap
+**Leading hypothesis, stated so it can be killed quickly.** A runaway loop. If
+the `size` passed to `arm_vm_page_granular_prot` is far too large, then
+`while (align_start < align_end)` steps upward through level 1 entries, crosses
+0x7DF (the aperture) and 0x7E0 (the kernel), reaches 0x7E1 which is unmapped,
+and panics. This is the only reading so far that explains why the *first* call
+succeeds and a later iteration fails, without needing anything else to be wrong.
+
+Candidate source: `real_avail_end - args->topOfKernelData` at the second
+`arm_vm_physmap_slide` call. A previously measured x9 of 0x2004be04000, about
+128 GiB, is the right order of magnitude for a length that would walk that far.
+
+Test it first, and test it by measurement: freeze at the call into
+0xa0098e0 and read x0, x1, x2 (start, length, pa_offset). A length near 128 GiB
+confirms it; a length near 4 GiB kills it. Do not reason further about it before
+that number is in hand.
+
+**Then, if the hypothesis dies.** Locate `init_ptpages` in the binary, freeze its call for the heap
 range, and establish whether it runs before the failing walk. Locate it, do not
 assume it - assuming produced every wrong turn above.
 
@@ -1157,4 +1173,5 @@ Recording these because a repo that only lists its strengths is advertising.
   0x7E1 before this walk, and why it has not run. `init_ptpages` at line 2327 is
   the candidate from source, but it must be located in the binary and frozen
   rather than assumed, since assuming is what produced every wrong turn above.
+
 
