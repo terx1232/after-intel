@@ -1398,3 +1398,39 @@ not reach the device, or the scan starts at the wrong place within the region.
 **Next measurement:** read GICR_TYPER through the monitor with `x/2xg` at the
 mapped virtual address 0xfffffe000c010000, which goes through QEMU's own
 translation and will show the real register rather than a RAM dump.
+
+**GIC `reg` must be offsets, not absolute addresses - and that fix cleared the
+whole GIC stage.** Comparing the same frame read two ways settled it:
+
+    physical  0x080a0000:  +0x00 = 0x0                GICR_CTLR
+                           +0x08 = 0x0000000001000011 GICR_TYPER, Aff0 = 0
+    virtual   0xfffffe000c010000: 0xffffffffffffffff  not mapped
+
+The register was there all along with an Aff0 of 0 that would have matched
+MPIDR. The mapped address returned all-ones, QEMU's answer for an unassigned
+address, so the scan read Aff0 as 0xff, never matched, and panicked.
+
+`pe_arm_map_interrupt_controller` maps `soc_phys + offset`, as its own log string
+admits. With absolute addresses in `reg` the kernel mapped
+0x08000000 + 0x080a0000. Emitting `reg` relative to arm-io's ranges base fixes
+it, and this corrects the note on the arm-io node which claimed nothing consumed
+the offset form.
+
+**Result: GIC init passes.** The boot moved from the halt into
+`PE_init_platform`'s video and progress setup - the strings around the new
+resting point are `kPEDisableScreen`, `iBoot version: %s`, `BootCLUT`,
+`Pict-FailedBoot`, `-noprogress`, `progress-dy`, and the pixel format
+`BBBBBBBBG`.
+
+**Then two further states, both measured:**
+
+* Without a framebuffer in boot_args, it spins in a purely arithmetic delay loop
+  at 0xa75cc90 whose bound is zero: `x10 = 0`, `x11 = 0xcdd55d14`, and
+  `cmp x10, x11; b.ls` is therefore always taken. A loop whose limit came from a
+  value nobody set.
+* With `--fb 1024x768` it panics instead, format string `"%s"` with the real text
+  as a variadic argument on the stack, and not through the printing path.
+
+Next: read that variadic argument off the stack at the halt. The technique is
+established - freeze, then walk the frame - but the format being bare `%s` means
+the message is a pointer in the argument area rather than a static string.

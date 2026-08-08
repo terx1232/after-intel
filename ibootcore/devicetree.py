@@ -363,8 +363,21 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     gic.set_str("compatible", "ARM,gicv3")
     gic.set_u32("#interrupt-cells", 3)
     gic.set_u32("interrupt-controller", 1)
-    gic.props["reg"] = struct.pack("<QQQQ", gic_dist, 0x10000,
-                                   gic_redist, 0xF60000)
+    # `reg` here is **relative to arm-io's ranges base**, not absolute.
+    # `pe_arm_map_interrupt_controller` maps `soc_phys + offset`, and its own
+    # log string says so: "pe_arm_map_interrupt_controller: soc_phys: 0x%l...".
+    # With absolute addresses the kernel mapped 0x08000000 + 0x080a0000, and
+    # reading the result returned 0xffffffffffffffff - QEMU's answer for an
+    # unassigned address - while the register at physical 0x080a0000 held a
+    # perfectly good GICR_TYPER of 0x0000000001000011 with Aff0 of 0. The scan
+    # then matched Aff0 0xff against MPIDR's 0 and panicked with "cannot find
+    # GICR base for core %u".
+    #
+    # This is the correction to the note on arm-io above, which claimed nothing
+    # consumed the offset form. The GIC does.
+    gic.props["reg"] = struct.pack("<QQQQ",
+                                   gic_dist - soc_base, 0x10000,
+                                   gic_redist - soc_base, 0xF60000)
     # The kernel checks this exactly: "incorrect reg property size in GIC DT
     # node; expecting 32 bytes but got %u bytes". Four 64-bit values, which is
     # what the two pairs above give.
