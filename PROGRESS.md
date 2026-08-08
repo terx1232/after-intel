@@ -846,3 +846,14 @@ Recording these because a repo that only lists its strengths is advertising.
   So the failure sits in the TrustCache path, the same place the first device
   tree fix of this stage touched. Whether the `memory-map` entries now supplied
   are the wrong shape, rather than merely absent, is what to check next.
+
+  **Correction, one commit later.** x30 at that same freeze reads
+  0x5cde7e000a009a20, which unstrips to 0xfffffe000a009a20, so the caller is
+  0xa009a1c - the walker, not the TrustCache block. The `memory-map` string on
+  the stack is residue from an earlier lookup, not the current context, and
+  reading it as evidence of the current call path repeated the exact mistake
+  this stage keeps making: treating whatever is lying nearby as though it were
+  the thing being executed.
+
+  The failure remains at 0xa009a1c. Nothing about TrustCache follows from the
+  stack contents.
