@@ -1814,3 +1814,30 @@ nothing at the GIC addresses which are certainly mapped, so the scan itself is
 broken rather than the mapping being absent. Fix the scan before concluding
 anything from it - this is the same class of mistake as the four apparatus
 faults already recorded, and it would be the fifth.
+
+**The UART is mapped, and its address is now known: 0xfffffe000c000000.**
+Reading +0x18 there returns `0x00000090` - a PL011 flag register with both FIFOs
+empty. That is not a value ordinary memory produces, so the identification is
+certain. The driver setup worked and the device is live.
+
+Two apparatus faults had to be fixed to see it, and both had produced
+convincing-looking negative results:
+
+* the monitor reader desynchronised. Reading once after a fixed sleep means a
+  slow reply is collected by the *next* command, and after a dozen queries the
+  answers no longer match the questions. The symptom is an empty reply, which
+  looks exactly like a failed read. It now drains first and accumulates until
+  the prompt returns.
+* PowerShell's `:x` format silently does nothing to a `UInt64`, so addresses
+  went to the monitor as decimal digits behind an `0x` prefix. Every read was of
+  a nonsense address and the scan reported "nothing readable in that range" -
+  which reads as a finding and is not one. Casting to `Int64` fixes it.
+
+That is the fifth and sixth apparatus fault in this stage. Both produced false
+negatives rather than false positives, which is the more dangerous direction:
+a wrong answer gets checked, an absent one gets believed.
+
+`early_console.py --uart 0xfffffe000c000000` now assembles against the real
+address, but the port stays silent, and the reason is no longer a mystery: the
+current halt arrives through 0x9e9216c, which does **not** print, rather than
+0x9e91e60, which does. The patched routine is never called on this path.
