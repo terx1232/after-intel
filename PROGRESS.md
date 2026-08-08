@@ -554,6 +554,30 @@ of confident forum assertions.
   requires finding what x9 points at, by tracing where x9 is set rather than by
   matching an offset against a plausible struct.
 
+  **Resolved, and it is the first case: the load never runs.**
+
+      0xa00ca68   add  x8, x13, x8          loop arithmetic
+      0xa00ca8c   b    0xa00caa0            <- jumps over everything below
+      0xa00ca90   adrp x8, 0xfffffe0007925000
+      0xa00ca94   ldr  x8, [x8, #0x920]     physmap_base
+      0xa00ca98   str  x8, [x0, #8]         write it to [x0+8]
+      0xa00ca9c   ldr  x8, [x9, #8]         read it back
+      0xa00caa0   <- the freeze sits here, and the branch lands here too
+
+  x0 and x9 both hold 0xfffffe000abebe00, so on the fall-through path the store
+  and the load touch the same address and x8 would come back as physmap_base
+  exactly. It does not, because the branch at 0xa00ca8c was taken and the load
+  never executed.
+
+  So x8 arrives from `add x8, x13, x8` in the loop above, and no ptov_table
+  read is involved at any point. The `+8` matching the struct layout was
+  coincidence, and the entire ptov_table line - including the bzero
+  contradiction it raised - was reasoning about an instruction the CPU skipped.
+
+  Every failed inference in this stage failed the same way: a static reading of
+  the code never checked against which path actually runs. A freeze yields
+  register values, not control flow, and those are different evidence.
+
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
   freeze on first arrival.
