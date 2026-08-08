@@ -100,7 +100,36 @@ of confident forum assertions.
   assumes the entry exists (:737, :752). The level 1 entry is empty, meaning
   the virtual address being walked is not covered by the boot page tables.
 
-  Register state at the halt narrows it further. The index instruction is
+  **Correction.** An earlier note here read x8 and x9 out of a register dump
+  taken at the halt and concluded the level 1 index was zero. Those are scratch
+  registers and the whole panic path runs between the failing instruction and
+  the halt, so they were clobbered; the conclusion was built on garbage.
+  Trapping *at* the call instead - replacing the `bl` with `b .` so the CPU
+  freezes with registers intact - gives the real state, and the index is
+  `0x7E0`, exactly what the address implies.
+
+  What that trap then showed: the level 1 table at `0xfffffe000781c000` had
+  **one** non-empty entry out of 2048, at index `0x7df`, while the walk needed
+  `0x7E0`. Each entry at that level covers 64 GiB, and the boundary between
+  those two falls at `0xfffffe0000000000`. Separating physBase from the load
+  address had moved virtBase to `0xfffffdfffe000000`, just below that line,
+  while the kernel sits just above it - so virtBase and the kernel landed in
+  different level 1 entries and XNU's early tables only populate one.
+
+  That was self-inflicted, and it means the earlier claim that the panic
+  "predates the change" was stated too confidently: the message matched, but
+  the cause for this layout is now established and the cause before it is not.
+
+  Constraining the load offset to at most `0x7004000` puts virtBase back in the
+  same entry as the kernel (`--phys-base 0x47004000 --ram-base 0x40000000`
+  gives virtBase `0xfffffe0000000000`, index `0x7E0` for both) while keeping
+  physBase at the true base of RAM. The first walk then succeeds: the entry
+  reads `0x2000000047820003` instead of zero.
+
+  The panic persists, so a *later* call over a different range still finds an
+  empty entry. Which range is the next measurement.
+
+  Superseded detail, kept because the reasoning is reusable: the index
   `ubfx x9, x2, #36, #11`, so the level 1 index is bits [46:36] of the address
   being walked, and the walker's first argument (x21) is
   `0xfffffe0007004000` - the kernel collection base. But bits [46:36] of that
