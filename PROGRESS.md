@@ -494,9 +494,29 @@ of confident forum assertions.
   `arm_vm_init.c:1528` assigns `temp_ptov_table[ptov_index].va = physmap_base`.
   The slot holds 0xfffffdf01311c000, below physmap_base, so either a later
   entry is slid downward on purpose or one is being filled from something other
-  than physmap_base. `arm_vm_physmap_slide` is the function to read next, and
-  the field offsets of `ptov_table` should be confirmed from the source rather
-  than inferred from the `+8`.
+  than physmap_base.
+
+  **Confirmed from source, and it yields a contradiction.** The struct is
+
+      typedef struct { pmap_paddr_t pa; vm_map_address_t va; vm_size_t len; }
+          ptov_table_entry;
+
+  so `+8` is `.va`, as inferred. And `arm_vm_physmap_slide` fills it:
+
+      temp_ptov_table[i].pa = orig_va - gVirtBase + gPhysBase;
+      if (i == 0) temp_ptov_table[i].va = physmap_base;
+      else        temp_ptov_table[i].va = prev.va + prev.len;
+
+  Entry 0 is physmap_base and every later entry stacks *upward* from it. So no
+  entry can ever be below physmap_base - yet the slot read holds
+  0xfffffdf01311c000, which is below it. Those cannot both be true of a
+  correctly filled table.
+
+  `temp_ptov_table` is a **stack array** passed in by pointer, so the obvious
+  reading is that the slot being read has not been filled yet and holds stack
+  residue that happens to look like a plausible address. That is a hypothesis,
+  not a finding: it predicts the value should vary with anything that changes
+  the stack, and that prediction has not been tested.
 
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
