@@ -80,10 +80,35 @@ of confident forum assertions.
   routines were doing; and the skipped work is what leaves a translation table
   entry empty. `phystokv: illegal PA: 0x0` is the bill for all of it.
 
-  The honest fix is therefore not a fourth workaround. It is to **implement**
-  the `0xC1000000`-`0xC100FFFF` CPU service calls rather than stub them -
-  either in QEMU or by supplying their results in the guest. Everything above
-  this line in the boot is now clean; this is the one real blocker left.
+  **Done** - `hvc_impl.py` answers the 19 checker sites with `movz x0, #0`, and
+  the unmodified kernel then reaches the same place the triple-workaround build
+  reached, with all three workarounds gone. The 21 consumer sites are left
+  failing honestly; their return values are not knowable from this side and all
+  of them run at IOKit matching time, not in early boot.
+
+  What remains at `phystokv: illegal PA: 0x0` is now located to the
+  instruction. The failing call is
+
+      ldr  x8, [x8, #0x1d0]        ; translation table root, from a global
+      lsr  x9, <vaddr>, #36        ; level 1 index
+      ldr  x8, [x8, x9, lsl #3]    ; l1_tte = root[index]
+      and  x0, x8, #<mask>         ; l1_tte & ARM_TTE_TABLE_MASK
+      bl   phystokv                ; <- zero
+
+  with **no** preceding `if (l1_tte == ARM_TTE_EMPTY) { alloc_ptpage(); }`. So
+  this is not the allocating walker at arm_vm_init.c:629-639 but the one that
+  assumes the entry exists (:737, :752). The level 1 entry is empty, meaning
+  the virtual address being walked is not covered by the boot page tables.
+
+  Which address that is has not been established yet, and that is the next
+  measurement rather than the next guess.
+
+  Separating physBase from the load address did not cause this. It moved
+  virtBase down by 0x9004000, so the physical aperture now starts below the
+  kernel's base where before it started exactly at it - a real change in
+  layout. But the panic is the same on both sides of it, and says so: it read
+  `phys base 0x49004000` before and `phys base 0x40000000` after, with
+  everything else identical. The empty entry predates the change.
 
 **Track: what is actually inside the shipped macOS 27 installer.**
 
