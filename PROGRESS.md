@@ -54,7 +54,23 @@ of confident forum assertions.
 | 30 | The vma2 kernel's declared virtual span equals its file size exactly, so the collection maps 1:1 and a loader can place it as one contiguous blob. Entry point `0xfffffe0009e3c480`, virtBase `0xfffffe0007004000` | [measured] `data/vma2-loadmap.json` |
 | 31 | Device tree node names are recoverable from the kernel's own `__PRELINK_INFO`; property names are recoverable from driver cstring sections, but unevenly - `AppleARMPlatform` yields 258, `AppleVirtualPlatform` 35, `AppleARMGIC` **zero** | [measured] `data/vma2-*-strings.json` |
 
+| 32 | An early XNU panic prints **nothing**: it says so itself, in `"Kernel panicked very early before serial init, spinning forever..."`. It formats the real message into a stack buffer and calls a shared halt routine, so an empty serial log plus a fixed PC is a panic, not a hang. The message survives at the halt and can be read out of a `pmemsave` dump | [measured] read from guest memory |
+| 33 | Return addresses on the guest stack are PAC-signed and the signature reaches **below bit 48**, so masking to 48 bits still leaves garbage. Keeping 40 bits recovers a frame chain that resolves cleanly | [measured] frame walk over the dump |
+| 34 | `pe_identify_machine` returns before assigning any defaults if `pe_arm_get_soc_base_phys()` is zero, and that reads the **second** cell of `arm-io`'s `ranges`. A wrong `ranges` therefore leaves every clock at zero, and the kernel dies far away in `_enable_timebase_event_stream` with `invalid bit index (4294967294)` - which is `flsll(0) - 1` decremented once more | [verified] against xnu source + reproduced |
+| 35 | The minimum this kernel demands of a device tree before it will leave early boot: `arm-io` with non-zero `ranges[1]` and a `device_type`; `/cpus/cpuN` with `state` as the **string** `"running"` and a `timebase-frequency`; `/chosen/random-seed` of **256** bytes; and a `chosen/memory-map` node, whose absence is only an `assert` and so goes unchecked in a release kernel | [measured] each one found by fixing the previous panic |
+
 ## In progress
+
+**Track: booting the shipped kernel far enough to learn from it.**
+
+- **`phystokv: illegal PA: 0x0` in `arm_vm_init`.** Where the boot now stops.
+  The frame chain puts the caller at a `phystokv(tte & ARM_TTE_TABLE_MASK)`,
+  so a translation table entry is empty during a page table walk. Unlike
+  findings #34 and #35 this is not a missing property, and supplying one will
+  not fix it; the question is which mapping the kernel expects to exist by that
+  point. Note that two `null_guard` diversions are still in this kernel, and a
+  bulk memory routine returning early on a null argument is a candidate cause -
+  ruling that in or out comes first.
 
 **Track: what is actually inside the shipped macOS 27 installer.**
 
