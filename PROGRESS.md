@@ -183,9 +183,22 @@ of confident forum assertions.
   entry 0x7DF - the one immediately below the kernel's own 0x7E0, and the one
   that has no table.
 
-  So the kernel wants virtual space *beneath* gVirtBase and we have given it
-  none. Our layout puts gVirtBase only 0x7004000 below the kernel's link base,
-  with nothing under it.
+  A first reading of that was "the kernel wants virtual space beneath gVirtBase
+  and we gave it none". Tested and **wrong**: lowering virtBase as far as
+  QEMU's dtb allows, loading at 0x40100000 to leave 0x6f04000 of space
+  underneath, does not change the halt.
+
+  The magnitude points somewhere better. Rewrite the address as
+
+      gVirtBase - 0xff2000000  =  (gVirtBase + 0xE000000) - 0x1000000000
+
+  and `gVirtBase + 0xE000000` is a perfectly ordinary kernel address.
+  `0x1000000000` is `1 << 36`, and 36 is exactly the level 1 index shift for
+  this granule. So what is happening is that **one whole level 1 entry is being
+  subtracted** - an index off by one, or a sign issue in that field - not a
+  region we failed to supply. That reframes the search from "what memory is
+  missing" to "which computation decrements the index", which is a much smaller
+  thing to look for.
 
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
