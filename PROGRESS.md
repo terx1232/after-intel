@@ -1964,3 +1964,31 @@ Both ELRs are physical addresses, so the MMU is off and this is early code.
 FAR 0x148 is a small offset from null - a field read through a null pointer.
 Whether the machine reset and restarted, or never brought the MMU up this time,
 has to be established before reading anything more into it.
+
+**The trampoline is now emitted by `build_image.py` itself.** `--trampoline PATH`
+writes the stub from the addresses the build just computed, and prints the exact
+QEMU command line to go with it.
+
+This closes a defect that caused the two most misleading failures in the whole
+project. Building the stub with a separate command lets the two disagree, and
+anything that changes the device tree's size moves boot_args. Adding the
+framebuffer node did it once; adding the manifest properties did it again,
+growing the tree from 11 992 to 12 400 bytes and moving boot_args from
+0x4be07000 to 0x4be08000. The kernel then received a pointer into the middle of
+the device tree, and the symptoms looked like deep kernel faults:
+
+* a machine that reset and spun in an exception vector, 2 452 392 exceptions;
+* a page-table store that appeared to be overwriting the kernel's own text;
+* an "undefined instruction" on an ordinary, valid `str`.
+
+None of it had anything to do with the code being investigated. Two separate
+sessions of analysis went into those symptoms before the cause was found, and
+both times the cause was the same stale number.
+
+**Still open:** the manifest properties did not take. The panic returns as
+"non-sensical crypto hash method: " with nothing after the colon, so
+`crypto-hash-method` is still not being found. The names taken from around
+0xfffffe0007234f1a may be display labels for a printout rather than device tree
+property names - Image4 manifest fields are conventionally four-character codes.
+That needs establishing from the code that reads them, not from the strings that
+sit near them.

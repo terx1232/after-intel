@@ -65,6 +65,11 @@ def main(argv=None) -> int:
                     help="framebuffer geometry for the boot console, e.g. 1024x768")
     ap.add_argument("--fb-addr", default="0x900000000")
     ap.add_argument("--ncpus", type=int, default=1)
+    ap.add_argument("--trampoline", metavar="PATH",
+                    help="also emit the entry stub, with x0 and the entry point "
+                         "taken from this image rather than typed in again")
+    ap.add_argument("--trampoline-at", default="0x41000000",
+                    help="where the stub will be loaded, for the printed command")
     args = ap.parse_args(argv)
 
     phys_base = int(args.phys_base, 0)
@@ -200,6 +205,30 @@ def main(argv=None) -> int:
     print(f"\nCPU state required at handoff:")
     print(f"  PC = {entry:#018x}   (kernel entry, virtual)")
     print(f"  x0 = {ba_addr:#018x}   (physical address of boot_args)")
+
+    # Emit the entry stub here, from the addresses this build just computed.
+    #
+    # Building it with a separate command means the two can disagree, and they
+    # did, twice. Anything that changes the device tree's size moves boot_args,
+    # and a stub built before that hands the kernel a pointer into the middle of
+    # the tree. The symptoms were spectacular and misleading: a machine that
+    # reset into an exception vector, 2 452 392 logged exceptions, and a
+    # page-table store that appeared to be overwriting the kernel's own text.
+    # None of it had anything to do with the code being investigated.
+    if args.trampoline:
+        import trampoline
+        entry_phys = phys_base + (entry - virt_base)
+        blob = trampoline.build(ba_addr, entry_phys)
+        open(args.trampoline, "wb").write(blob)
+        tramp_at = int(args.trampoline_at, 0)
+        print(f"\n  trampoline  {args.trampoline}  ({len(blob)} bytes)")
+        print(f"    x0    = {ba_addr:#x}")
+        print(f"    entry = {entry_phys:#x}   (virtual {entry:#x})")
+        print(f"\n  qemu-system-aarch64 -M virt,gic-version=3 -cpu max -accel tcg \\")
+        print(f"    -m 4G -display none -no-reboot -serial file:serial.txt \\")
+        print(f"    -device loader,file={args.out},addr={phys_base:#x},force-raw=on \\")
+        print(f"    -device loader,file={args.trampoline},addr={tramp_at:#x},force-raw=on \\")
+        print(f"    -device loader,addr={tramp_at:#x},cpu-num=0")
     print(f"\n  virtBase {virt_base:#018x} -> physBase {phys_base:#018x}")
     print(f"  so the loader must map that range before jumping.")
 
