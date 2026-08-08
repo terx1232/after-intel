@@ -59,8 +59,27 @@ def load_imm64(rd: int, value: int) -> list:
     return out
 
 
-def build(x0: int, entry: int) -> bytes:
-    words = load_imm64(0, x0) + load_imm64(1, entry) + [br(1)]
+MSR_DAIFSET_ALL = 0xD50343DF      # msr DAIFSet, #0xf
+# msr MDSCR_EL1, xzr -- (op0=2, op1=0, CRn=0, CRm=2, op2=2), Rt=31.
+# The kernel panics out of machine_routines_common.c with "debug exceptions
+# enabled in kernel mode" if it finds debug enabled where firmware should have
+# left it off. Masking DAIF is not enough: that panic reads MDSCR_EL1.
+MSR_MDSCR_EL1_ZERO = 0xD510025F
+
+
+def build(x0: int, entry: int, mask_daif: bool = True) -> bytes:
+    """Emit the stub. `mask_daif` sets DAIFSet before the branch.
+
+    Real firmware hands the kernel a machine with debug, SError, IRQ and FIQ
+    all masked. Without that the vma2 kernel reaches its exception handler and
+    panics with "debug exceptions enabled in kernel mode", which is a correct
+    complaint about the state it was given rather than a fault in the kernel.
+    """
+    words = []
+    if mask_daif:
+        words.append(MSR_DAIFSET_ALL)
+        words.append(MSR_MDSCR_EL1_ZERO)
+    words += load_imm64(0, x0) + load_imm64(1, entry) + [br(1)]
     return b"".join(struct.pack("<I", w) for w in words)
 
 
