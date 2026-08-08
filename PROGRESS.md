@@ -59,6 +59,63 @@ of confident forum assertions.
 | 34 | `pe_identify_machine` returns before assigning any defaults if `pe_arm_get_soc_base_phys()` is zero, and that reads the **second** cell of `arm-io`'s `ranges`. A wrong `ranges` therefore leaves every clock at zero, and the kernel dies far away in `_enable_timebase_event_stream` with `invalid bit index (4294967294)` - which is `flsll(0) - 1` decremented once more | [verified] against xnu source + reproduced |
 | 35 | The minimum this kernel demands of a device tree before it will leave early boot: `arm-io` with non-zero `ranges[1]` and a `device_type`; `/cpus/cpuN` with `state` as the **string** `"running"` and a `timebase-frequency`; `/chosen/random-seed` of **256** bytes; and a `chosen/memory-map` node, whose absence is only an `assert` and so goes unchecked in a release kernel | [measured] each one found by fixing the previous panic |
 
+## Stage 5 - read this first
+
+Everything below in "In progress" is a chronological log with several claims
+that were later retracted. Read this summary before it, not after.
+
+**Where the boot stops.** `phystokv: illegal PA: 0x0`, printed by nothing
+because it happens before serial init, then a shared halt routine spins. It
+presents as a silent hang with an empty log.
+
+**The failing chain, every value measured in one frozen guest:**
+
+    0xa00c9e4 -> 0xa00cb24 -> 0xa0098e0 -> 0xa009a1c -> phystokv(0)
+
+    x24 = 0xfffffe1000000000   the walked address, = KERNEL_PMAP_HEAP_RANGE_START
+    x26 = 0x7E1               its level 1 index
+    x25 = 0                   the entry read: it does not exist
+    x0  = 0                   entry & bits[47:12], the rejected argument
+
+`KERNEL_PMAP_HEAP_RANGE_START` is `VM_MIN_KERNEL_AND_KEXT_ADDRESS +
+ARM_TT_L1_SIZE`, i.e. gVirtBase + 64 GiB (pmap.h:252, in the branch commented
+"for large memory systems with no KTRR/CTRR such as virtual machines").
+
+**The defect, with nothing inferred:** a non-allocating walk over the heap
+level 1 range, whose tables have not been built yet.
+
+**Verified correct, so do not re-investigate:** virtBase (equals
+VM_MIN_KERNEL_ADDRESS), physBase, memSize, the device tree, the 19 hypercall
+answers, both populated level 1 entries (0x7DF and 0x7E0), and the physical
+aperture (128 blocks of 32 MiB = exactly 4 GiB from gPhysBase).
+
+**Retracted below, do not rebuild on any of these:** that the walked address is
+below the aperture; that it comes from x2 (it is x24 - the `ubfx` reads x24);
+that the argument is `avail_start`; that `avail_start` being unset is the cause
+(it is a consequence); that the slide is deterministic across runs; that
+`ptov_table` or `chosen/memory-map` are involved; that the region around
+0xa00ca50 is dead code.
+
+**Apparatus, four faults found and fixed. Use `dis.ps1` and `cond_trap.py`:**
+
+1. Registers read at the halt are meaningless - scratch registers are clobbered
+   by the whole panic path. Freeze at the instruction instead.
+2. `-d` logging starves the guest under TCG; the freeze is not reached inside
+   the wait. No `-d` when reading registers.
+3. Stale QEMU processes hold the fixed monitor port and answer instead of the
+   new guest. Kill them first.
+4. A 256 MiB `pmemsave` does not finish before the script kills QEMU, leaving
+   the previous run's file. Poll the size to completion.
+
+Also: `-d in_asm` logs blocks as *translated*, not each time they execute, so a
+block's presence never proves it ran on a given pass. And nothing may be
+compared across runs: the aperture slide differs every boot.
+
+**Next step.** Locate `init_ptpages` in the binary, freeze its call for the heap
+range, and establish whether it runs before the failing walk. Locate it, do not
+assume it - assuming produced every wrong turn above.
+
+---
 ## In progress
 
 **Track: booting the shipped kernel far enough to learn from it.**
@@ -1100,3 +1157,4 @@ Recording these because a repo that only lists its strengths is advertising.
   0x7E1 before this walk, and why it has not run. `init_ptpages` at line 2327 is
   the candidate from source, but it must be located in the binary and frozen
   rather than assumed, since assuming is what produced every wrong turn above.
+
