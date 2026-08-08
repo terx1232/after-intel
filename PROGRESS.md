@@ -589,8 +589,32 @@ of confident forum assertions.
   proves nothing about either. Before analysing any instruction here, establish
   it is on the executed path - either by freezing it, or by capturing the trace
   with QEMU's `-d in_asm` over a bounded window and reading the path rather
-  than guessing it. Bisecting with freezes works too and costs one boot per
-  probe, which is cheap next to the eight retractions guessing has cost.
+  than guessing it.
+
+  **Applied immediately, and it corrects the paragraph above.** A `-d in_asm`
+  trace, 2466 translation blocks, contains block 2355:
+
+      0xa00ca90:  adrp x8, #0xfffffe0007925000
+      0xa00ca94:  ldr  x8, [x8, #0x920]      physmap_base
+      0xa00ca98:  str  x8, [x0, #8]
+      0xa00ca9c:  ldr  x8, [x9, #8]
+      0xa00caa0:  and  x11, x11, #0x1ffffff
+      0xa00caa8:  cmp  x12, x11
+      0xa00caac:  b.hs 0xa00cabc
+
+  Those instructions **do** execute. The freeze at 0xa00ca64 failed to trigger
+  because that address lies in a different block which is not entered, not
+  because the surrounding region is dead. Generalising from one failed freeze
+  to "the region does not run" was itself the same mistake in a new form.
+
+  So the `ldr x8, [x9, #8]` is live after all. What remains unexplained is why
+  it does not return physmap_base, given the store two instructions earlier
+  writes physmap_base to `[x0, #8]` and x0 and x9 were both measured as
+  0xfffffe000abebe00. Either they differ at that moment and the later
+  measurement is misleading, or something between the store and the load
+  intervenes. The trace can answer this: block 2358 shows the path continues at
+  0xa00cae0, so the branch at 0xa00caac was taken and the blocks between hold
+  the answer.
 
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
