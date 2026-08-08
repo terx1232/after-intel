@@ -281,7 +281,7 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     # loosening of secure boot, not a placeholder - a loader shipping these
     # values would be declaring an unlocked machine.
     manifest = chosen.add(Node("manifest-properties"))
-    manifest.set_str("crypto-hash-method", "sha2-384")
+    manifest.set_str("crypto-hash-method", "sha1")
     manifest.set_u32("certificate-production-status", 0)
     manifest.set_u32("certificate-security-mode", 0)
     manifest.set_u32("effective-production-status-ap", 0)
@@ -687,6 +687,7 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
 
 
 

@@ -1992,3 +1992,32 @@ both times the cause was the same stale number.
 property names - Image4 manifest fields are conventionally four-character codes.
 That needs establishing from the code that reads them, not from the strings that
 sit near them.
+
+**The manifest lookup is not a device tree read.** Disassembling the only
+reference to the `crypto-hash-method` string, at 0xfffffe0008431aac:
+
+    adrp x1, "crypto-hash-method"
+    add  x2, sp, #0x10          output buffer
+    mov  x0, x20                the object being queried
+    bl   0xfffffe00084299c0     lookup(obj, key, &out)
+    adrp x1, "sha1"
+    movz w2, #4                 compare four bytes
+    bl   0xfffffe0008447a2c
+
+and x20 comes from `[[x0 + 0x10] + 0x8]` - a field two dereferences into an
+object graph, not the device tree. Both `sha2-384` and `sha1` were tried as
+device tree properties and neither is found; the panic prints an empty value
+either way.
+
+So `/chosen/manifest-properties` is very likely a **single blob** that the
+kernel parses - an Image4 manifest in DER - rather than a node whose children
+are individual properties. Adding named properties to a node cannot satisfy a
+parser expecting a serialised structure.
+
+That reframes this blocker as it was described in advance: it needs **material
+from outside**, specifically a manifest, not more names guessed from the string
+table. The manifest for this platform exists inside the shipped installer, so
+the next step is to find and extract it rather than to synthesise one.
+
+Two attempts at synthesising the properties are recorded here as failures so
+that a third is not made from the same assumption.
