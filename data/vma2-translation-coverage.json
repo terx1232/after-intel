@@ -25,6 +25,7 @@
     "orr": 21201,
     "and": 20033,
     "(zero)": 16196,
+    "mrs": 9770,
     "subs": 5601,
     "tst": 5286,
     "adds": 2031,
@@ -33,20 +34,20 @@
     "br": 548,
     "dmb": 499,
     "ands": 422,
-    "dsb": 116
+    "msr": 312,
+    "dsb": 116,
+    "dc/ic": 89,
+    "hvc": 46,
+    "tlbi": 24,
+    "eret": 1,
+    "svc": 1
   },
   "failed": {
-    "undecoded": 1705289,
-    "system_register": 10082,
-    "tlb_cache": 113,
-    "exception_model": 48
+    "undecoded": 1705289
   },
   "reasons": {
-    "undecoded": "not in this translator's subset (NEON, atomics, bitfield, extended-register forms, ...)",
-    "system_register": "mrs: reads ARM system state that has no x86 analogue",
-    "exception_model": "svc/hvc/smc: exception-level entry, not a call",
-    "tlb_cache": "dc/ic: ARM maintenance granularity and coherence rules differ from INVLPG/WBINVD"
+    "undecoded": "not in this translator's subset (NEON, atomics, bitfield, extended-register forms, ...)"
   },
-  "translated_total": 8843956,
-  "failed_total": 1715532
+  "translated_total": 8854199,
+  "failed_total": 1705289
 }

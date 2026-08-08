@@ -67,6 +67,60 @@ def is_mem(loc: str) -> bool:
     return loc.startswith("[")
 
 
+# --------------------------------------------------------------------------
+# Shadow system register file.
+#
+# Guest system registers live in memory past the GPR spill area, addressed off
+# the same base. Slots are assigned on first use and remembered, so the layout
+# is stable for a given translation run and a helper runtime can be generated
+# against it.
+# --------------------------------------------------------------------------
+
+SYSREG_BASE = 0x200          # GPR file occupies 0x00..0xf8
+_sysreg_slots: dict = {}
+
+
+def sysreg_slot(key: tuple) -> int:
+    if key not in _sysreg_slots:
+        _sysreg_slots[key] = SYSREG_BASE + len(_sysreg_slots) * 8
+    return _sysreg_slots[key]
+
+
+SYSREG_NAMES = {
+    (3, 0, 13, 0, 4): "TPIDR_EL1",
+    (3, 3, 14, 0, 2): "CNTVCT_EL0",
+    (3, 3, 4, 2, 1): "DAIF",
+    (3, 0, 1, 0, 0): "SCTLR_EL1",
+    (3, 0, 2, 0, 0): "TTBR0_EL1",
+    (3, 0, 2, 0, 1): "TTBR1_EL1",
+    (3, 0, 2, 0, 2): "TCR_EL1",
+    (3, 0, 12, 0, 0): "VBAR_EL1",
+    (3, 0, 10, 2, 0): "MAIR_EL1",
+    (3, 0, 1, 0, 2): "CPACR_EL1",
+    (3, 0, 4, 1, 0): "SP_EL0",
+    (3, 0, 4, 0, 0): "SPSR_EL1",
+    (3, 0, 4, 0, 1): "ELR_EL1",
+    (3, 0, 4, 2, 0): "SPSel",
+}
+
+# Writes that change how the machine addresses or dispatches. Everything else
+# is state the guest reads back later and nothing more.
+SYSREG_SIDE_EFFECTS = {
+    "TTBR0_EL1": "rebuild shadow page tables",
+    "TTBR1_EL1": "rebuild shadow page tables",
+    "TCR_EL1": "granule and address size changed",
+    "SCTLR_EL1": "MMU/cache enable",
+    "VBAR_EL1": "exception vector base -> host IDT",
+    "MAIR_EL1": "memory attributes",
+    "CPACR_EL1": "FP/SIMD trapping",
+    "SPSel": "stack pointer selection",
+    "DAIF": "interrupt masking -> cli/sti",
+    "SP_EL0": "the other stack pointer",
+    "ELR_EL1": "exception return address",
+    "SPSR_EL1": "saved processor state",
+}
+
+
 def move(dst: str, src: str) -> list:
     """Emit a move, staging through the scratch register when both are memory."""
     if dst == src:
@@ -95,27 +149,84 @@ def translate(w: int, pc: int) -> tuple:
 
     Raises Unsupported for instructions with no meaning-preserving equivalent.
     """
-    # ---- things that program the machine, not compute --------------------
-    if (w & 0xFFF00000) == 0xD5100000:
-        raise Unsupported("system_register",
-                          "msr: writes TTBR/TCR/SCTLR/VBAR; x86 has CR3/IDT "
-                          "with different table and vector formats")
-    if (w & 0xFFF00000) == 0xD5300000:
-        raise Unsupported("system_register",
-                          "mrs: reads ARM system state that has no x86 analogue")
+    # ---- system registers: a shadow file, not a wall ----------------------
+    #
+    # Calling every MSR/MRS untranslatable was too coarse. A census of this
+    # kernel (sysreg_census.py) finds 10,082 accesses of which 10,028 are
+    # reads or writes of registers that hold state and nothing more --
+    # TPIDR_EL1 alone accounts for 8,120 reads. Against a shadow register file
+    # in memory those are ordinary loads and stores.
+    #
+    # Only writes that change how the machine addresses or dispatches need a
+    # runtime callback, and there are 54 of those in the whole kernel.
+    if (w & 0xFFF00000) in (0xD5100000, 0xD5300000):
+        is_read = (w & 0xFFF00000) == 0xD5300000
+        op0 = 2 + ((w >> 19) & 1)
+        op1 = (w >> 16) & 7
+        crn = (w >> 12) & 0xF
+        crm = (w >> 8) & 0xF
+        op2 = (w >> 5) & 7
+        rt = w & 0x1F
+        key = (op0, op1, crn, crm, op2)
+        name = SYSREG_NAMES.get(key)
+
+        # The counter is real hardware state, not stored state: x86 has its own.
+        if is_read and name == "CNTVCT_EL0":
+            dst = hostreg(rt)
+            return "mrs", [
+                "rdtsc                      ; CNTVCT_EL0 -> host timestamp",
+                "shl  rdx, 32",
+                "or   rax, rdx",
+            ] + (move(dst, "rax") if dst != "rax" else [])
+
+        if not is_read and name in SYSREG_SIDE_EFFECTS:
+            src = hostreg(rt)
+            return "msr", [
+                f"mov  rdi, {src}",
+                f"call sysreg_write_{name}    ; {SYSREG_SIDE_EFFECTS[name]}",
+            ]
+
+        slot = sysreg_slot(key)
+        loc = f"[{SPILL_BASE}+{slot:#x}]"
+        label = name or f"S{op0}_{op1}_C{crn}_C{crm}_{op2}"
+        if is_read:
+            dst = hostreg(rt)
+            if is_mem(dst):
+                return "mrs", [f"mov  {SCRATCH}, {loc}   ; {label}",
+                               f"mov  {dst}, {SCRATCH}"]
+            return "mrs", [f"mov  {dst}, {loc}   ; {label}"]
+        src = hostreg(rt)
+        if is_mem(src):
+            return "msr", [f"mov  {SCRATCH}, {src}",
+                           f"mov  {loc}, {SCRATCH}   ; {label}"]
+        return "msr", [f"mov  {loc}, {src}   ; {label}"]
+    # ---- TLB and cache maintenance ----------------------------------------
+    # x86 caches are coherent, so most of the data-cache operations a kernel
+    # issues to keep memory and cache in step have nothing to do on the host
+    # and become no-ops. TLB invalidation does have to happen, but through the
+    # shadow mapping rather than the guest's, so it goes to the runtime.
     if (w & 0xFFF80000) == 0xD5080000:
         crn = (w >> 12) & 0xF
-        kind = {8: "tlbi", 7: "dc/ic"}.get(crn, "sys")
-        raise Unsupported("tlb_cache",
-                          f"{kind}: ARM maintenance granularity and coherence "
-                          f"rules differ from INVLPG/WBINVD")
+        rt = w & 0x1F
+        if crn == 8:
+            return "tlbi", [f"mov  rdi, {hostreg(rt)}",
+                            "call runtime_tlbi          ; invalidate shadow mapping"]
+        if crn == 7:
+            return "dc/ic", ["; dc/ic -> no-op (x86 caches are coherent)"]
+        return "sys", ["call runtime_sys"]
+
+    # ---- exception model ---------------------------------------------------
+    # These do not map to an x86 instruction, but they do map to a call. The
+    # runtime holds the shadow SPSR and ELR and knows how the guest's exception
+    # levels are being represented on the host.
     if w == 0xD69F03E0:
-        raise Unsupported("exception_model",
-                          "eret: returns from an exception level; x86 has rings "
-                          "and IRET with different semantics")
-    if (w & 0xFFE0001F) in (0xD4000001, 0xD4000002, 0xD4000003):
-        raise Unsupported("exception_model",
-                          "svc/hvc/smc: exception-level entry, not a call")
+        return "eret", ["call runtime_eret         ; restore from shadow SPSR/ELR"]
+    if (w & 0xFFE0001F) == 0xD4000001:
+        return "svc", [f"mov  rdi, {(w >> 5) & 0xFFFF:#x}", "call runtime_svc"]
+    if (w & 0xFFE0001F) == 0xD4000002:
+        return "hvc", [f"mov  rdi, {(w >> 5) & 0xFFFF:#x}", "call runtime_hvc"]
+    if (w & 0xFFE0001F) == 0xD4000003:
+        return "smc", [f"mov  rdi, {(w >> 5) & 0xFFFF:#x}", "call runtime_smc"]
 
     # ---- barriers: the favourable direction ------------------------------
     if (w & 0xFFFFF0FF) == 0xD503309F:
