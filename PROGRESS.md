@@ -210,10 +210,28 @@ of confident forum assertions.
   -63.8 GiB. The second argument is negative. Some caller computed a size or
   offset by subtracting and went below zero.
 
-  It is not the call site at 0xa00922c: that one passes `movz x2, #0`. So
-  0xa0098e0 has more than one caller and the failing one is elsewhere. Finding
-  which caller passes a negative second argument is the remaining step, and it
-  is now a search for one subtraction rather than for a missing region.
+  **Located.** The walker has 37 callers. Thirty-six of them pass `movz x2, #0`.
+  Exactly one computes it:
+
+      0xa00cb08   cb010102   sub  x2, x8, x1      ; the size argument
+      0xa00cb0c   aa0803e0   mov  x0, x8          ; the start
+      0xa00cb10   aa0903e1   mov  x1, x9
+      0xa00cb24   97fff36f   bl   0xa0098e0
+
+  so the call is `f(x8, x9, x8 - x1_old, ...)` and the third operand is a
+  length. The measured result is -0xFF2000000, meaning x1 exceeds x8 by
+  63.8 GiB, and a length computed as `start - end` rather than `end - start`
+  is exactly the shape that produces it.
+
+  This is the whole chain, end to end: a length that comes out negative, added
+  to gVirtBase inside the walker after `sub x20, xzr, x21` negates it, giving a
+  virtual address roughly one level 1 entry below the kernel, in the table
+  entry that has nothing in it, whose empty descriptor masks to zero and
+  reaches phystokv as `illegal PA: 0x0`.
+
+  What remains is to establish what x8 and x9 actually are at that call - which
+  region of the kernel's own layout is being described - because a length that
+  large means one of the two endpoints is not where this port has put it.
 
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
