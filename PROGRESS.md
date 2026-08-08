@@ -675,6 +675,23 @@ of confident forum assertions.
   the last several commits were built on. That premise came from exactly this
   comparison.
 
+  **And the run-to-run behaviour settles part of it.** The identical image,
+  frozen at the same instruction, two consecutive runs:
+
+      x08 = 0xfffffdf00ebd0000
+      x08 = 0xfffffdf03a94c000
+
+  physmap_base is **not deterministic across runs**. The earlier note claiming
+  it was - and using that to license cross-run comparison - is wrong; that
+  conclusion came from two reads that happened to agree. `early_random()` is
+  evidently seeded from something that varies, most likely the timebase.
+
+  So the correct rule is the one first written and then wrongly withdrawn:
+  nothing may be compared across runs. Any figure in this entry derived from
+  two separate boots has to be discarded, and that includes the arithmetic
+  linking x8 to physmap_base and the slide. What survives is only what was read
+  from a single frozen guest, or from the kernel file.
+
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
   freeze on first arrival.
