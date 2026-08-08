@@ -44,17 +44,23 @@ GUEST_REGS = 0x20000          # r15 points here: the guest register file
 LINE_BUF   = 0x21000          # the typed line, NUL-terminated
 BLOCK_SLOT = 0x80             # where the block address parks, past x0..x15
 
-# arm64 words the bench knows, with what they should do to the guest state.
-DEMO_WORDS = [
-    (0xD2800141, "movz x1, #10"),
-    (0xD2801002, "movz x2, #128"),
-    (0x8B020020, "add  x0, x1, x2"),
-    (0xCB020020, "sub  x0, x1, x2"),
-    (0xAA0203E3, "mov  x3, x2"),
-    (0xD2800000, "movz x0, #0"),
-    (0x91000421, "add  x1, x1, #1"),
-    (0xD1000421, "sub  x1, x1, #1"),
+# Each case is (word, x1 in, x2 in, register to check, description). The
+# expected value is not written here on purpose -- arm_model.py computes it, so
+# the bench compares two independent implementations rather than the translator
+# against itself.
+TEST_CASES = [
+    (0xD2800141, 0, 0, 1, "movz x1, #10"),
+    (0xD2801002, 0, 0, 2, "movz x2, #128"),
+    (0x8B020020, 5, 7, 0, "add  x0, x1, x2"),
+    (0xCB020020, 20, 7, 0, "sub  x0, x1, x2"),
+    (0xAA0203E3, 0, 0x99, 3, "mov  x3, x2"),
+    (0x91000421, 41, 0, 1, "add  x1, x1, #1"),
+    (0xD1000421, 43, 0, 1, "sub  x1, x1, #1"),
+    (0x8A020020, 0xF0, 0x3C, 0, "and  x0, x1, x2"),
+    (0xAA020020, 0xF0, 0x0C, 0, "orr  x0, x1, x2"),
+    (0xCA020020, 0xFF, 0x0F, 0, "eor  x0, x1, x2"),
 ]
+DEMO_WORDS = [(w, d) for w, _, _, _, d in TEST_CASES]
 
 SCAN = {
     0x02: "1", 0x03: "2", 0x04: "3", 0x05: "4", 0x06: "5", 0x07: "6",
@@ -178,6 +184,8 @@ def build_monitor() -> bytes:
     a.jcc("e", "cmd_clear")
     a.cmp8_imm("al", ord("l"))
     a.jcc("e", "cmd_list")
+    a.cmp8_imm("al", ord("t"))
+    a.jcc("e", "cmd_test")
     a.jmp("bad_line")
 
     a.label("not_cmd")
@@ -254,6 +262,75 @@ def build_monitor() -> bytes:
     a.label("cmd_list")
     a.call("newline")
     a.mov_label("rsi", "s_list")
+    a.call("puts")
+    a.jmp("prompt")
+
+    # --- t: run every case and compare against the model's expectation ----
+    a.label("cmd_test")
+    a.mov_label("r10", "test_table")
+    a.label("t_loop")
+    a.mov_load("rax", "r10", 0)            # word, 0 terminates
+    a.alu_imm("cmp", "rax", 0)
+    a.jcc("e", "t_done")
+
+    # set up the guest state this case wants
+    a.mov_imm("rax", 0)
+    a.mov_store("r15", "rax", 0)
+    a.mov_store("r15", "rax", 24)
+    a.mov_load("rax", "r10", 8)
+    a.mov_store("r15", "rax", 8)           # x1
+    a.mov_load("rax", "r10", 16)
+    a.mov_store("r15", "rax", 16)          # x2
+
+    a.mov_load("rax", "r10", 40)           # block address
+    a.mov_store("r15", "rax", BLOCK_SLOT)
+    a.mov_load("rdx", "r15", 24)
+    a.mov_load("rcx", "r15", 16)
+    a.mov_load("rbx", "r15", 8)
+    a.mov_load("rax", "r15", 0)
+    a.call_mem("r15", BLOCK_SLOT)
+    a.mov_store("r15", "rax", 0)
+    a.mov_store("r15", "rbx", 8)
+    a.mov_store("r15", "rcx", 16)
+    a.mov_store("r15", "rdx", 24)
+
+    # print the word
+    a.mov_load("rax", "r10", 0)
+    a.call("puthex8")
+    a.mov_label("rsi", "s_sp")
+    a.call("puts")
+
+    # compare the register this case checks against the expectation
+    a.mov_load("rbx", "r10", 24)           # which register
+    a.shift_imm("shl", "rbx", 3)
+    a.alu_rr("add", "rbx", "r15")
+    a.mov_load("rax", "rbx", 0)
+    a.mov_load("rbx", "r10", 32)           # expected
+    a.alu_rr("cmp", "rax", "rbx")
+    a.jcc("ne", "t_fail")
+    a.mov_label("rsi", "s_ok")
+    a.call("puts")
+    a.jmp("t_next")
+
+    a.label("t_fail")
+    a.mov_label("rsi", "s_fail")
+    a.call("puts")
+    a.call("puthex16")                     # what we actually got
+    a.mov_label("rsi", "s_want")
+    a.call("puts")
+    a.mov_load("rax", "r10", 32)
+    a.call("puthex16")
+    a.call("newline")
+    a.jmp("t_next2")
+
+    a.label("t_next")
+    a.call("newline")
+    a.label("t_next2")
+    a.alu_imm("add", "r10", 48)
+    a.jmp("t_loop")
+
+    a.label("t_done")
+    a.mov_label("rsi", "s_tdone")
     a.call("puts")
     a.jmp("prompt")
 
@@ -376,6 +453,10 @@ def build_monitor() -> bytes:
     a.label("puthex16")
     a.mov_imm("rcx", 16)
     a.jmp("ph_common")
+    a.label("puthex8")
+    a.mov_imm("rcx", 8)
+    a.shift_imm("shl", "rax", 32)
+    a.jmp("ph_common")
     a.label("puthex2")
     a.mov_imm("rcx", 2)
     a.shift_imm("shl", "rax", 56)
@@ -427,10 +508,16 @@ def build_monitor() -> bytes:
     string("s_help",
            "type 8 hex digits: run that arm64 word\n"
            "xN=HEX   set guest register x0..x3\n"
+           "t run the built-in tests\n"
            "r regs   l list   c clear   h help\n")
     string("s_unknown", "no translation built in for that word\n")
     string("s_bad", "?  try h\n")
     string("s_x", "x")
+    string("s_sp", "  ")
+    string("s_ok", "ok")
+    string("s_fail", "FAIL got ")
+    string("s_want", " want ")
+    string("s_tdone", "-- done\n")
     string("s_eq", " = ")
     listing = "".join(f"{w:08x}  {d}\n" for w, d in DEMO_WORDS)
     string("s_list", listing)
@@ -449,6 +536,17 @@ def build_monitor() -> bytes:
         a.label(f"blk_{word:08x}")
         a.raw(code)
         blocks[word] = f"blk_{word:08x}"
+
+    a.label("test_table")
+    import arm_model
+    for word, x1, x2, check, desc in TEST_CASES:
+        if word not in blocks:
+            continue
+        expect = arm_model.step(word, {1: x1, 2: x2}).get(check, 0)
+        a.raw(struct.pack("<QQQQQ", word, x1, x2, check, expect))
+        a.fixups.append((len(a.buf), 8, blocks[word], "abs"))
+        a.raw(b"\x00" * 8)
+    a.raw(struct.pack("<Q", 0))
 
     a.label("word_table")
     for word, lbl in blocks.items():
