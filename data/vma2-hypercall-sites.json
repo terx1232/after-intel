@@ -1,0 +1,119 @@
+{
+  "kernel": "vma2.kernel",
+  "sites": [
+    {
+      "segment": "__TEXT_EXEC",
+      "vaddr": 18446741874852234064,
+      "offset": 48481104,
+      "function_id": 3238002688
+    },
+    {
+      "segment": "__TEXT_EXEC",
+      "vaddr": 18446741874852234500,
+      "offset": 48481540,
+      "function_id": null
+    },
+    {
+      "segment": "__TEXT_EXEC",
+      "vaddr": 18446741874852234568,
+      "offset": 48481608,
+      "function_id": null
+    },
+    {
+      "segment": "__TEXT_EXEC",
+      "vaddr": 18446741874852234724,
+      "offset": 48481764,
+      "function_id": null
+    },
+    {
+      "segment": "__TEXT_EXEC",
+      "vaddr": 18446741874852234792,
+      "offset": 48481832,
+      "function_id": null
+    },
+    {
+      "segment": "__TEXT_EXEC",
+      "vaddr": 18446741874852235300,
+      "offset": 48482340,
+      "function_id": null
+    },
+    {
+      "segment": "__TEXT_EXEC",
+      "vaddr": 18446741874852235368,
+      "offset": 48482408,
+      "function_id": null
+    },
+    {
+      "segment": "__TEXT_EXEC",
+      "vaddr": 18446741874852236092,
+      "offset": 48483132,
+      "function_id": null
+    },
+    {
+      "segment": "__TEXT_EXEC",
+      "vaddr": 18446741874852236160,
+      "offset": 48483200,
+      "function_id": null
+    },
+    {
+      "segment": "__TEXT_EXEC",
+      "vaddr": 18446741874852237632,
+      "offset": 48484672,
+      "function_id": null
+    },
+    {
+      "segment": "__TEXT_EXEC",
+      "vaddr": 18446741874852237680,
+      "offset": 48484720,
+      "function_id": null
+    },
+    {
+      "segment": "__TEXT_EXEC",
+      "vaddr": 18446741874852884400,
+      "offset": 49131440,
+      "function_id": null
+    },
+    {
+      "segment": "__TEXT_EXEC",
+      "vaddr": 18446741874852884468,
+      "offset": 49131508,
+      "function_id": null
+    },
+    {
+      "segment": "__TEXT_EXEC",
+      "vaddr": 18446741874852884968,
+      "offset": 49132008,
+      "function_id": null
+    },
+    {
+      "segment": "__TEXT_EXEC",
+      "vaddr": 18446741874853804336,
+      "offset": 50051376,
+      "function_id": null
+    },
+    {
+      "segment": "__TEXT_EXEC",
+      "vaddr": 18446741874854087600,
+      "offset": 50334640,
+      "function_id": 3238002689
+    },
+    {
+      "segment": "__TEXT_EXEC",
+      "vaddr": 18446741874854158756,
+      "offset": 50405796,
+      "function_id": 3238002689
+    },
+    {
+      "segment": "__TEXT_EXEC",
+      "vaddr": 18446741874862112448,
+      "offset": 58359488,
+      "function_id": null
+    },
+    {
+      "segment": "__TEXT_EXEC",
+      "vaddr": 18446741874862112516,
+      "offset": 58359556,
+      "function_id": null
+    }
+  ]
+}
