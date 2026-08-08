@@ -1869,3 +1869,29 @@ Two things follow. Any failure can now be made to print by patching the executed
 path, so the excavation from memory dumps that this whole stage required is over.
 And the kernel's own console will produce a full boot log the moment the boot
 reaches a path that uses it.
+
+**Panic messages are now readable on the wire.** Routing the halt path into the
+kernel's own printing function - `mov x0, x2; mov x1, x3; bl <print>` over the
+three words at 0x9e92164 - makes XNU format and print the panic itself:
+
+    IONVRAMCHRPHandler creation failed
+     @IONVRAM.cpp:1691
+
+followed by its full register dump. No more excavating from memory.
+
+**`nvram_image.py` builds a valid CHRP store.** The layout and checksum are read
+from `iokit/Kernel/IONVRAMCHRPHandler.cpp`, not guessed:
+
+    chrp_nvram_header  = sig | cksum | len(16-byte blocks) | name[12]
+    apple_nvram_header = chrp | adler32 | generation | padding[8]
+
+and the checksum is a byte sum with end-around carry over `sig` plus `len`
+through `name`, skipping the checksum field. The tool recomputes both the
+checksum and the Adler-32 after writing and refuses to emit an image that fails
+its own validation.
+
+It does **not** fix the panic. Reading `nvram_validate_header_v1v2` shows the
+kernel checks only the name and the checksum - the signature byte is not
+validated at all - and our image satisfies both. So the failure comes from a
+different check inside handler creation, and the next step is to find which,
+now that the message arrives as text.

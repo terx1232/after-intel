@@ -60,6 +60,13 @@ UART_PHANDLE = 1
 NVRAM_BYTES = 0x2000
 
 
+def _default_nvram(size: int) -> bytes:
+    """A valid, empty CHRP store. Built by nvram_image.py, which reads the
+    layout and checksum out of IONVRAMCHRPHandler.cpp."""
+    import nvram_image
+    return nvram_image.build(size)
+
+
 def _pad4(n: int) -> int:
     return (-n) % 4
 
@@ -191,7 +198,8 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
                          bus_hz: int = 100_000_000,
                          soc_base: int = 0x0800_0000,
                          soc_size: int = 0x3800_0000,
-                         random_seed: bytes | None = None) -> Node:
+                         random_seed: bytes | None = None,
+                         nvram_data: bytes | None = None) -> Node:
     root = Node("device-tree")
     root.set_str("compatible", "AppleVirtualPlatformARM")
     root.set_str("model", "VirtualMac2,1")
@@ -264,10 +272,18 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     # with iBoot + xnu mismatch" when this is empty, so the buffer has to be
     # real rather than the node merely present. Zeros are a valid empty store:
     # the handler formats it on first use.
+    # A buffer of zeros is not enough: the CHRP handler validates a header and
+    # fails with "IONVRAMCHRPHandler creation failed @IONVRAM.cpp:1691". The
+    # image below carries a real Apple header, a checksum computed the way
+    # `chrp_checksum` computes it, an Adler-32 over the body, and two empty
+    # partitions. See nvram_image.py, which reads the layout out of
+    # IONVRAMCHRPHandler.cpp rather than guessing it.
     options = root.add(Node("options"))
-    options.props["nvram-proxy-data"] = b"\x00" * NVRAM_BYTES
+    options.props["nvram-proxy-data"] = nvram_data or _default_nvram(NVRAM_BYTES)
     options.set_u32("nvram-total-size", NVRAM_BYTES)
     options.set_u32("nvram-bank-size", NVRAM_BYTES)
+    options.set_u32("nvram-bank-count", 1)
+    options.set_u32("nvram-current-bank", 0)
 
     memmap = chosen.add(Node("memory-map"))
     memmap.props["DeviceTree"] = b"\x00" * 16
@@ -638,6 +654,7 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
 
 
 
