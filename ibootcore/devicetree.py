@@ -240,6 +240,22 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     memmap.props["DeviceTree"] = b"\x00" * 16
     memmap.props["BootArgs"] = b"\x00" * 16
 
+    # pe_serial.c:831 does
+    #
+    #     if (SecureDTFindNodeWithStringProperty("name", "defaults",
+    #                                            &defaults_node) != kSuccess) {
+    #         panic("Unable to find the 'defaults' devicetree node.");
+    #     }
+    #
+    # and that is an unconditional panic, not a fallback. The node has to exist
+    # for the kernel to reach serial init at all.
+    #
+    # It then looks for a "serial-device" phandle inside it. Leaving that out is
+    # deliberate: absent, the kernel treats no serial device as specified and
+    # picks its own, which is what we want while the tree describes PL011 rather
+    # than an Apple UART.
+    root.add(Node("defaults"))
+
     memory = root.add(Node("memory"))
     memory.set_str("device_type", "memory")
     memory.set_reg(ram_base, ram_size)

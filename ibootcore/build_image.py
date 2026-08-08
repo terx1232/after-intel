@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 build_image.py -- assemble a flat memory image for an arm64e kernel collection:
 kernel, device tree and boot_args placed at fixed physical addresses.
@@ -151,12 +151,27 @@ def main(argv=None) -> int:
     # own link address: phystokv(load) == the kernel's vm_low.
     ba_virt_base = virt_base - (phys_base - ram_base)
 
+    # deviceTreeP is a **virtual** address, not physical. XNU copies it into
+    # PE_state.deviceTreeHead, and arm_vm_init assigns
+    #     segEXTRADATA = (vm_offset_t)PE_state.deviceTreeHead
+    # letting it become segLOWEST, after which arm_vm_physmap_slide computes
+    # `segLOWEST - gVirtBase` as a length. Passing a physical address there makes
+    # that subtraction wrap: 0x4be04000 - 0xfffffe0000000000 is 0x2004be04000,
+    # two terabytes, and the granular walk then steps up through level 1 entries
+    # until it reaches one that was never built and panics in phystokv with
+    # "illegal PA: 0x0". That was this port's stage-5 failure, and the 0x200 that
+    # kept turning up in the high bits of unrelated-looking values was the top of
+    # `2 << 40` surviving the wrap.
+    dt_virt = ba_virt_base + (dt_addr - ram_base)
+    print(f"  deviceTreeP                 {dt_virt:#018x}   (virtual, not "
+          f"{dt_addr:#x})")
+
     ba = bootargs.build(
         virt_base=ba_virt_base,
         phys_base=ram_base,
         mem_size=mem_size,
         top_of_kernel_data=phys_base + total,
-        device_tree_p=dt_addr,
+        device_tree_p=dt_virt,
         device_tree_length=len(dt_blob),
         cmdline=args.cmdline,
         video=video,
@@ -200,3 +215,4 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+

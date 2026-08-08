@@ -59,7 +59,51 @@ of confident forum assertions.
 | 34 | `pe_identify_machine` returns before assigning any defaults if `pe_arm_get_soc_base_phys()` is zero, and that reads the **second** cell of `arm-io`'s `ranges`. A wrong `ranges` therefore leaves every clock at zero, and the kernel dies far away in `_enable_timebase_event_stream` with `invalid bit index (4294967294)` - which is `flsll(0) - 1` decremented once more | [verified] against xnu source + reproduced |
 | 35 | The minimum this kernel demands of a device tree before it will leave early boot: `arm-io` with non-zero `ranges[1]` and a `device_type`; `/cpus/cpuN` with `state` as the **string** `"running"` and a `timebase-frequency`; `/chosen/random-seed` of **256** bytes; and a `chosen/memory-map` node, whose absence is only an `assert` and so goes unchecked in a release kernel | [measured] each one found by fixing the previous panic |
 
-## Stage 5 - read this first
+## Stage 5 - PASSED
+
+**Root cause, one field.** `boot_args.deviceTreeP` must be a **virtual**
+address. We were passing a physical one. XNU copies it into
+`PE_state.deviceTreeHead`, `arm_vm_init` assigns
+`segEXTRADATA = (vm_offset_t)PE_state.deviceTreeHead` and lets that become
+`segLOWEST`, then `arm_vm_physmap_slide` computes `segLOWEST - gVirtBase` as a
+length:
+
+    0x4be04000 - 0xfffffe0000000000 = 0x2004be04000   (mod 2^64) = 2.00 TiB
+
+A 2 TiB granular walk starting inside level 1 entry 0x7DF steps up through 0x7E0
+and into 0x7E1, which is never built, whose empty descriptor masks to zero and
+reaches `phystokv` as `illegal PA: 0x0`. Measured, not inferred: freezing the
+call at 0xa00cb24 read x1 = 0x2004be04000 before the fix and x1 = 0x7004000
+after, the latter being exactly gVirtBase to the kernel's link base.
+
+`2 << 40` is VM_MIN_KERNEL_ADDRESS, so the `0x200` that kept appearing in the
+high bits of unrelated-looking values all through this investigation - and which
+was twice dismissed as a tagged pointer - was the top of that wrap pointing
+straight at the cause.
+
+**Second fix, needed to get past serial init.** `pe_serial.c:831` panics
+unconditionally if there is no `defaults` device tree node. Added.
+
+**Where the boot is now.** Past `arm_vm_init`, past the `defaults` lookup, into
+serial init. The panic changed from a silent halt to XNU's exception report
+(`"%s at pc 0x%016llx, lr 0x%016llx (saved state: %p%s)"` with a register dump),
+so the kernel is now trying to describe its own failure rather than spinning.
+
+Exceptions captured with `-d int`:
+
+    Hypervisor Call, handled as PSCI                        expected
+    Undefined Instruction, ESR 0x0, ELR 0xfffffe0009e92dc0  <- the blocker
+    Data Abort, ESR 0x96000045, FAR 0xb1
+
+The instruction at 0xfffffe0009e92dc0 is `0xe7ffdeff`, and it is present in
+Apple's **unmodified** kernel - verified against `vma2.kernel`, not just the
+patched build. QEMU's `-cpu max` does not decode it. Whether it is an
+undocumented Apple instruction or a poison value that should never be reached is
+the next question, and the two lead to very different work.
+
+---
+
+## Stage 5 - the investigation, kept for method
 
 Everything below in "In progress" is a chronological log with several claims
 that were later retracted. Read this summary before it, not after.
@@ -1204,6 +1248,7 @@ Recording these because a repo that only lists its strengths is advertising.
   0x7E1 before this walk, and why it has not run. `init_ptpages` at line 2327 is
   the candidate from source, but it must be located in the binary and frozen
   rather than assumed, since assuming is what produced every wrong turn above.
+
 
 
 
