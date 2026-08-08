@@ -1657,6 +1657,60 @@ past x3's own address, so this is an argument-list structure pointing back into
 the same stack region. The message is therefore one dereference further on, and
 the technique to follow it now exists and is reliable.
 
+## Stage 6 - read this first
+
+**Where the boot stops:** `panic: non-sensical crypto hash method:` with an empty
+value, from the Image4 secure-boot path. Everything before it now passes.
+
+**Passed this stage, all read from the kernel rather than guessed:**
+
+| requirement | how it was found |
+|---|---|
+| `/defaults` node | `pe_serial.c:831`, unconditional panic |
+| `/defaults/serial-device` phandle + `AAPL,phandle` on the UART | `serial_init` returns early without it, which is why the port was silent throughout |
+| compatible `arm,pl011`, lower case | the `driver_setup_functions` table spells it that way |
+| GIC node at `/arm-io/gic` | the path sits beside the error string |
+| GIC and UART `reg` as **offsets** from arm-io's ranges base | both map `soc_base_phys + reg->block_offset` |
+| `/product` node | `panic: failed to get product node` |
+| `/chosen` NVRAM properties, not `/options` | `IONVRAM.cpp` reads them from `/chosen` |
+| valid CHRP NVRAM image, adler from offset 20 | the kernel printed both checksums |
+
+**Serial output works.** `early_console.py --uart 0xfffffe000c000000` prints, and
+routing the halt into the kernel's own printer (`mov x0, x2; mov x1, x3; bl` over
+the three words at 0x9e92164) makes XNU format its own panics. Use that: every
+failure names itself now, and the three fixes after it landed in one session
+against one message per session before.
+
+**The kernel is alive.** 56 timer interrupts, 41 page faults, all with clean
+exception returns. GIC, timer and fault handlers all work.
+
+**The remaining blocker needs material, not analysis.** The manifest lookup at
+0xfffffe0008431aac queries an object two dereferences into a graph, not the
+device tree. Named properties on `/chosen/manifest-properties` are not found -
+`sha2-384` and `sha1` were both tried. It is very likely a DER Image4 manifest
+blob that the kernel parses. The manifest for this platform exists in the shipped
+installer; extract it rather than synthesise one.
+
+**Apparatus: six faults found and fixed in this stage.** Registers read at the
+halt are clobbered; `-d` starves the guest; stale QEMU processes answer the
+monitor port; a 256 MiB `pmemsave` outlives the script; the monitor reader
+desynchronises unless it drains and waits for the prompt; PowerShell's `:x`
+silently ignores a `UInt64`. Four of the six produced **false negatives**, which
+get believed rather than checked. Use `dis.ps1` and `uartscan.ps1`, which carry
+the fixes.
+
+**Build the image and trampoline together**, always:
+
+    python build_image.py <kernel> --out image.bin --phys-base 0x47004000 \
+      --ram-base 0x40000000 --mem-size 4G --cmdline="-v" \
+      --fb 1024x768 --fb-addr 0x50000000 --trampoline trampoline.bin
+
+Anything that changes the device tree's size moves boot_args, and a separately
+built stub then points into the middle of the tree. That produced a machine
+resetting into an exception vector with 2 452 392 logged exceptions, and cost two
+sessions before it was found.
+
+---
 ## Stage 6 - into IOKit
 
 Following pointers with `gva2gpa` + `xp` finally made panic messages readable,
@@ -2021,3 +2075,4 @@ the next step is to find and extract it rather than to synthesise one.
 
 Two attempts at synthesising the properties are recorded here as failures so
 that a third is not made from the same assumption.
+
