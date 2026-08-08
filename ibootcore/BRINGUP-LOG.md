@@ -126,6 +126,31 @@ The cause follows from the stub. `movz x0, #0` makes the check fall through,
 but it also makes the *return value* zero, and some of these calls hand back
 pointers. The kernel got NULL and dereferenced it.
 
+### What the two faults were reaching for
+
+Disassembling both sites says the same thing twice:
+
+```
+0xfffffe000a0129c0  f940a530   ldr x16, [x9, #0x148]     ; x9 = 0, FAR 0x148
+0xfffffe0009e41eb0  3dc00020   ldr q0, [x1]              ; x1 = 0, FAR 0x0
+```
+
+The first appears twice within four instructions with a branch between, which
+is the shape of a dispatch-pointer fetch from a structure. Both are loads
+through pointers that a paravirtual call was supposed to hand back.
+
+Tracing `x9` back forty instructions does not find an assignment - it arrives
+from further out or from a callee, `0xfffffe000a00e87c`, which is invoked twice
+just before.
+
+That is where stubbing runs out. Returning `0` produces `FAR 0x148`. Returning
+`-1` would produce a fault at `0xffffffffffffff48` instead, no better. Any
+third value is another guess. Going further needs the actual contract - what
+structure these calls return, how large it is, and what lives at offset
+`0x148` - and that is not in the kernel, not in the XNU headers, and not
+recoverable from either. It is in `AVPBooter.vmapple2.bin` and in QEMU's
+`vmapple` machine.
+
 ## What this establishes
 
 - The macOS 27 kernel executes on non-Apple hardware, brings up its own page
