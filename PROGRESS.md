@@ -1366,3 +1366,35 @@ entries. The panic has two possible causes and they need different fixes:
 the table was never built; non-zero means a match failure. Do that before
 touching the device tree again - the last two device tree guesses here both
 failed.
+
+**Correction: that loop is an MMIO scan, not a device tree table.** Measured at
+a freeze on 0xa75bf94:
+
+    x00 = 0                     Aff0, from MPIDR_EL1 = 0x80000000
+    x20 = 0x08000000            GICD base, parsed correctly from reg
+    x24 = 0x080a0000            GICR base, parsed correctly
+    x01 = 0xf60000              GICR size, parsed correctly
+    [x23+0x6c8] = 0xf60000      not a count - the GICR region **size**
+    [x22+0x6c0] = 0xfffffe000c010000   the ml_io_map'd GICR base
+
+And the stride was misread: `91408129` has the shift bit set, so
+`add x9, x9, #0x20` is actually `0x20 << 12` = **0x20000**, the correct GICR
+frame stride.
+
+So the loop walks the redistributor frames over MMIO, reads `GICR_TYPER` at
+frame+8, takes Aff0 from its upper half, and compares against MPIDR. There is no
+table built from the device tree and **no property to add** - the previous
+reading of this as a per-core table was wrong, and so were both device tree
+guesses that followed from it.
+
+The zeros read at that address prove nothing either: `pmemsave` dumps RAM, and
+the redistributor is MMIO outside the dumped range.
+
+Every value the device tree supplies here is now confirmed correct. The failure
+is that the scan finds no frame whose TYPER Aff0 is 0, which points at the
+mapping rather than the tree: either `ml_io_map` returned an address that does
+not reach the device, or the scan starts at the wrong place within the region.
+
+**Next measurement:** read GICR_TYPER through the monitor with `x/2xg` at the
+mapped virtual address 0xfffffe000c010000, which goes through QEMU's own
+translation and will show the real register rather than a RAM dump.
