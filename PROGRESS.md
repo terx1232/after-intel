@@ -1045,3 +1045,27 @@ Recording these because a repo that only lists its strengths is advertising.
   entered when it should not be, or something it depends on completes earlier on
   a real machine. Both are checkable by freezing the entry to that function and
   reading what selected it.
+
+  **Call structure, measured.** 0xa0098e0 has 37 call sites across four
+  functions:
+
+      0xa009168   25 calls   per-segment, so this is the protection pass
+      0xa009e04    6 calls
+      0xa009fd0    5 calls   the large one, plausibly arm_vm_init itself
+      0xa00c9e4    1 call    at 0xa00cb24 - the failing path
+
+  Which means 0xa0098e0 is **not** `init_ptpages`: it takes eight arguments and
+  is called once per segment, matching `arm_vm_page_granular_prot`. An earlier
+  entry above assumed it was init_ptpages; that assumption is withdrawn.
+
+  The failing chain, fully measured, is:
+
+      0xa00c9e4 -> 0xa00cb24 -> 0xa0098e0 -> 0xa009a1c -> phystokv(0)
+
+  with x24 at the failure equal to KERNEL_PMAP_HEAP_RANGE_START, and the
+  assignment to avail_start never reached.
+
+  Note the tension that remains and should not be smoothed over: if 0xa0098e0
+  is the protection pass rather than init_ptpages, then the argument reaching
+  phystokv may not be avail_start after all, and the identification two entries
+  above needs re-testing. The measured facts stand; the naming does not.
