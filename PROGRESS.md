@@ -144,10 +144,34 @@ of confident forum assertions.
   x23 = 0x2000000.
 
   This is no longer a missing mapping. An address that far outside RAM comes
-  from a computation producing an impossible value, and the next step is to
-  find which input to that computation we are supplying wrongly - the
-  magnitudes involved (63 GiB, 128 GiB) match nothing in this machine's
-  4 GiB layout.
+  from a computation producing an impossible value, and one wrong input was
+  found: `build_image` handed the device tree the load address while boot_args
+  got the true RAM base, so the tree claimed DRAM ran from the image for the
+  full memory size, past the real end of RAM. Fixed.
+
+  **State after that fix, measured three ways and not yet explained:**
+
+  * Serial output is **zero bytes**. The kernel does not reach serial init, so
+    the stage is not complete. This is the decisive test, because the early
+    panic path announces itself with "Kernel panicked very early before serial
+    init, spinning forever..." - any bytes at all would mean we were past it.
+  * Searching all 256 MB of dumped RAM for panic text finds **nothing written
+    at runtime**: every candidate string counts the same in memory as in the
+    kernel file. The `illegal PA` message is gone, but no message replaced it.
+  * The stack buffer the early panic path formats into holds pointers, not
+    text, so that path did not run.
+
+  So the halt is now reached *without* going through the printing path. The
+  shared halt routine has five `bl` call sites and only one of them formats a
+  message first; identifying which site is live now is the next measurement.
+  x30 reads 0xfffffe0009e91e64, which is both the return address of the
+  printing site's call and the branch target of the `cbnz` that skips it -
+  those two readings are indistinguishable from the register alone, and that
+  ambiguity has to be resolved before anything is concluded from it.
+
+  A `startup_bootstrap` string found near the stack was noted earlier as a sign
+  of progress. It is not evidence: the serial test contradicts it, and the
+  string exists in the kernel image anyway.
 
   Superseded detail, kept because the reasoning is reusable: the index
   `ubfx x9, x2, #36, #11`, so the level 1 index is bits [46:36] of the address
