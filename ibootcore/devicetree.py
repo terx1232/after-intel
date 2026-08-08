@@ -266,7 +266,30 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     # the ARV root hash and manifest a real loader supplies, per finding #15 -
     # and inventing values there would be worse than leaving them out. The nodes
     # exist so the lookups succeed; their contents are a separate problem.
-    chosen.add(Node("manifest-properties"))
+    # The manifest properties are Image4 secure-boot fields. Leaving the node
+    # empty produced "panic: non-sensical crypto hash method: " with the value
+    # missing after the colon, which named the property directly.
+    #
+    # The names and the accepted values are read out of the kernel's own string
+    # table around 0xfffffe0007234f1a: `crypto-hash-method` takes `sha1` or
+    # `sha2-384`, and the neighbouring strings are the rest of the set. Note
+    # `uses-avp-root-ca` - AVP is Apple Virtual Platform, so this path is meant
+    # for exactly the machine we are pretending to be.
+    #
+    # These describe a development configuration: production status off, security
+    # mode off, mix-and-match allowed. That is deliberate and it is a real
+    # loosening of secure boot, not a placeholder - a loader shipping these
+    # values would be declaring an unlocked machine.
+    manifest = chosen.add(Node("manifest-properties"))
+    manifest.set_str("crypto-hash-method", "sha2-384")
+    manifest.set_u32("certificate-production-status", 0)
+    manifest.set_u32("certificate-security-mode", 0)
+    manifest.set_u32("effective-production-status-ap", 0)
+    manifest.set_u32("effective-security-mode-ap", 0)
+    manifest.set_u32("mix-n-match-prevention-status", 0)
+    manifest.set_u32("uses-avp-root-ca", 1)
+    manifest.set_u32("allow-ecid-mismatch", 1)
+
     chosen.add(Node("asmb"))
     # IONVRAM panics with "NVRAM size is 0 bytes, possibly due to bad config
     # with iBoot + xnu mismatch" when this is empty, so the buffer has to be

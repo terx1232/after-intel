@@ -1931,3 +1931,36 @@ Worth noting how fast these three went compared to everything before them. With
 the console working, each failure named itself and the fix followed from reading
 one function. The whole of stage 5 was spent extracting single messages from
 memory dumps.
+
+**Manifest properties, read from the kernel's own strings.** The panic
+"non-sensical crypto hash method: " with nothing after the colon named the
+missing property directly. Around 0xfffffe0007234f1a the kernel spells out both
+the name and the permitted values:
+
+    crypto-hash-method    with `sha1` and `sha2-384` immediately following
+    certificate-production-status      certificate-security-mode
+    effective-production-status-ap     effective-security-mode-ap
+    mix-n-match-prevention             allow-ecid-mismatch
+    uses-avp-root-ca
+
+`uses-avp-root-ca` is worth noting: AVP is Apple Virtual Platform, so this code
+path exists for exactly the machine we are pretending to be.
+
+Populating `/chosen/manifest-properties` with those clears the panic. **The
+values chosen describe an unlocked development machine** - production status
+off, security mode off, mix-and-match allowed. That is a real loosening of
+secure boot rather than a placeholder, and a loader shipping them would be
+declaring the machine unlocked. It is recorded here rather than buried in the
+code.
+
+**State after that.** The serial output stops, so the redirected panic path is
+no longer reached. Two exceptions and then silence, against 2 452 392 lines of
+exception loop before:
+
+    Data Abort, ESR 0x96000006, FAR 0x945d70,  ELR 0x4a7abde4
+    Data Abort, ESR 0x96000006, FAR 0x148,     ELR 0x4a0129c0
+
+Both ELRs are physical addresses, so the MMU is off and this is early code.
+FAR 0x148 is a small offset from null - a field read through a null pointer.
+Whether the machine reset and restarted, or never brought the MMU up this time,
+has to be established before reading anything more into it.
