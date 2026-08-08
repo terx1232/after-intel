@@ -711,6 +711,22 @@ of confident forum assertions.
   requested length before closing the monitor - rather than sleeping a fixed
   interval and hoping.
 
+  **With that fixed, the premise collapses.** One run, dump verified complete:
+
+      x08 (freshly loaded from physmap_base) = 0xfffffdf02f9f8000
+      physmap_base read from the dump        = 0xfffffdf02f9f8000
+
+  They are equal. `x8` **is** physmap_base, exactly, and there is no address
+  below the aperture. Every commit built on "the kernel walks an address below
+  physmap_base" rested on a dump that lagged one boot, comparing this run's
+  register against the previous run's memory while the slide changed between
+  them.
+
+  What that leaves standing is narrow but real: the boot still halts, serial is
+  still silent, and the panic is still `phystokv: illegal PA: 0x0`. Everything
+  said about *why* since the level 1 tables were confirmed populated has to be
+  discarded and redone with the corrected apparatus.
+
   x0 on the first hit is 0x47824000, not zero, so that call succeeds and the
   failing one comes later; catching it needs a conditional trap rather than a
   freeze on first arrival.
