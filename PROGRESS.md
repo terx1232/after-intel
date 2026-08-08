@@ -1069,3 +1069,34 @@ Recording these because a repo that only lists its strengths is advertising.
   is the protection pass rather than init_ptpages, then the argument reaching
   phystokv may not be avail_start after all, and the identification two entries
   above needs re-testing. The measured facts stand; the naming does not.
+
+  **Tension resolved with data already in hand.** At 0xa009a18 the instruction
+  is `and x0, x8, #mask`, and x8 at the failing moment was measured as
+  `x25 = 0`. So the argument reaching phystokv is the **masked table entry**,
+  not `avail_start`. The `alloc_ptpage` identification is wrong and is
+  withdrawn, along with everything derived from it: the read-only-too-early
+  theory, the ordering argument about line 1941, and the claim that the defect
+  is an uninitialised allocator cursor.
+
+  `avail_start` being zero and the assignment being unreached are both true and
+  both irrelevant to this failure. They are downstream of it: execution stops
+  before line 1941 *because* it panics here, not the other way round. I had the
+  causality backwards.
+
+  What stands, all measured in one guest with the apparatus corrected:
+
+      the failing chain 0xa00c9e4 -> 0xa00cb24 -> 0xa0098e0 -> 0xa009a1c
+      the walked address x24 = 0xfffffe1000000000 = KERNEL_PMAP_HEAP_RANGE_START
+      the level 1 index  x26 = 0x7E1
+      the entry read     x25 = 0, i.e. that entry does not exist
+      the argument       x0 = entry & bits[47:12] = 0
+
+  So 0xa0098e0 walks the heap level 1 range through a path that does **not**
+  allocate, and entry 0x7E1 has not been created by the time it does. That is
+  the defect, stated with nothing inferred: a non-allocating walk over a range
+  whose tables are not built yet.
+
+  The next question is the right one at last: which code was supposed to create
+  0x7E1 before this walk, and why it has not run. `init_ptpages` at line 2327 is
+  the candidate from source, but it must be located in the binary and frozen
+  rather than assumed, since assuming is what produced every wrong turn above.
