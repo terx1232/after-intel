@@ -2114,3 +2114,26 @@ kernel is parsing the manifest **blob**, not reading a node. The next attempt
 should hand it the raw 4 819 bytes rather than a decomposition of them.
 
 The manifest and the parser are committed, so that work is not repeated.
+
+**Third attempt, also failed: the raw blob in the device tree.** Supplying the
+4 819-byte manifest as `/chosen/manifest-properties`, as `/chosen/manifest`, and
+as `manifest` and `IM4M` properties inside the node - the device tree grew from
+12 400 to 32 264 bytes, so it was certainly delivered - leaves the panic
+unchanged.
+
+So the manifest is not read from the device tree in any form. Three shapes have
+now been tried and eliminated:
+
+1. long display-label properties on the node - wrong names entirely;
+2. four-character-code properties on the node - right names, wrong place;
+3. the raw DER blob, on the node and on /chosen - right data, wrong place.
+
+The disassembly said as much and should have been trusted sooner: `x20` comes
+from `[[x0 + 0x10] + 0x8]`, two dereferences into an object the caller passes
+in. The device tree is not in that path at all.
+
+**Next, and it is a different kind of step:** find the callers of the function
+containing 0xfffffe0008431aac and see where that object is built. It is likely
+an Image4 environment assembled earlier in boot, possibly from the trust cache
+or from a registry entry, and whatever populates it is what needs feeding - not
+the device tree.

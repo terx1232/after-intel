@@ -82,6 +82,17 @@ DEFAULT_MANIFEST_PROPS = {
 
 NVRAM_BYTES = 0x2000
 
+# Apple's manifest for this platform, shipped in the installer and committed to
+# data/. Loaded lazily so the tree can still be built without it.
+def _default_manifest_blob():
+    import os
+    for p in (os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
+                           "data", "apticket.vma2macosap.im4m"),
+              r"D:\macos\ibootcore-build\apticket.vma2macosap.im4m"):
+        if os.path.exists(p):
+            return open(p, "rb").read()
+    return None
+
 
 def _default_nvram(size: int) -> bytes:
     """A valid, empty CHRP store. Built by nvram_image.py, which reads the
@@ -223,7 +234,8 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
                          soc_size: int = 0x3800_0000,
                          random_seed: bytes | None = None,
                          nvram_data: bytes | None = None,
-                         manifest_props: dict | None = None) -> Node:
+                         manifest_props: dict | None = None,
+                         manifest_blob: bytes | None = None) -> Node:
     root = Node("device-tree")
     root.set_str("compatible", "AppleVirtualPlatformARM")
     root.set_str("model", "VirtualMac2,1")
@@ -320,7 +332,19 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     # Note CPRO and CSEC are **true**. The earlier synthesis set them to zero,
     # declaring an unlocked development machine; Apple's manifest says the
     # opposite, so that loosening was not only unnecessary, it was wrong.
+    # Hand over the raw manifest as well as the decomposed properties. The
+    # lookup disassembles to a query against an object two dereferences into a
+    # graph, not a device tree read, so the kernel is parsing a blob. Supplying
+    # only the four-character properties left the panic in place.
+    manifest_blob = manifest_blob or _default_manifest_blob()
+    if manifest_blob:
+        chosen.props["manifest-properties"] = manifest_blob
+        chosen.props["manifest"] = manifest_blob
+
     manifest = chosen.add(Node("manifest-properties"))
+    if manifest_blob:
+        manifest.props["manifest"] = manifest_blob
+        manifest.props["IM4M"] = manifest_blob
     for key, value in (manifest_props or DEFAULT_MANIFEST_PROPS).items():
         if isinstance(value, bool):
             manifest.set_u32(key, 1 if value else 0)
@@ -728,6 +752,8 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
 
 
 
