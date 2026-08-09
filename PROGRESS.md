@@ -2200,3 +2200,37 @@ image did not enable it - the banner still reports `log mode flags 0x4`, so the
 variable is initialised at runtime and the static patch is overwritten. Find
 where it is written, or find the boot argument that sets it. That log states
 what the two values actually are and ends the guessing.
+
+### Stage 6 - measured, not inferred (update)
+
+Boot arguments for IOPCIFamily's own log: `pci_log`, `pci_log_mode`,
+`pci_log_rc`. Found by disassembling the initialiser at 0xfffffe00094a85f0.
+`pci=` is deprecated and the kernel says so.
+
+With `pci_log=0xffffffff pci_log_mode=0x7`:
+
+* The configurator works. `Found type 0 device class-code 0x010000 at
+  [i5]0:2:0(0x1af4:0x1001)`, BARs sized and assigned, `[0x14 MEM] 0x10008000,
+  read 0x10008000` and `[0x20 PFM] 0x10000000, read 0x1000000c`.
+* The I/O BAR at 0x10 is never assigned, only MEM and PFM, even though the pcie
+  ranges advertise an I/O window.
+* `AppleVirtIOPCITransport`'s match IS evaluated, once per nub.
+* The `reg` value in the comparison log lags one iteration - the first value of
+  a list logs the stack poison 0xaaaaaaaa, later values log the real register -
+  so it cannot be read as the comparison input. AppleUIOPCI's single-value class
+  match logs the same poison and still probes.
+* Where the log does show it, the register is right: 0x00081b36 for the host
+  bridge, 0x10011af4 for the disk. Masked with 0xffff that equals the plist
+  value. On the evidence the match succeeds.
+* After a full boot, `info pci` still reports every BAR of 0:2:0 as **not
+  mapped**. Memory decode was never enabled. Nothing drove the device.
+
+So the gap is between a successful match and a driver that never enables the
+device: probe returns NULL without logging, or start returns false without
+logging. Neither is visible at `io=0x3f`.
+
+**Next: prove reachability instead of inferring it.** Put a freeze at
+AppleVirtIOPCITransport's entry - cond_trap.py already does this elsewhere in
+the project - and see whether the guest stops there. That answers in one boot
+which side of the gap the failure is on, and every further step depends on the
+answer.
