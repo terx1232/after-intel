@@ -2525,3 +2525,29 @@ stub at 0xfffffe00093a4140 is the tool - the same divert-test-return shape,
 placed on candidate points inside 0xfffffe0008a102e0..0x8a442fb. Start from the
 capability walk: modern virtio keeps its structures behind PCI capabilities, and
 if the transport cannot find them it has nothing to map.
+
+### Modern-only virtio changes nothing, and the nubs never stop being busy
+
+Forcing the disk modern-only with `disable-legacy=on,disable-modern=off` gives
+the identical registry: the transport attached to scsi@2, publishing nothing. So
+the unassigned I/O BAR - which would matter only to a transitional device's
+legacy interface - is not the cause. Worth having ruled out, since Apple's ARM
+IOPCIFamily allocates no I/O space at all and that looked promising.
+
+The registry shows something else that does matter:
+
+    ethernet@1               <IOPCIDevice, busy 1>
+      AppleVirtIOPCITransport <busy 0>
+    scsi@2                   <IOPCIDevice, busy 1>
+      AppleVirtIOPCITransport <busy 0>
+
+Both nubs sit at busy 1 permanently while the drivers on them are busy 0. In
+IOKit a nub is busy while matching is outstanding on it, so matching on these
+nubs never completes. The driver that did attach has finished; something else is
+still pending.
+
+One of the strings in probeCandidates is `%s(0x%qx): matching deferred by %s%s`,
+and deferral is exactly what a permanent busy count looks like. Read that path
+next: find what defers, and what it is waiting for. That is a better lead than
+bisecting inside start, because a deferred match would also explain why the
+transport never publishes - it may be waiting to be told it may.
