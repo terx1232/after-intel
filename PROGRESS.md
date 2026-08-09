@@ -2269,3 +2269,32 @@ comparison runs, the register holds the right value, and no candidate results.
 The next thing to read is IOKit's own side of it - `IOService::probeCandidates`
 and what it does with the personality after `matchPropertyTable` returns - since
 IOPCIFamily's half has now been exhausted.
+
+### Correction: the 0xaaaaaaaa in the PCI matching log is deliberate
+
+An earlier entry explained the `0xaaaaaaaa` values in IOPCIFamily's comparison
+log as a stale local - a variable printed before it was assigned. That
+explanation is withdrawn. The code writes the pattern on purpose:
+
+    0xfffffe00094b4a70  mov  x8, #-0x5555555555555556    ; 0xAAAAAAAAAAAAAAAA
+    0xfffffe00094b4a74  str  x8, [sp, #0x50]             ; poison the slot
+    0xfffffe00094b4a78  bl   ...                         ; then fill it
+    0xfffffe00094b4a7c  add  x1, sp, #0x50
+    0xfffffe00094b4a80  bl   ...
+
+So a poisoned value in the log means the call that should have filled that slot
+did not - it is a real signal, not a printing artefact.
+
+What has **not** been established is which of the format's seven arguments comes
+out of that slot. The variadic marshalling at 0xfffffe00094b4a90..ab0 does not
+map to the format string in an order that could be read off with confidence, and
+guessing at it is how this investigation has gone wrong before. Two candidates
+remain open: the register value, in which case the config read genuinely fails
+for those comparisons and that is the whole bug; or the timestamp, in which case
+the poison says nothing about matching.
+
+**Settle that first, before anything else.** Decode the marshalling properly, or
+find the same log call in a case whose outcome is already known - AppleUIOPCI
+matches by class and demonstrably probes, so whatever its line shows is what a
+*successful* comparison looks like. That single comparison decides which of the
+two readings is right, and every next step depends on it.
