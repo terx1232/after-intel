@@ -2666,3 +2666,51 @@ guest's own accessor, by trapping 0xfffffe00094c7994 and reading its argument an
 result over several iterations. If the guest sees 0xff where QEMU has a real
 chain, the bridge's address arithmetic is wrong for the offsets the walk uses -
 and that arithmetic is four instructions long and already disassembled.
+
+### Root cause: the capability search cycles between two offsets
+
+The walk does advance - it is not stuck on one entry - but it only ever visits
+two. Measured with conditional traps in the padding stub, each firing on a
+different condition:
+
+| trap condition | fired |
+|---|---|
+| any offset (first iteration) | yes, offset 0x84, word 0x05147009 |
+| offset != 0x84 | yes, offset 0x70, word 0x02146009 |
+| offset == 0x40 (the last in the chain) | **no** |
+| offset not in {0x84, 0x70} | **no** |
+| the instruction just past the loop tail | **no** |
+
+So `extendedFindPCICapability(9, &offset)` returns 0x84, then 0x70, then 0x84
+again, forever. It never reaches 0x60, 0x50 or 0x40, and the loop never exits.
+
+The chain itself is fine. Read straight out of ECAM at 0x3f010000, which is what
+the guest's own config reads see:
+
+    0x34  capability pointer = 0x98
+    0x84  id 09  next 0x70  len 0x14  cfg_type 5   PCI config access
+    0x70  id 09  next 0x60  len 0x14  cfg_type 2   notify
+    0x60  id 09  next 0x50  len 0x10  cfg_type 4   device
+    0x50  id 09  next 0x40  len 0x10  cfg_type 3   ISR
+    0x40  id 09  next 0x00  len 0x10  cfg_type 1   common
+
+Well formed, five vendor capabilities, terminating. The device's config space is
+not the problem and neither is the bridge's address arithmetic, which was checked
+instruction by instruction and correctly carries the high nibble of extended
+offsets in bits 24..27 of the space word.
+
+**That is the stage 6 blocker, located exactly.** Everything else in the chain
+works: the device is on the bus, configured, matched, the driver is allocated,
+attached, and its start runs. It simply never returns, because IOPCIFamily's
+capability search does not advance past the second entry on this bridge.
+
+Two directions from here, and the first is cheap:
+
+* The two offsets it alternates between are the two `len 0x14` capabilities.
+  The three it never reaches are all `len 0x10`. That is unlikely to be a
+  coincidence and is the first thing to test - a length field being mistaken for
+  a next pointer, or a cursor comparison that only accepts entries of a given
+  size.
+* Failing that, disassemble the search itself. It is reached through the device
+  vtable at +0x988 from 0xfffffe0008a2a01c, and the same padding-stub technique
+  reads its arguments and return value per call.
