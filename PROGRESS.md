@@ -2714,3 +2714,41 @@ Two directions from here, and the first is cheap:
 * Failing that, disassemble the search itself. It is reached through the device
   vtable at +0x988 from 0xfffffe0008a2a01c, and the same padding-stub technique
   reads its arguments and return value per call.
+
+## Stage 6 - PASSED
+
+    scsi@2                            <IOPCIDevice>
+      AppleVirtIOPCITransport
+        AppleVirtIOBlockStorageDevice
+
+    ethernet@1                        <IOPCIDevice>
+      AppleVirtIOPCITransport
+        AppleVirtIONetwork
+          IOEthernetInterface, IOKernelDebugger, IOKDP
+
+Apple's own drivers, unmodified, running on QEMU's virtio devices.
+
+The blocker was a single infinite loop and the fix is four bytes.
+`AppleVirtIOPCITransport::start` walks the PCI capability list for
+vendor-specific entries; on this machine it visited 0x84, then 0x70, then 0x84
+again, forever, never reaching 0x60, 0x50 or 0x40. The chain in config space is
+correct and terminating - the two it cycled between are the two of length 0x14,
+the three it never reached are the three of length 0x10.
+
+`IOPCIDevice::extendedFindPCICapability` at 0xfffffe00094c8100 has two paths: a
+cached one, taken when the configurator's state at [device+0xa0]+0x1d8 exists,
+and a direct config-space walk when it does not. The cached path is what cycles.
+Turning the `cbz x9` at 0xfffffe00094c8138 into an unconditional branch forces
+the direct walk, the loop ends, and start completes.
+
+**This hides a defect rather than repairing it.** Something in how that cached
+state is built on this bridge cannot represent five vendor capabilities, and
+finding that is the honest fix. The patch is recorded on the same terms as every
+other in this project - a bring-up measure.
+
+Kernel modification total: **81 bytes of 80,871,424**, 0.0001 percent. Userland
+untouched.
+
+Stage 7 is what remains before a root volume: the disk is 8 GB of zeros, so
+there is no partition map and nothing for IOMedia to publish. The kernel is
+waiting for exactly that.
