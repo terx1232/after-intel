@@ -2551,3 +2551,42 @@ and deferral is exactly what a permanent busy count looks like. Read that path
 next: find what defers, and what it is waiting for. That is a better lead than
 bisecting inside start, because a deferred match would also explain why the
 transport never publishes - it may be waiting to be told it may.
+
+### A function table for the kext, and why the brk sweep stalls
+
+`__DATA_CONST` carries a sorted table of (function address, metadata) pairs for
+each kext - found by accident while looking for a vtable, at 0xfffffe000afffd48:
+
+    0xfffffe000afffd38  fffffe0008a2afdc
+    0xfffffe000afffd40  0000031e00386747
+    0xfffffe000afffd48  fffffe0008a2b09c     <- the publish helper
+    0xfffffe000afffd50  0000031e0068acbd
+
+Walking it outward while the value stays inside the kext's text
+(0xfffffe0008a102e0..0x8a442fb) yields **1204 function entry points**. That is a
+general tool: it enumerates a kext's functions without symbols, and nothing in
+this project had one before.
+
+Used it to sweep for reachable code - `brk #0` at every entry, boot, read the pc:
+
+| skip below | first break | caller |
+|---|---|---|
+| -            | 0xfffffe0008a105b8 | 0xfffffe000a5f9bc0 |
+| 0x8a12000    | 0xfffffe0008a1524c | 0xfffffe000a5f9bc0 |
+| 0x8a20000    | 0xfffffe0008a23c7c | 0xfffffe000a5f9bc0 |
+
+Always the same caller. That address is the kernel's kext-load path calling the
+kext's OSMetaClass constructors, of which this kext has over a thousand, and they
+are scattered throughout rather than grouped - so raising the address threshold
+never gets past them. Six functions immediately around the publish helper were
+also swept individually and none executes.
+
+Filtering has to be on the **caller**, not the address. A single shared stub in
+the padding at 0xfffffe00093a4140 can do it, because every one of these entries
+begins with `pacibsp`: compare x30 against the loader's return address, and
+either execute the displaced `pacibsp` and continue or trap. The only awkward
+part is resuming at site+4, which the stub cannot compute from x30 alone - so
+each site needs its own two-word thunk, or the sweep needs to run in batches
+small enough to bisect by hand.
+
+That is the next step, and it is mechanical rather than uncertain.
