@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 trampoline.py -- emit a three-instruction arm64 stub that sets x0 and jumps to
 the kernel entry point.
@@ -76,7 +76,7 @@ MSR_DAIFSET_ALL = 0xD5034FDF      # msr DAIFSet, #0xf
 MSR_MDSCR_EL1_ZERO = 0xD510025F
 
 
-def build(x0: int, entry: int, mask_daif: bool = True) -> bytes:
+def build(x0: int, entry: int, mask_daif: bool = True, fb_init: list | None = None) -> bytes:
     """Emit the stub. `mask_daif` sets DAIFSet before the branch.
 
     Real firmware hands the kernel a machine with debug, SError, IRQ and FIQ
@@ -84,7 +84,7 @@ def build(x0: int, entry: int, mask_daif: bool = True) -> bytes:
     panics with "debug exceptions enabled in kernel mode", which is a correct
     complaint about the state it was given rather than a fault in the kernel.
     """
-    words = []
+    words = list(fb_init or [])
     if mask_daif:
         words.append(MSR_DAIFSET_ALL)
         words.append(MSR_MDSCR_EL1_ZERO)
@@ -169,3 +169,4 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+

@@ -68,6 +68,15 @@ def main(argv=None) -> int:
     ap.add_argument("--trampoline", metavar="PATH",
                     help="also emit the entry stub, with x0 and the entry point "
                          "taken from this image rather than typed in again")
+    ap.add_argument("--fb-init", action="store_true",
+                    help="have the trampoline program a bochs-display card "
+                         "before entering the kernel, so the framebuffer named "
+                         "in boot_args actually exists")
+    ap.add_argument("--fb-device", type=lambda s: int(s, 0), default=3,
+                    help="PCI device number the display card sits at")
+    ap.add_argument("--fb-mmio", default="0x32000000",
+                    help="where to map the card's register BAR")
+    ap.add_argument("--ecam", default="0x3f000000")
     ap.add_argument("--trampoline-at", default="0x41000000",
                     help="where the stub will be loaded, for the printed command")
     args = ap.parse_args(argv)
@@ -218,7 +227,22 @@ def main(argv=None) -> int:
     if args.trampoline:
         import trampoline
         entry_phys = phys_base + (entry - virt_base)
-        blob = trampoline.build(ba_addr, entry_phys)
+        tramp_at_early = int(args.trampoline_at, 0)
+        fb_words = None
+        if args.fb_init and fb:
+            # Program the display before jumping, the way iBoot would. Without
+            # this the geometry in boot_args describes a framebuffer at an
+            # address nothing is mapped at, and every pixel the kernel draws is
+            # discarded -- which is why this project has only ever produced text
+            # on a serial line.
+            import bochs_fb
+            fb_words = bochs_fb.build(int(args.ecam, 0), args.fb_device,
+                                      fb_addr, int(args.fb_mmio, 0),
+                                      w, h, at=tramp_at_early)
+            print(f"\n  display bring-up: bochs-display at ECAM device "
+                  f"{args.fb_device}, framebuffer {fb_addr:#x}, "
+                  f"{len(fb_words)} instructions")
+        blob = trampoline.build(ba_addr, entry_phys, fb_init=fb_words)
         open(args.trampoline, "wb").write(blob)
         tramp_at = int(args.trampoline_at, 0)
         print(f"\n  trampoline  {args.trampoline}  ({len(blob)} bytes)")
