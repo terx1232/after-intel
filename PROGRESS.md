@@ -2621,3 +2621,48 @@ contributes one, so start descends a chain rather than doing work directly - and
 the sweep will walk it. And decoding that pointer is the same decoding the vtable
 route needed, so the earlier blocker is no longer a blocker: a chained fixup
 here is `base + (value & 0xFFFFFFFF)` with the diversifier in bits 47:32.
+
+## Stage 6 - the blocker is found: start spins in the virtio capability walk
+
+`AppleVirtIOPCITransport::start` is at 0xfffffe0008a29e24 and spans 1832 bytes to
+0xfffffe0008a2a54c. It has exactly one return instruction, at 0xfffffe0008a2a548.
+Trapping that instruction with `brk #0` and watching it never fire proves the
+function **never returns**. That is why the nub sits at busy 1 forever, why the
+driver shows attached but publishes nothing, and why the boot waits for a root
+device that can never appear.
+
+Bisecting the 33 call sites inside it - trapping from index k onward and asking
+whether anything fires - put execution past index 20 at 0xfffffe0008a2a1ec and
+never at 21. The disassembly says why: 0xfffffe0008a2a28c is
+`cbnz w21, #0xfffffe0008a29ff0`, a backward branch, so the later call sites are
+simply on paths the loop does not take.
+
+The loop is the virtio PCI capability walk, and it identifies itself:
+
+    cmp  w25, #1 / #2 / #3 / #4
+    ...
+    str  x22, [x19, #0x100]      cfg_type 1, common configuration
+    str  x22, [x19, #0x110]      cfg_type 4, device configuration
+    str  x22, [x19, #0x118]      cfg_type 3, ISR
+    str  w8,  [x19, #0x124]
+    cbnz w21, <back>             w21 is the next-capability offset
+
+`w21` never reaches zero, so the walk never ends. The call at index 20 is
+0xfffffe00094c7994 in IOPCIFamily, a config-space read - it takes the device and
+an offset below 0x1000 and dispatches through the device's vtable at +0x8a0,
+which lands in `AppleVirtualPlatformPCIE::configRead8`. That closes a loop with
+an earlier observation that had no explanation at the time: two of ten PC samples
+during an idle boot landed inside that accessor. The guest is spinning in config
+reads.
+
+So the fault is in what config space reads back through this bridge, not in
+matching, not in MSI, not in the device tree's PCI description, and not in the
+driver. A capability chain whose `next` pointer never becomes zero is the classic
+symptom of reads returning 0xff - follow 0xff and you land on 0xff again forever.
+
+**Next, and it is a direct comparison.** Read the disk's capability list two
+ways: from QEMU's monitor, which shows what the hardware presents, and from the
+guest's own accessor, by trapping 0xfffffe00094c7994 and reading its argument and
+result over several iterations. If the guest sees 0xff where QEMU has a real
+chain, the bridge's address arithmetic is wrong for the offsets the walk uses -
+and that arithmetic is four instructions long and already disassembled.
