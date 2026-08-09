@@ -453,6 +453,10 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     memmap = chosen.add(Node("memory-map"))
     memmap.props["DeviceTree"] = b"\x00" * 16
     memmap.props["BootArgs"] = b"\x00" * 16
+    # Reserved at full size so filling it in later cannot move anything. XNU
+    # reads this entry by name when the command line says rd=md0, and says so
+    # when it is absent: "Unable to retrieve range for root memory device".
+    memmap.props["RAMDisk"] = b"\x00" * 16
 
     # pe_serial.c:831 does
     #
@@ -1029,6 +1033,7 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
 
 
 

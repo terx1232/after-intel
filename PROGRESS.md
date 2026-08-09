@@ -2752,3 +2752,50 @@ untouched.
 Stage 7 is what remains before a root volume: the disk is 8 GB of zeros, so
 there is no partition map and nothing for IOMedia to publish. The kernel is
 waiting for exactly that.
+
+## Stage 7 - PASSED
+
+    Added memory device md0/rmd0 for 000000000CC00000
+    BSD root: md0, major 3, minor 0
+    apfs_vfsop_mountroot:3156: apfs: mountroot called!
+    container_rootmount:2638: boot from ramdisk /dev/md0
+    handle_mount:893: md0s1 vol-uuid: 4BCD88B9-5915-4712-B3F7-E21A8DADCD4F
+                      block size: 4096 block count: 52224
+    apfs_log_op_with_proc: md0s1 mount-complete volume ramdisk
+    VM Swap Subsystem is ON
+    load_init_program: attempting to load /sbin/launchd
+
+Apple's APFS driver mounting Apple's filesystem image, and the kernel executing
+PID 1 out of it.
+
+The image is `AssetData/usr/standalone/update/ramdisk/arm64eSURamDisk.dmg` from
+the installer. Despite the extension it is an IM4P of payload type `rdsk`, and
+inside is a raw APFS container - NXSB at offset 32, 4096-byte blocks, 52224 of
+them, exactly the file size. It is the root Apple boots during software updates,
+so it is self-contained and needs no partition map.
+
+What it took, all named by the kernel's own strings:
+
+* `chosen/memory-map/RAMDisk` = <address, length>, reserved at full size like
+  DeviceTree and BootArgs so filling it in later cannot move the tree
+* `rd=md0` on the command line
+* topOfKernelData raised past the image - that field is where the kernel
+  believes free memory begins, and anything above it is fair game for the
+  allocator
+
+## Stage 8 - begun, and the first obstacle is named
+
+    AMFI: /sbin/launchd: Rejecting signature, binary has platform identifier
+          but is not in the trustcache
+    proc 1: load code signature error 4 for file "launchd"
+    panic: launchd[1] fatal signal 9
+
+launchd is found and executed; AMFI rejects it because the platform binaries on
+that ramdisk have to be listed in a trust cache the kernel was given, and none
+was. The file exists:
+
+    AssetData/boot/Firmware/arm64eSURamDisk.dmg.trustcache   9,067 bytes
+
+the trust cache for exactly this ramdisk. Handing it over is the next step and
+is the same shape of work as the ramdisk itself - a blob, a memory-map entry,
+and room reserved for it.

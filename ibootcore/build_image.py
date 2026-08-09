@@ -83,6 +83,12 @@ def main(argv=None) -> int:
                          "comes up in that colour proves the BARs, the mode and "
                          "memory decode are all right, which black cannot prove "
                          "because it looks the same as nothing working.")
+    ap.add_argument("--ramdisk", metavar="PATH",
+                    help="a raw disk image to hand the kernel as its root. It is "
+                         "placed after the kernel image, named in "
+                         "chosen/memory-map/RAMDisk, and covered by "
+                         "topOfKernelData so the kernel does not allocate over "
+                         "it. Boot with rd=md0 to select it.")
     ap.add_argument("--boot-logo", metavar="PATH",
                     help="a decoded iBootIm payload; the stub composites it "
                          "over the fill colour and copies the result into the "
@@ -163,6 +169,24 @@ def main(argv=None) -> int:
         print(f"  chosen/memory-map: DeviceTree {dt_addr:#x} +{len(dt_blob)}, "
               f"BootArgs {ba_addr:#x} +{bootargs.SIZEOF_BOOT_ARGS}")
 
+    # The ramdisk sits above the image, and topOfKernelData has to cover it:
+    # that field is where the kernel believes free memory begins, so anything
+    # placed past it is fair game for the allocator.
+    rd_addr = rd_len = 0
+    top_of_kernel_data = phys_base + total
+    if args.ramdisk:
+        rd_len = os.path.getsize(args.ramdisk)
+        rd_addr = align(phys_base + total, 1 << 20)
+        top_of_kernel_data = align(rd_addr + rd_len, 1 << 20)
+        if memmap is not None:
+            memmap.props["RAMDisk"] = struct.pack("<QQ", rd_addr, rd_len)
+            again = tree.serialise()
+            if len(again) != len(dt_blob):
+                raise SystemExit("device tree changed size when the ramdisk "
+                                 "entry was filled in")
+            dt_blob = again
+        print(f"  ramdisk           {rd_addr:>#20x}{"":>14}{rd_len:>14,}")
+
     video = (fb_addr, 1, w * 4, w, h, 32) if fb else (0, 0, 0, 0, 0, 0)
 
     # physBase and the load address are not the same thing, and conflating them
@@ -198,7 +222,7 @@ def main(argv=None) -> int:
         virt_base=ba_virt_base,
         phys_base=ram_base,
         mem_size=mem_size,
-        top_of_kernel_data=phys_base + total,
+        top_of_kernel_data=top_of_kernel_data,
         device_tree_p=dt_virt,
         device_tree_length=len(dt_blob),
         cmdline=args.cmdline,
@@ -312,6 +336,7 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
 
 
 
