@@ -2298,3 +2298,30 @@ find the same log call in a case whose outcome is already known - AppleUIOPCI
 matches by class and demonstrably probes, so whatever its line shows is what a
 *successful* comparison looks like. That single comparison decides which of the
 two readings is right, and every next step depends on it.
+
+### Settled: the poison in the match log means nothing either way
+
+Ran the comparison whose outcome is already known. AppleUIOPCI matches by class
+and demonstrably probes, and every one of its comparisons prints the poison too:
+
+    Comparing plist value & mask (0x2000000 & 0xffffff00)
+        vs. reg 0x8 value & mask (0xaaaaaaaa & 0xffffff00)
+
+A successful comparison and a failing one look identical in this log. The field
+is not the register the comparison used. So IOPCIFamily's comparison log cannot
+distinguish the two here, and AppleVirtIO's line showing 0xaaaaaaaa is not
+evidence of anything. That whole line of inquiry is closed - a negative result,
+but it saves the next attempt from repeating it.
+
+**And it corrects the freeze result.** The function at 0xfffffe0008a2b09c is the
+one that references `IOVirtIOPrimaryMatch`, which is the property the transport
+sets on the child nub it *publishes* - so it runs at the end of a successful
+start, not at its entry. That it is never reached means start did not get that
+far. It does not mean start was never called, which is what the earlier entry
+concluded.
+
+So the live question is back to: what does AppleVirtIOPCITransport::start do
+before it publishes, and which step of it fails. The next measurement is to find
+the real entry of start - through the class's vtable, via its OSMetaClass - and
+freeze *that*, which distinguishes "never called" from "called and gave up"
+properly.
