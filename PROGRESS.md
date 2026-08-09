@@ -2387,3 +2387,31 @@ For the disk that should be 0x10011af4, and
 already does exactly this shape of patch elsewhere in this project - and read w22
 and x8 from the monitor. That gives the savedConfig pointer and the word it
 holds, which is the last unknown in the chain.
+
+### Read the comparison directly: savedConfig is correct
+
+Patched `eor x8, x27, x22` at 0xfffffe00094b4b54 to `brk #0`. A break panics with
+a full register dump and clobbers nothing, so the values the comparison uses can
+simply be read off. First hit:
+
+    x27 0x02000000   the plist value
+    x22 0x06000000   the register that was read
+    x23 0xffffff00   the default mask
+    x24 0x00000002   the index, so regNum 0x08
+    x20 0xfffffe2bf008ebc0   the nub
+
+That is IOPCIClassMatch against the host bridge, and savedConfig[2] holds
+0x06000000 - class code 0x060000, correct for a host bridge. So the array is
+populated and indexed correctly, and the read works.
+
+The break fires on the first comparison to reach it, which is this one, so it
+does not yet answer the vendor case. To get that, the break has to be conditional
+on w24 being zero, or on x27 being 0x1af4. There is no conditional BRK and only
+one instruction slot here, so it needs cond_trap.py's approach: divert into
+padding, test there, and freeze or return.
+
+What this does establish is that nothing is wrong with savedConfig as such,
+which was the leading hypothesis after the positive control. The remaining
+possibilities are narrower: either savedConfig[0] specifically differs from
+0x10011af4 on our nubs, or the vendor branch is not reached with the values the
+log suggests.
