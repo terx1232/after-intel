@@ -57,6 +57,29 @@ UART_PHANDLE = 1
 
 # IONVRAM refuses a zero-sized store. 8 KiB is the smallest size Apple's own
 # platforms use and is plenty for a store nothing has written to yet.
+# Read from Apple's own manifest for this platform, apticket.vma2macosap.im4m,
+# by im4m_props.py. Values are Apple's, not invented.
+DEFAULT_MANIFEST_PROPS = {
+    "BORD": 32,
+    "CEPO": 1,
+    "CHIP": 65024,
+    "CPRO": True,
+    "CSEC": True,
+    "EKEY": True,
+    "EPRO": True,
+    "ESEC": True,
+    "SDOM": 1,
+    "augs": 1,
+    "vugs": 1,
+    "apmv": "27.0",
+    "love": "26.1.388.5.7,0",
+    "prtp": "VirtualMac2,1",
+    "sdkp": "macosx",
+    "tagt": "VMA2MACOSAP",
+    "tatp": "vma2macos",
+    "tstp": 1784268391,
+}
+
 NVRAM_BYTES = 0x2000
 
 
@@ -199,7 +222,8 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
                          soc_base: int = 0x0800_0000,
                          soc_size: int = 0x3800_0000,
                          random_seed: bytes | None = None,
-                         nvram_data: bytes | None = None) -> Node:
+                         nvram_data: bytes | None = None,
+                         manifest_props: dict | None = None) -> Node:
     root = Node("device-tree")
     root.set_str("compatible", "AppleVirtualPlatformARM")
     root.set_str("model", "VirtualMac2,1")
@@ -280,15 +304,32 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     # mode off, mix-and-match allowed. That is deliberate and it is a real
     # loosening of secure boot, not a placeholder - a loader shipping these
     # values would be declaring an unlocked machine.
+    # The property names are four-character codes, not the long display labels
+    # that sit near the panic string. Two attempts to synthesise this node from
+    # those labels failed, because they are what the kernel *prints*, not what
+    # it looks up.
+    #
+    # The real values come from Apple's own manifest for this exact platform,
+    # shipped inside the installer at
+    #   AssetData/boot/Firmware/Manifests/restore/
+    #   macOS Customer Software Update/apticket.vma2macosap.im4m
+    # and read by im4m_props.py. `prtp` there is "VirtualMac2,1", matching the
+    # model this tree already claims, which is how the file was confirmed to be
+    # the right one.
+    #
+    # Note CPRO and CSEC are **true**. The earlier synthesis set them to zero,
+    # declaring an unlocked development machine; Apple's manifest says the
+    # opposite, so that loosening was not only unnecessary, it was wrong.
     manifest = chosen.add(Node("manifest-properties"))
-    manifest.set_str("crypto-hash-method", "sha1")
-    manifest.set_u32("certificate-production-status", 0)
-    manifest.set_u32("certificate-security-mode", 0)
-    manifest.set_u32("effective-production-status-ap", 0)
-    manifest.set_u32("effective-security-mode-ap", 0)
-    manifest.set_u32("mix-n-match-prevention-status", 0)
-    manifest.set_u32("uses-avp-root-ca", 1)
-    manifest.set_u32("allow-ecid-mismatch", 1)
+    for key, value in (manifest_props or DEFAULT_MANIFEST_PROPS).items():
+        if isinstance(value, bool):
+            manifest.set_u32(key, 1 if value else 0)
+        elif isinstance(value, int):
+            manifest.set_u32(key, value)
+        elif isinstance(value, str):
+            manifest.set_str(key, value)
+        else:
+            manifest.props[key] = value
 
     chosen.add(Node("asmb"))
     # IONVRAM panics with "NVRAM size is 0 bytes, possibly due to bad config
@@ -687,6 +728,7 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
 
 
 

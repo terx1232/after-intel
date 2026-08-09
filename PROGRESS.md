@@ -2076,3 +2076,41 @@ the next step is to find and extract it rather than to synthesise one.
 Two attempts at synthesising the properties are recorded here as failures so
 that a third is not made from the same assumption.
 
+**Apple's own manifest for this platform, extracted.** The installer ships it at
+
+    AssetData/boot/Firmware/Manifests/restore/
+      macOS Customer Software Update/apticket.vma2macosap.im4m
+
+`vma2macosap` is the Apple Virtual Machine - the same platform whose kernel this
+project boots. It is 4 819 bytes, deflate, and `im4m_props.py` reads 21
+properties out of it:
+
+    BORD 32        CEPO 1         CHIP 65024 (0xFE00)
+    CPRO True      CSEC True      SDOM 1
+    EKEY True      EPRO True      ESEC True
+    prtp "VirtualMac2,1"          tagt "VMA2MACOSAP"
+    tatp "vma2macos"              sdkp "macosx"
+    apmv "27.0"                   love "26.1.388.5.7,0"
+    DGST, srvn                    digests
+
+`prtp` is "VirtualMac2,1", matching the model this device tree already claims,
+which is how the file was confirmed to be the right one rather than assumed.
+
+**Two things this settles.**
+
+The property names are **four-character codes**, not the long labels near the
+panic string - those are what the kernel prints, not what it looks up. Both
+earlier syntheses used the labels and could never have worked.
+
+And `CPRO` and `CSEC` are **true** in Apple's manifest. The first synthesis set
+them to zero, declaring an unlocked development machine and describing that as a
+deliberate loosening of secure boot. Apple's own values say the opposite, so that
+loosening was both unnecessary and wrong. Corrected.
+
+**Still not enough.** Putting the four-character properties on
+`/chosen/manifest-properties` does not clear the panic either. Combined with the
+disassembly - the lookup queries an object two dereferences into a graph - the
+kernel is parsing the manifest **blob**, not reading a node. The next attempt
+should hand it the raw 4 819 bytes rather than a decomposition of them.
+
+The manifest and the parser are committed, so that work is not repeated.
