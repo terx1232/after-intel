@@ -332,19 +332,12 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     # Note CPRO and CSEC are **true**. The earlier synthesis set them to zero,
     # declaring an unlocked development machine; Apple's manifest says the
     # opposite, so that loosening was not only unnecessary, it was wrong.
-    # Hand over the raw manifest as well as the decomposed properties. The
-    # lookup disassembles to a query against an object two dereferences into a
-    # graph, not a device tree read, so the kernel is parsing a blob. Supplying
-    # only the four-character properties left the panic in place.
-    manifest_blob = manifest_blob or _default_manifest_blob()
-    if manifest_blob:
-        chosen.props["manifest-properties"] = manifest_blob
-        chosen.props["manifest"] = manifest_blob
-
+    # The raw blob was tried here too - as /chosen/manifest-properties, as
+    # /chosen/manifest, and as `manifest` and `IM4M` inside the node - and
+    # changed nothing. It is not passed any more; it only added 20 KiB three
+    # times over. See the crypto-hash-method note below for what the panic
+    # actually wanted, which was none of this.
     manifest = chosen.add(Node("manifest-properties"))
-    if manifest_blob:
-        manifest.props["manifest"] = manifest_blob
-        manifest.props["IM4M"] = manifest_blob
     for key, value in (manifest_props or DEFAULT_MANIFEST_PROPS).items():
         if isinstance(value, bool):
             manifest.set_u32(key, 1 if value else 0)
@@ -382,6 +375,45 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     chosen.set_u32("nvram-bank-size", NVRAM_BYTES)
     chosen.set_u32("nvram-bank-count", 1)
     chosen.set_u32("nvram-current-bank", 0)
+
+    # Secure boot policy. `crypto-hash-method` is the property behind
+    #
+    #     panic: non-sensical crypto hash method:
+    #
+    # and it took three wrong attempts to find, all of them spent on the Image4
+    # manifest because the panic appeared right after manifest properties were
+    # added. It has nothing to do with the manifest. The proof is in the kernel's
+    # own string table, where the name occurs exactly twice, and the second copy
+    # sits in AppleMobileApNonce::start's literal pool immediately after the node
+    # it reads from:
+    #
+    #     fffffe000732f934  /chosen
+    #     fffffe000732f93c  crypto-hash-method
+    #     fffffe000732f94f  sha2-384
+    #     fffffe000732f958  sha1
+    #     fffffe000732f95d  allow-ap-nonce-retrieval
+    #
+    # A plain string property on /chosen, and the only two accepted values are
+    # right there next to it. The consumer memcmps 4 bytes against "sha1" or 8
+    # against "sha2-384" and panics on anything else - including, as here, on
+    # absent, because the 64-byte output buffer is prefilled with 0xaa and an
+    # unfound property leaves it that way.
+    #
+    # sha2-384 is the modern choice and the first one the code tests for.
+    chosen.set_str("crypto-hash-method", "sha2-384")
+
+    # Read by the same routine, immediately after, and by AppleImage4. Each is
+    # fetched as a single byte and skipped if absent, so unlike the above these
+    # cannot panic - they are set because leaving them out means accepting
+    # whatever default a driver picks for hardware this is not.
+    #
+    # `uses-avp-root-ca` is the interesting one: AVP is Apple Virtual Platform,
+    # which is exactly what this tree describes, so the answer is yes.
+    chosen.props["uses-avp-root-ca"] = b"\x01"
+    chosen.props["allow-ap-nonce-retrieval"] = b"\x01"
+    chosen.props["entangle-nonce"] = b"\x00"
+    chosen.props["use-ddi-secure-boot"] = b"\x00"
+    chosen.props["allow-ecid-mismatch"] = b"\x01"
 
     memmap = chosen.add(Node("memory-map"))
     memmap.props["DeviceTree"] = b"\x00" * 16
