@@ -2852,3 +2852,45 @@ about the tree. Writing the module into that segment and correcting its size in
 the load command hands the kernel its trust cache with no memory-map entry at
 all - and unlike a panic with no console, it can be checked statically before
 booting.
+
+### 8.1 - the entry itself is fatal, and that is now proven
+
+Eight configurations, all zero bytes of serial: raw module; wrapped segment with
+count 1 and offset 8, matching the parser at 0xfffffe000a46eaa8; empty segment;
+past the ramdisk at 0x58c00000; inside the image at 0x4be09000 below
+topOfKernelData; physical address; virtual address; and finally **the entry
+pointed at the device tree itself**, a region the kernel demonstrably maps and
+walks.
+
+That last one eliminates content, placement and address space together. The
+presence of a `TrustCache` property in chosen/memory-map is fatal whatever it
+contains.
+
+The fault is also upstream of the loader. A freeze planted at
+0xfffffe000a46eaa8 - the instruction that reads the module count - is never
+reached; the PC sits in the early-panic spin at 0xfffffe0009e921b8. The kernel
+dies before it looks at the trust cache at all.
+
+Two real defects found on the way, both fixed:
+
+* the placeholder was written into **every** tree as sixteen zero bytes. Fatal
+  on its own: the parser converts the address before checking the length, so a
+  zero address is translated and the translation faults.
+* the trust cache block overwrote topOfKernelData with a value below the
+  ramdisk, having run after it and recomputed from its own smaller total - the
+  kernel would have believed free memory began inside the root filesystem. The
+  blocks are reordered; the ramdisk sets the top.
+
+`kernel-only` is now on memory-map, which Apple's tree carries and this one did
+not. It changed nothing, but it was missing and it is true.
+
+Working configuration verified unharmed: 25,237 bytes, root mounted, PID 1
+executed.
+
+**Do not try a ninth arrangement of the same entry.** The evidence says the
+kernel objects to the entry existing, which points at how memory-map is consumed
+rather than at trust caches. Apple's tree has sixteen `MemoryMapReserved-N`
+slots that iBoot renames in place - so the kernel may expect entries from that
+fixed set, or a particular count, or a particular order. Read the code that
+walks memory-map during bootstrap; it can be read statically, and a panic with
+no console cannot.

@@ -173,6 +173,31 @@ def main(argv=None) -> int:
         print(f"  chosen/memory-map: DeviceTree {dt_addr:#x} +{len(dt_blob)}, "
               f"BootArgs {ba_addr:#x} +{bootargs.SIZEOF_BOOT_ARGS}")
 
+    # The trust cache goes inside the image, right after boot_args, rather than
+    # out past the ramdisk. It is read during kernel bootstrap, long before the
+    # physical map covers all of RAM, so a copy sitting a hundred megabytes away
+    # is not reachable when it is wanted -- and the failure is silent, because
+    # serial is not up yet either.
+    tc_addr = tc_len = 0
+    if args.trustcache:
+        tc_len = os.path.getsize(args.trustcache)
+        tc_off = align(ba_off + bootargs.SIZEOF_BOOT_ARGS, 1 << 12)
+        tc_addr = phys_base + tc_off
+        total = align(tc_off + tc_len, 1 << 20)
+        top_of_kernel_data = phys_base + total
+        if memmap is not None:
+            # Physical. The kernel converts it at 0xfffffe000a008bb4, which is a
+            # range check against the regions it knows about - so the value has
+            # to be a physical address inside one of them, and it has to lie
+            # below topOfKernelData or there is no such region.
+            memmap.props["TrustCache"] = struct.pack("<QQ", tc_addr, tc_len)
+            again = tree.serialise()
+            if len(again) != len(dt_blob):
+                raise SystemExit("device tree changed size when the trust cache "
+                                 "entry was filled in")
+            dt_blob = again
+        print(f"  trust cache       {tc_addr:>#20x}{"":>14}{tc_len:>14,}")
+
     # The ramdisk sits above the image, and topOfKernelData has to cover it:
     # that field is where the kernel believes free memory begins, so anything
     # placed past it is fair game for the allocator.
@@ -190,33 +215,6 @@ def main(argv=None) -> int:
                                  "entry was filled in")
             dt_blob = again
         print(f"  ramdisk           {rd_addr:>#20x}{"":>14}{rd_len:>14,}")
-
-    # The trust cache goes inside the image, right after boot_args, rather than
-    # out past the ramdisk. It is read during kernel bootstrap, long before the
-    # physical map covers all of RAM, so a copy sitting a hundred megabytes away
-    # is not reachable when it is wanted -- and the failure is silent, because
-    # serial is not up yet either.
-    tc_addr = tc_len = 0
-    if args.trustcache:
-        tc_len = os.path.getsize(args.trustcache)
-        tc_off = align(ba_off + bootargs.SIZEOF_BOOT_ARGS, 1 << 12)
-        tc_addr = phys_base + tc_off
-        total = align(tc_off + tc_len, 1 << 20)
-        top_of_kernel_data = phys_base + total
-        if memmap is not None:
-            # Virtual, not physical. Stage 5 was lost for a long time to exactly
-            # this: deviceTreeP is a virtual address, and passing a physical one
-            # made a length computation wrap into two terabytes. The memory-map
-            # entries iBoot writes are in the same space.
-            tc_virt = (virt_base - (phys_base - ram_base)) + (tc_addr - ram_base)
-            memmap.props["TrustCache"] = struct.pack("<QQ", tc_virt, tc_len)
-            print(f"    TrustCache virtual {tc_virt:#018x}")
-            again = tree.serialise()
-            if len(again) != len(dt_blob):
-                raise SystemExit("device tree changed size when the trust cache "
-                                 "entry was filled in")
-            dt_blob = again
-        print(f"  trust cache       {tc_addr:>#20x}{"":>14}{tc_len:>14,}")
 
     video = (fb_addr, 1, w * 4, w, h, 32) if fb else (0, 0, 0, 0, 0, 0)
 
@@ -370,6 +368,10 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+
+
 
 
 

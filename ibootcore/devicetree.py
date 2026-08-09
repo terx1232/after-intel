@@ -452,6 +452,9 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     chosen.props["allow-ecid-mismatch"] = b"\x01"
 
     memmap = chosen.add(Node("memory-map"))
+    # Apple's own tree carries this, and its absence is the difference between
+    # a tree the kernel walks and one it does not.
+    memmap.set_str("kernel-only", "true")
     memmap.props["DeviceTree"] = b"\x00" * 16
     memmap.props["BootArgs"] = b"\x00" * 16
     # Reserved at full size so filling it in later cannot move anything. XNU
@@ -1043,6 +1046,7 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
 
 
 
