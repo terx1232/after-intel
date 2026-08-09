@@ -82,6 +82,27 @@ DEFAULT_MANIFEST_PROPS = {
 
 NVRAM_BYTES = 0x2000
 
+# Phandles. Any distinct non-zero values work; they only have to agree between
+# the referring property and the referenced node's AAPL,phandle.
+GIC_PHANDLE = 2
+PCIE_PHANDLE = 3
+
+# PCIe host bridge geometry, read out of QEMU's own generated device tree with
+#     qemu-system-aarch64 -M virt,gic-version=3,highmem-ecam=off,dumpdtb=x.dtb
+# and decoded by fdt_read.py. Measured, not looked up.
+PCIE_ECAM_BASE = 0x3F00_0000
+PCIE_ECAM_SIZE = 0x0100_0000          # 16 buses at 1 MiB each
+PCIE_INTX_SPI_BASE = 3                # INTA..INTD are SPI 3, 4, 5, 6
+
+# (flags, pci address, cpu address, size). The flag byte's low two bits are the
+# space: 1 = I/O, 2 = 32-bit memory, 3 = 64-bit memory. The 64-bit aperture at
+# 0x8000000000 is deliberately left out: it does not fit inside arm-io's window,
+# and virtio devices are happy with 32-bit BARs.
+PCIE_RANGES = (
+    (0x0100_0000, 0x0000_0000, 0x3EFF_0000, 0x0001_0000),
+    (0x0200_0000, 0x1000_0000, 0x1000_0000, 0x2EFF_0000),
+)
+
 # Apple's manifest for this platform, shipped in the installer and committed to
 # data/. Loaded lazily so the tree can still be built without it.
 def _default_manifest_blob():
@@ -111,6 +132,10 @@ class Node:
     def __init__(self, name: str | None = None, **props):
         self.props: dict[str, bytes] = {}
         self.children: list[Node] = []
+        # Property names whose length field had the top bit set, i.e. values
+        # Apple's iBoot fills in. Kept so a parsed tree can say which of its own
+        # numbers are real and which are waiting to be written.
+        self.placeholders: set[str] = set()
         if name is not None:
             self.set_str("name", name)
         for k, v in props.items():
@@ -188,10 +213,19 @@ def parse(buf: bytes, off: int = 0):
         off += PROP_NAME_LEN
         (length,) = struct.unpack_from("<I", buf, off)
         off += 4
+        # The top bit of the length is a flag, not length. Apple's own trees set
+        # it on properties iBoot is expected to overwrite before handing the
+        # tree to the kernel -- addresses, sizes, seeds and the like. Reading it
+        # as part of the length turns a 4-byte property into a 2 GiB one, which
+        # is exactly how Apple's DeviceTree.vma2macosap failed to parse here.
+        placeholder = bool(length & 0x80000000)
+        length &= 0x7FFFFFFF
         value = buf[off:off + length]
         off += length + _pad4(length)
         key = raw_name.split(b"\x00")[0].decode("utf-8", "replace")
         node.props[key] = value
+        if placeholder:
+            node.placeholders.add(key)
     for _ in range(nchildren):
         child, off = parse(buf, off)
         node.children.append(child)
@@ -235,7 +269,9 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
                          random_seed: bytes | None = None,
                          nvram_data: bytes | None = None,
                          manifest_props: dict | None = None,
-                         manifest_blob: bytes | None = None) -> Node:
+                         manifest_blob: bytes | None = None,
+                         gic_interrupts: bool = True,
+                         gic_ic_prop: bool = False) -> Node:
     root = Node("device-tree")
     root.set_str("compatible", "AppleVirtualPlatformARM")
     root.set_str("model", "VirtualMac2,1")
@@ -560,7 +596,71 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     gic = arm_io.add(Node("gic"))
     gic.set_str("compatible", "ARM,gicv3")
     gic.set_u32("#interrupt-cells", 3)
-    gic.set_u32("interrupt-controller", 1)
+    if gic_ic_prop:
+        gic.set_u32("interrupt-controller", 1)
+    # No `interrupt-controller` **property**. The conventional DT marker is fatal
+    # here: IODeviceTreeSupport tests for it while resolving a node's own
+    # interrupt parent, and a node carrying both it and `interrupts` takes a
+    # branch that leaves the controller pointer null and then dereferences it -
+    #
+    #     0xa635db4  cbz  x0, ...        ; getProperty("interrupt-controller")
+    #     0xa635db8  mov  x19, #0        ; present -> no parent
+    #     0xa635df4  ldr  x16, [x19]     ; ... and straight into a null load
+    #
+    # which shows up as a data abort at pc 0xfffffe000a635df4 before IOKit
+    # finishes registering. `device_type` below carries the same meaning for
+    # everything that needs to recognise this node, and does not take that path.
+    # Referenced by /arm-io/pcie/device-interrupt-parent, which the PCIe driver
+    # asserts is present and exactly four bytes long. The PCIe driver turns that
+    # phandle into a matching dictionary and calls waitForMatchingService with a
+    # timeout of ~0ull, so a phandle naming nothing hangs the boot silently
+    # rather than failing.
+    gic.set_u32("AAPL,phandle", GIC_PHANDLE)
+
+    # `device_type` is what makes this nub an interrupt controller as far as
+    # IOKit is concerned, and the name has to be exactly this.
+    #
+    # AppleARMGIC reads an `InterruptControllerName` property from its provider,
+    # and AppleVirtualPlatformPCIEMSIController reads the same name off the
+    # service it is handed - and panics at its line 52 when the value is not an
+    # OSSymbol. A device tree property cannot satisfy that: IODeviceTreeSupport
+    # turns every property into OSData, so writing the name here directly fails
+    # the cast. That was tried; the panic did not move.
+    #
+    # The name is not supposed to come from the tree at all. AppleARMPE's
+    # platformAdjustService sets it, and the code is unambiguous:
+    #
+    #     if (IODTMatchNubWithKeys(nub, "interrupt-controller"))
+    #         nub->setProperty("InterruptControllerName",
+    #                          IODTInterruptControllerName(nub));
+    #
+    # IODTMatchNubWithKeys tests `name`, `compatible`, `device_type` and
+    # `model`. This node's name must stay "gic" because the kernel finds it by
+    # the literal path '/arm-io/gic', and `compatible` must stay "ARM,gicv3"
+    # because that is what AppleARMGICv3's personality matches - so device_type
+    # is the one field left, and it is enough. IODTInterruptControllerName then
+    # produces the OSSymbol "IOInterruptController%08X" from AAPL,phandle above.
+    gic.set_str("device_type", "interrupt-controller")
+
+    # AppleARMGIC::start ends by calling, on its own nub,
+    #
+    #     registerInterrupt(0, this, handler, NULL)
+    #
+    # four arguments, which is IOService::registerInterrupt and not the
+    # IOInterruptController five-argument form. That routes through
+    # IOService::lookupInterrupt -> resolveInterrupt, which reads the
+    # IOInterruptControllers and IOInterruptSpecifiers properties IODTMapInterrupts
+    # derives from this node's `interrupts`. With no such property there is no
+    # source 0 to resolve, the call returns an error, and the driver panics with
+    #
+    #     "Failed to register GIC to PassthruInterruptController." @AppleARMGIC.cpp:105
+    #
+    # One cell, because IODTGetICellCounts looks for #interrupt-cells on the
+    # parent chain - arm-io and the root both lack it - and falls back to 1. The
+    # #interrupt-cells = 3 above describes what *children* of this controller
+    # write, not what this node's own `interrupts` means.
+    if gic_interrupts:
+        gic.props["interrupts"] = struct.pack("<I", 0)
     # `reg` here is **relative to arm-io's ranges base**, not absolute.
     # `pe_arm_map_interrupt_controller` maps `soc_phys + offset`, and its own
     # log string says so: "pe_arm_map_interrupt_controller: soc_phys: 0x%l...".
@@ -608,6 +708,75 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
 
     rtc = arm_io.add(Node("rtc"))
     rtc.set_str("compatible", "ARM,pl031")
+
+    # ------------------------------------------------------------------
+    # PCIe host bridge - the only route to a root device on this platform.
+    #
+    # The chain was recovered from the collection's own matching dictionaries
+    # by personality.py, and it ends somewhere useful:
+    #
+    #   AppleVirtualPlatformPCIE     IONameMatch      pcie,vmapple1
+    #                                IOProviderClass  AppleARMIODevice
+    #   AppleVirtIOPCITransport      IOProviderClass  IOPCIDevice
+    #                                IOPCIPrimaryMatch 0x00001af4&0x0000FFFF
+    #   AppleVirtIOBlock             IOClass          AppleVirtIOBlockStorageDevice
+    #                                IOProviderClass  AppleVirtIOTransport
+    #
+    # 0x1af4 is the standard virtio vendor ID, which is exactly what QEMU's
+    # virtio-blk-pci presents. So Apple's own shipped driver can bind to QEMU's
+    # disk with nothing emulated on our side - provided the host bridge comes up.
+    #
+    # The properties are not guessed. AppleVirtualPlatformPCIE's assertion
+    # strings name them, in the order the driver touches them:
+    #
+    #     fEcamMM != NULL
+    #     device-interrupt-parent
+    #     deviceInterruptParentPhandle->getLength() == sizeof(UInt32)
+    #     msi-frame-index
+    #     ranges
+    #     vendor-id
+    #     device-id
+    #
+    # Addresses come from QEMU's own generated dtb rather than from reading the
+    # source, via `-M virt,dumpdtb=`. Note `highmem-ecam=off`: by default the
+    # `virt` machine advertises ECAM at 0x4010000000, which is far outside the
+    # 0x08000000 + 0x38000000 window arm-io declares, and a child `reg` cannot
+    # reach outside its parent's ranges. With the option, ECAM moves to
+    # 0x3f000000 and I/O and 32-bit MMIO land at 0x3eff0000 and 0x10000000 - all
+    # three inside the window. Only the 64-bit MMIO aperture stays out, and
+    # virtio needs 32-bit BARs only.
+    pcie = arm_io.add(Node("pcie"))
+    pcie.set_str("compatible", "pcie,vmapple1")
+    pcie.set_str("device_type", "pci")
+    pcie.set_u32("#address-cells", 3)
+    pcie.set_u32("#size-cells", 2)
+    pcie.set_reg(PCIE_ECAM_BASE - soc_base, PCIE_ECAM_SIZE)
+    pcie.props["bus-range"] = struct.pack("<II", 0, PCIE_ECAM_SIZE // 0x100000 - 1)
+
+    # Standard PCI ranges: three cells of child address, then parent address and
+    # size in this node's parent's cells. The parent is arm-io, so parent
+    # addresses are written relative to its base, the same convention `reg` uses
+    # one line above. Little-endian cells, because this is an Apple tree and not
+    # an FDT - the values were read big-endian out of QEMU's dtb and are
+    # re-packed here.
+    ranges = b""
+    for flags, pci_addr, cpu_addr, size in PCIE_RANGES:
+        ranges += struct.pack("<7I", flags,
+                              pci_addr >> 32, pci_addr & 0xFFFFFFFF,
+                              (cpu_addr - soc_base) >> 32,
+                              (cpu_addr - soc_base) & 0xFFFFFFFF,
+                              size >> 32, size & 0xFFFFFFFF)
+    pcie.props["ranges"] = ranges
+
+    # The bridge's own identity, read by the driver and reported for the root
+    # complex nub. Apple's vendor ID with a generic device ID; nothing matches
+    # against it, it is descriptive.
+    pcie.set_u32("vendor-id", 0x106B)
+    pcie.set_u32("device-id", 0x0001)
+    pcie.set_u32("device-interrupt-parent", GIC_PHANDLE)
+    pcie.set_u32("msi-frame-index", 0)
+    pcie.set_u32("interrupt-base", PCIE_INTX_SPI_BASE)
+    pcie.set_u32("AAPL,phandle", PCIE_PHANDLE)
 
     return root
 
@@ -784,6 +953,8 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
 
 
 
