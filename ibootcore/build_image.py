@@ -89,6 +89,9 @@ def main(argv=None) -> int:
                          "chosen/memory-map/RAMDisk, and covered by "
                          "topOfKernelData so the kernel does not allocate over "
                          "it. Boot with rd=md0 to select it.")
+    ap.add_argument("--trustcache", metavar="PATH",
+                    help="a trust cache module for the ramdisk. AMFI rejects "
+                         "every platform binary whose cdhash is not in one.")
     ap.add_argument("--boot-logo", metavar="PATH",
                     help="a decoded iBootIm payload; the stub composites it "
                          "over the fill colour and copies the result into the "
@@ -131,7 +134,8 @@ def main(argv=None) -> int:
 
     tree = devicetree.minimal_vmapple_tree(ram_base=ram_base,
                                            ram_size=mem_size,
-                                           ncpus=args.ncpus)
+                                           ncpus=args.ncpus,
+                                           want_trustcache=bool(args.trustcache))
     if fb:
         w, h = fb
         node = devicetree.Node("framebuffer")
@@ -187,6 +191,33 @@ def main(argv=None) -> int:
             dt_blob = again
         print(f"  ramdisk           {rd_addr:>#20x}{"":>14}{rd_len:>14,}")
 
+    # The trust cache goes inside the image, right after boot_args, rather than
+    # out past the ramdisk. It is read during kernel bootstrap, long before the
+    # physical map covers all of RAM, so a copy sitting a hundred megabytes away
+    # is not reachable when it is wanted -- and the failure is silent, because
+    # serial is not up yet either.
+    tc_addr = tc_len = 0
+    if args.trustcache:
+        tc_len = os.path.getsize(args.trustcache)
+        tc_off = align(ba_off + bootargs.SIZEOF_BOOT_ARGS, 1 << 12)
+        tc_addr = phys_base + tc_off
+        total = align(tc_off + tc_len, 1 << 20)
+        top_of_kernel_data = phys_base + total
+        if memmap is not None:
+            # Virtual, not physical. Stage 5 was lost for a long time to exactly
+            # this: deviceTreeP is a virtual address, and passing a physical one
+            # made a length computation wrap into two terabytes. The memory-map
+            # entries iBoot writes are in the same space.
+            tc_virt = (virt_base - (phys_base - ram_base)) + (tc_addr - ram_base)
+            memmap.props["TrustCache"] = struct.pack("<QQ", tc_virt, tc_len)
+            print(f"    TrustCache virtual {tc_virt:#018x}")
+            again = tree.serialise()
+            if len(again) != len(dt_blob):
+                raise SystemExit("device tree changed size when the trust cache "
+                                 "entry was filled in")
+            dt_blob = again
+        print(f"  trust cache       {tc_addr:>#20x}{"":>14}{tc_len:>14,}")
+
     video = (fb_addr, 1, w * 4, w, h, 32) if fb else (0, 0, 0, 0, 0, 0)
 
     # physBase and the load address are not the same thing, and conflating them
@@ -230,6 +261,9 @@ def main(argv=None) -> int:
     )
 
     image = bytearray(total)
+    if args.trustcache:
+        tc_blob = open(args.trustcache, "rb").read()
+        image[tc_off:tc_off + len(tc_blob)] = tc_blob
     image[0:len(kern)] = kern
     image[dt_off:dt_off + len(dt_blob)] = dt_blob
     image[ba_off:ba_off + len(ba)] = ba
@@ -336,6 +370,11 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+
+
+
 
 
 

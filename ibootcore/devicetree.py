@@ -270,7 +270,8 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
                          nvram_data: bytes | None = None,
                          manifest_props: dict | None = None,
                          manifest_blob: bytes | None = None,
-                         gic_msi_frame: int = 0x0802_0000,) -> Node:
+                         gic_msi_frame: int = 0x0802_0000,
+                         want_trustcache: bool = False,) -> Node:
     root = Node("device-tree")
     root.set_str("compatible", "AppleVirtualPlatformARM")
     root.set_str("model", "VirtualMac2,1")
@@ -457,6 +458,15 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     # reads this entry by name when the command line says rd=md0, and says so
     # when it is absent: "Unable to retrieve range for root memory device".
     memmap.props["RAMDisk"] = b"\x00" * 16
+    # AMFI refuses every platform binary on the root volume unless their code
+    # directory hashes are in a trust cache the kernel was handed. It looks for
+    # one here and names the entry itself:
+    #     "unable to find chosen/memory-map in the device tree"
+    #     "TrustCache"
+    #     "unexpected size for TrustCache property: %u != %zu"
+    #     "no external trust caches found (segment length is zero)"
+    if want_trustcache:
+        memmap.props["TrustCache"] = b"\x00" * 16
 
     # pe_serial.c:831 does
     #
@@ -1033,6 +1043,8 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
 
 
 

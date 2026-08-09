@@ -2799,3 +2799,56 @@ was. The file exists:
 the trust cache for exactly this ramdisk. Handing it over is the next step and
 is the same shape of work as the ramdisk itself - a blob, a memory-map entry,
 and room reserved for it.
+
+### Stage 8, broken into parts
+
+| part | what is needed | how it is checked |
+|---|---|---|
+| 8.1 | hand the kernel a trust cache | AMFI stops rejecting launchd |
+| 8.2 | launchd passes signing and loads | no fatal signal 9 |
+| 8.3 | dyld and the shared cache work | no rejection of /usr/lib/dyld |
+| 8.4 | launchd reaches its own main loop | its own messages appear |
+| 8.5 | the first services start | notifyd, configd, disk arbitration |
+
+### 8.1 - the material is in hand, the delivery is not
+
+`AssetData/boot/Firmware/arm64eSURamDisk.dmg.trustcache` is an IM4P of payload
+type `rtsc` wrapping a version 1 module: uuid 944c0b19-d98d-4d78-839d-7cde0ba77728,
+410 cdhash entries - every platform binary on that ramdisk, launchd included.
+
+The kernel names the mechanism itself: `chosen/memory-map`, an entry called
+`TrustCache`, "unexpected size for TrustCache property: %u != %zu", "no external
+trust caches found (segment length is zero)". The segment layout is readable from
+the parser at 0xfffffe000a46eaa8 - a uint32 module count, that many uint32
+offsets, then the modules.
+
+**None of it boots.** Each of these gives zero bytes of serial:
+
+* the raw module as the segment
+* a correctly wrapped segment, count 1 and offset 8
+* an empty segment, count 0
+* placed past the ramdisk at 0x58c00000
+* placed inside the image at 0x4be09000
+* the address written as physical
+* the address written as virtual
+
+Not the content, not the placement, not the address space. The presence of a
+`TrustCache` entry kills the boot before serial init, which is why there is
+nothing to read - trust caches load during bootstrap, before the console exists.
+The stopping point was read through the monitor: PC in the `wfe; b .` pair at
+0xfffffe0009e921b8, the early-panic spin.
+
+One real defect was found on the way and is fixed. The placeholder was at first
+written into **every** tree as sixteen zero bytes, like DeviceTree and BootArgs.
+That alone is fatal: the parser converts the address before it checks the
+length, so a zero address gets translated and the translation faults. The entry
+is now emitted only when a trust cache is supplied, and the working
+configuration is untouched - still 25,237 bytes of log, root mounted, PID 1
+executed.
+
+**Next, and it avoids the device tree entirely.** "no external trust caches found
+(segment length is zero)" is about a Mach-O segment in the kernel collection, not
+about the tree. Writing the module into that segment and correcting its size in
+the load command hands the kernel its trust cache with no memory-map entry at
+all - and unlike a panic with no console, it can be checked statically before
+booting.
