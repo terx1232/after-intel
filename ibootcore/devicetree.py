@@ -265,12 +265,12 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
                          cpu_hz: int = 2_400_000_000,
                          bus_hz: int = 100_000_000,
                          soc_base: int = 0x0800_0000,
-                         soc_size: int = 0x3A00_0000,
+                         soc_size: int = 0x3800_0000,
                          random_seed: bytes | None = None,
                          nvram_data: bytes | None = None,
                          manifest_props: dict | None = None,
                          manifest_blob: bytes | None = None,
-                         gic_msi_frame: int = 0x4180_0000,) -> Node:
+                         gic_msi_frame: int = 0x0802_0000,) -> Node:
     root = Node("device-tree")
     root.set_str("compatible", "AppleVirtualPlatformARM")
     root.set_str("model", "VirtualMac2,1")
@@ -736,7 +736,7 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
         # third being a 64 KiB window well above the redistributors. On QEMU the
         # equivalent is the GICv3 ITS, which `virt` places at 0x08080000.
         gic.props["reg"] += struct.pack("<QQ",
-                                        gic_msi_frame - soc_base, 0x20000)
+                                        gic_msi_frame - soc_base, 0x1000)
     # The kernel checks this exactly: "incorrect reg property size in GIC DT
     # node; expecting 32 bytes but got %u bytes". Four 64-bit values, which is
     # what the two pairs above give.
@@ -841,6 +841,18 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     pcie.set_u32("msi-frame-index", 2)
     pcie.set_u32("interrupt-base", 0x40)
     pcie.set_u32("AAPL,phandle", PCIE_PHANDLE)
+    # IOPCIFamily refuses to match any driver whose plist lacks
+    # IOPCITunnelCompatible when it considers a nub to be behind a tunnel, and
+    # says so: `Driver "%s" needs "%s" key in plist`, a string sitting directly
+    # after IOPCITunnelCompatible in its literal pool. That matches what the
+    # boot log shows -- the only driver that ever probed a PCI nub here is
+    # AppleUIOPCI, and it is the one personality carrying that key.
+    #
+    # That turned out not to be the gate. The message never appears in the log,
+    # and adding IOPCITunnelCompatible and IOPCITunnelled here changed nothing,
+    # so both were removed again. Only `built-in` is kept, and only because it
+    # is true: this bridge is part of the machine, not plugged into it.
+    pcie.props["built-in"] = b""
 
     return root
 
@@ -1017,6 +1029,9 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+
 
 
 
