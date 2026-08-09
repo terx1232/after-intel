@@ -2415,3 +2415,43 @@ which was the leading hypothesis after the positive control. The remaining
 possibilities are narrower: either savedConfig[0] specifically differs from
 0x10011af4 on our nubs, or the vendor branch is not reached with the values the
 log suggests.
+
+### The matcher is provably correct end to end
+
+Built a conditional trap the way cond_trap.py does it - divert into alignment
+padding, test there, freeze or return. The padding is at 0xfffffe00093a4140,
+nops followed by zeros at the end of a section:
+
+    0xfffffe00093a4140  cbnz w24, +8        ; index != 0, carry on
+    0xfffffe00093a4144  brk  #0             ; index == 0, the vendor branch
+    0xfffffe00093a4148  eor  x8, x27, x22   ; the displaced instruction
+    0xfffffe00093a414c  b    0xfffffe00094b4b58
+
+with 0xfffffe00094b4b54 replaced by a branch to it. The trap fires on a vendor
+comparison and nothing else, and the dump reads:
+
+    x24 0x00000000    index 0, so regNum 0 -- the vendor branch
+    x27 0x11421b21    the plist value
+    x22 0x00081b36    savedConfig[0], device 0x0008 vendor 0x1b36
+    x28 0xffffffff    the mask
+
+The register is read correctly, the comparison is performed correctly, and the
+mismatch is legitimate - 0x1b36 is the QEMU host bridge and that personality
+wants 0x1b21. Reading the array directly through the monitor in the same boot
+agrees: savedConfig[0] = 0x00081b36, savedConfig[2] = 0x06000000.
+
+So the whole IOPCIFamily matching path is sound, and for the disk
+(0x1af4 ^ 0x10011af4) & 0xffff must be zero. **The match succeeds.** That
+eliminates matching entirely, which is where four sessions of suspicion had
+pointed.
+
+**What that leaves.** The driver matches, becomes a candidate, and something
+after that fails silently. No `probe fails` line ever appears for it, which fits
+a class that does not override probe - IOService::probe returns `this` and logs
+nothing. So start is called and returns false before it publishes.
+
+The freeze at 0xfffffe0008a2b09c proved only that the code referencing
+`IOVirtIOPrimaryMatch` never runs. Find the class's vtable through its
+OSMetaClass at 0xfffffe0008a2c69c, take the `start` slot, and freeze that. Then
+"never called" and "called and gave up" separate for good, and if it is the
+latter, the same padding trick reads out where inside start it turns back.
