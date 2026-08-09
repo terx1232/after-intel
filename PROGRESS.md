@@ -2325,3 +2325,36 @@ before it publishes, and which step of it fails. The next measurement is to find
 the real entry of start - through the class's vtable, via its OSMetaClass - and
 freeze *that*, which distinguishes "never called" from "called and gave up"
 properly.
+
+### Positive control: the nub is fine, only vendor matching fails
+
+QEMU's virtio-blk-pci takes a `class` property, which gives a lever to change
+one variable and nothing else. Presenting the same disk as an ethernet
+controller with `class=0x0200`:
+
+    Registering: .../AppleVirtualPlatformPCIE/ethernet@1
+    Registering: .../AppleVirtualPlatformPCIE/ethernet@2
+    AppleUIOPCI[0x100000156]::probe fails
+    AppleUIOPCI[0x100000158]::probe fails
+
+Two probes where there was one. IOKit reaches the disk's nub, selects a driver
+for it, and runs probe. The nub is not special and nothing about it blocks
+matching.
+
+(The first attempt used `class=0x020000` and produced `pci1af4,1001@2` with no
+probe - the property is a 16-bit class code, so the 24-bit value landed as
+something IOPCIFamily does not recognise. The name changing at all is what said
+the property had taken effect.)
+
+So the failure is isolated to one branch of one function.
+`IOPCIBridge::matchNubWithPropertyTable` handles IOPCIClassMatch and
+IOPCIPrimaryMatch through the same helper, reading `nub->savedConfig` at offset
+0x08 and 0x00 respectively. The class branch works on these nubs. The vendor
+branch has never selected anything - not for the disk at 1af4:1042 or 1af4:1001,
+and not for the virtio network card at 1af4:1000, which AppleVirtIOPCITransport
+should also have claimed in every run so far.
+
+That points at `savedConfig[0]` holding something other than
+(device << 16) | vendor by the time matching runs, while `savedConfig[2]` holds
+the class correctly. Read what fills that array in IOPCIConfigurator and what,
+if anything, overwrites its first entry.
