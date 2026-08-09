@@ -2358,3 +2358,32 @@ That points at `savedConfig[0]` holding something other than
 (device << 16) | vendor by the time matching runs, while `savedConfig[2]` holds
 the class correctly. Read what fills that array in IOPCIConfigurator and what,
 if anything, overwrites its first entry.
+
+### The comparison itself, and where to read the value
+
+`matchKeys` is at 0xfffffe00094b4998. Its arguments are (x1 = nub, x2 = keys,
+w3 = default mask, w4 = regNum), and the comparison is:
+
+    0x94b49d4  mov  w22, #-0x55555556        ; poison the reg variable, ONCE
+    0x94b49d0  lsr  w24, w4, #2              ; index = regNum >> 2
+    ...                                      ; parse value into x27, mask into x28
+    ...                                      ; the log prints here, before the read
+    0x94b4b4c  ldr  x8, [x20, #0xb0]         ; the nub's savedConfig pointer
+    0x94b4b50  ldr  w22, [x8, w24, uxtw #2]  ; savedConfig[index]
+    0x94b4b54  eor  x8, x27, x22             ; plist value XOR register
+    0x94b4b5c  tst  x8, x28                  ; and the mask
+    0x94b4b60  b.ne <next value>             ; non-zero means no match
+
+Two things follow. The poison is written once before the loop and the log runs
+before the read, which is why a successful match prints it too - that closes the
+question for good, from the code rather than from a control.
+
+And the value the comparison actually uses is `[[nub + 0xb0] + (regNum & ~3)]`.
+For the disk that should be 0x10011af4, and
+(0x1af4 ^ 0x10011af4) & 0xffff is zero, so it should match. It does not.
+
+**Next step, and it is a direct read rather than an inference.** Divert
+0xfffffe00094b4b50 into a stub that freezes only when x27 is 0x1af4 - cond_trap.py
+already does exactly this shape of patch elsewhere in this project - and read w22
+and x8 from the monitor. That gives the savedConfig pointer and the word it
+holds, which is the last unknown in the chain.
