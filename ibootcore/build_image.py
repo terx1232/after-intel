@@ -76,6 +76,13 @@ def main(argv=None) -> int:
                     help="PCI device number the display card sits at")
     ap.add_argument("--fb-mmio", default="0x32000000",
                     help="where to map the card's register BAR")
+    ap.add_argument("--fb-fill", default="0",
+                    help="colour the stub paints the screen before entry. 0 is "
+                         "black, which is what a Mac shows. Any other value "
+                         "turns the fill into a visible self-test: a screen that "
+                         "comes up in that colour proves the BARs, the mode and "
+                         "memory decode are all right, which black cannot prove "
+                         "because it looks the same as nothing working.")
     ap.add_argument("--ecam", default="0x3f000000")
     ap.add_argument("--trampoline-at", default="0x41000000",
                     help="where the stub will be loaded, for the printed command")
@@ -238,7 +245,8 @@ def main(argv=None) -> int:
             import bochs_fb
             fb_words = bochs_fb.build(int(args.ecam, 0), args.fb_device,
                                       fb_addr, int(args.fb_mmio, 0),
-                                      w, h, at=tramp_at_early)
+                                      w, h, at=tramp_at_early,
+                                      fill=int(args.fb_fill, 0))
             print(f"\n  display bring-up: bochs-display at ECAM device "
                   f"{args.fb_device}, framebuffer {fb_addr:#x}, "
                   f"{len(fb_words)} instructions")
@@ -268,6 +276,7 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
 
 
 

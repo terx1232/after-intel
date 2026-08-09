@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 bochs_fb.py -- bring up a framebuffer before the kernel starts.
 
@@ -114,7 +114,7 @@ def vbe(index):
 
 
 def build(ecam: int, device: int, fb: int, mmio: int,
-          width: int, height: int, at: int = 0, fill: int | None = 0x00204060) -> list:
+          width: int, height: int, at: int = 0, fill: int | None = 0) -> list:
     """Instruction words that leave a live framebuffer at `fb`.
 
     `at` is where the sequence will be loaded, needed only to resolve the fill
@@ -155,9 +155,13 @@ def build(ecam: int, device: int, fb: int, mmio: int,
     words += load32(7, VBE_ENABLED | VBE_LFB_ENABLED)
     words.append(strh_w(7, 6, vbe(VBE_ENABLE)))
 
-    # Paint the whole framebuffer. This is the self-test: if the window shows
-    # this colour, the BARs, the mode and the memory decode are all right, and
-    # anything still wrong afterwards is the kernel's side rather than this.
+    # Paint the whole framebuffer. Black by default, because that is what a Mac
+    # shows and the card no longer needs proving. Passing a colour turns this
+    # back into a self-test: a screen that comes up in that colour says the
+    # BARs, the mode and memory decode are all correct, which black cannot say
+    # because it is indistinguishable from nothing working at all. That is how
+    # this was first shown to work - 99.8% of a screendump came back
+    # rgb(32,64,96), and the remaining 0.2% was the kernel's progress bar.
     if fill is not None:
         words += load64(8, fb)
         words += load32(9, fill)
@@ -203,3 +207,4 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
