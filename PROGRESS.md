@@ -2234,3 +2234,38 @@ AppleVirtIOPCITransport's entry - cond_trap.py already does this elsewhere in
 the project - and see whether the guest stops there. That answers in one boot
 which side of the gap the failure is on, and every further step depends on the
 answer.
+
+### Reachability test: the VirtIO transport code never executes
+
+Found AppleVirtIOPCITransport's publishing code through its literal pool, the
+same way `crypto-hash-method` and `InterruptControllerName` were found. Its
+class name sits with the two properties it sets on the nub it publishes:
+
+    0xfffffe0007409f59  AppleVirtIOPCITransport
+    0xfffffe0007409fb7  built-in
+    0xfffffe0007409fc0  IOVirtIOPrimaryMatch
+
+The only reference to `IOVirtIOPrimaryMatch` is at 0xfffffe0008a2b100, 100 bytes
+into a function entered at 0xfffffe0008a2b09c that nothing calls directly - a
+virtual method, as expected.
+
+Froze that entry with `b .` and sampled the PC ten times across a full boot.
+Four distinct addresses, none of them the freeze. **The function is never
+reached, so the driver never runs at all.** That agrees with `info pci`
+reporting every BAR of 0:2:0 still unmapped after a complete boot.
+
+Two of the ten samples landed at 0xfffffe0008a74a78, inside
+AppleVirtualPlatformPCIE's config-space read accessor:
+
+    lsr x8, x1, #8 ; ldr x9, [x0, #0xc0] ; ... ; add x8, x8, x9
+    cmp x9, #0 ; csel x8, xzr, x8, eq ; ldrb w0, [x8]
+
+Twenty percent of samples in a config read on an otherwise idle system is worth
+noting. Whether that is ordinary hot-plug polling or a symptom has not been
+established, and should not be assumed either way.
+
+So the failure is on the matching side after all, not in probe or start. The
+comparison runs, the register holds the right value, and no candidate results.
+The next thing to read is IOKit's own side of it - `IOService::probeCandidates`
+and what it does with the personality after `matchPropertyTable` returns - since
+IOPCIFamily's half has now been exhausted.
