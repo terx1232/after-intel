@@ -2137,3 +2137,66 @@ containing 0xfffffe0008431aac and see where that object is built. It is likely
 an Image4 environment assembled earlier in boot, possibly from the trust cache
 or from a registry entry, and whatever populates it is what needs feeding - not
 the device tree.
+
+---
+
+## Stage 6 - read this first
+
+**Driver matching: working. Storage discovery: one step short.**
+
+The kernel boots to `!BSD` and sits in `IOKitBSDInit` asking for a root volume:
+
+    Waiting on <dict><key>IOProviderClass</key><string>IOMedia</string>
+                    <key>Content</key><string>Apple_HFS</string></dict>
+
+Everything before that works. AppleARMGICv3 starts and registers as an interrupt
+controller, AppleVirtualPlatformPCIE brings up the host bridge, Apple's own
+IOPCIConfigurator walks the bus and configures three devices, AMFI, Sandbox,
+Quarantine, EndpointSecurity, AppleCredentialManager, AppleVPKeyStore,
+CoreAnalyticsHub, IOHIDSystem, IOSurfaceRoot, APFS, NFS and TMPFS all load.
+
+The disk is present as a PCI nub:
+
+    Registering: ../pcie@37000000/AppleVirtualPlatformPCIE/scsi@2
+
+and `info pci` on the monitor confirms what is on the wire - 1b36:0008 host
+bridge at 0:0, 1af4:1000 ethernet at 0:1, 1af4:1042 SCSI at 0:2.
+
+What has not happened is `AppleVirtIOPCITransport` binding to it. Its
+personality is `IOProviderClass = IOPCIDevice`, `IOPCIPrimaryMatch =
+0x00001af4&0x0000FFFF`, no other condition. The kext is in the boot collection
+with `OSBundleRequired = Local-Root`, it loads, and it registers the class. All
+1114 personalities reach the catalogue.
+
+### What has been eliminated, so it is not tried again
+
+| Hypothesis | How it died |
+|---|---|
+| MSI delivery was missing | Replaced the RAM stand-in frame with QEMU's real GICv2m (`-M virt,msi=gicv2m`, frame at 0x08020000). No change. |
+| Wrong virtio device ID | Transitional mode (0x1af4:0x1001) behaves exactly like modern (0x1af4:0x1042). |
+| IOPCIFamily's tunnel gate | Its literal pool has `Driver "%s" needs "%s" key in plist` immediately after `IOPCITunnelCompatible`, and AppleUIOPCI - the only driver that ever probes a PCI nub here - is the one personality carrying that key. But the message never prints, and adding `IOPCITunnelCompatible` and `IOPCITunnelled` to the pcie node changed nothing. |
+| Kext not loaded | `kextlog=0xff` shows `Loading kext com.apple.driver.AppleVirtIO`, `calling module start function`, and `registered class AppleVirtIOPCITransport`. |
+
+### The one hard fact to reason from
+
+Class matching works on these nubs and vendor matching does not.
+`AppleUIOPCI_Ethernet` matched `IOPCIClassMatch 0x02000000&0xffffff00` and
+probed ethernet@1, which means `IOPCIBridge::matchNubWithPropertyTable` runs and
+reads `savedConfig[2]`. `IOPCIPrimaryMatch` reads `savedConfig[0]` through the
+same helper and fails. Both registers were demonstrably read during the scan:
+device 0 got the name `pci1b36,8@0`, which is built from vendor and device ID,
+and devices 1 and 2 got `ethernet` and `scsi`, which are built from class code.
+
+### Next measurement, not next guess
+
+IOPCIFamily logs both sides of the comparison:
+
+    [PCIe:%u %llu ns] Matching nub %u:%u:%u
+    [PCIe:%u %llu ns] Comparing plist value & mask (0x%x & 0x%x)
+                      vs. reg 0x%x value & mask (0x%x & 0x%x)
+
+gated by bit 0 of a word at 0xfffffe000acbb740. Writing 7 into that word in the
+image did not enable it - the banner still reports `log mode flags 0x4`, so the
+variable is initialised at runtime and the static patch is overwritten. Find
+where it is written, or find the boot argument that sets it. That log states
+what the two values actually are and ends the guessing.
