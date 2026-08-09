@@ -84,6 +84,11 @@ def strh_w(rt, rn, off):
     return 0x79000000 | ((off // 2) << 10) | ((rn & 0x1F) << 5) | (rt & 0x1F)
 
 
+def ldr_w_post(rt, rn, imm9):
+    """LDR Wt, [Xn], #imm9 -- post-index."""
+    return 0xB8400400 | ((imm9 & 0x1FF) << 12) | ((rn & 0x1F) << 5) | (rt & 0x1F)
+
+
 def str_w_post(rt, rn, imm9):
     """STR Wt, [Xn], #imm9 -- post-index."""
     return 0xB8000400 | ((imm9 & 0x1FF) << 12) | ((rn & 0x1F) << 5) | (rt & 0x1F)
@@ -114,7 +119,8 @@ def vbe(index):
 
 
 def build(ecam: int, device: int, fb: int, mmio: int,
-          width: int, height: int, at: int = 0, fill: int | None = 0) -> list:
+          width: int, height: int, at: int = 0, fill: int | None = 0,
+          blit_from: int | None = None) -> list:
     """Instruction words that leave a live framebuffer at `fb`.
 
     `at` is where the sequence will be loaded, needed only to resolve the fill
@@ -154,6 +160,22 @@ def build(ecam: int, device: int, fb: int, mmio: int,
     words.append(strh_w(7, 6, vbe(VBE_Y_OFFSET)))
     words += load32(7, VBE_ENABLED | VBE_LFB_ENABLED)
     words.append(strh_w(7, 6, vbe(VBE_ENABLE)))
+
+    # Copy a prepared image in, if one was given. This is what iBoot does on a
+    # real Mac: it programs the display, then blits the boot logo from its own
+    # firmware volume, and only then enters the kernel, which draws its progress
+    # bar on top of a picture that is already there. The kernel contains no logo
+    # and never draws one.
+    if blit_from is not None:
+        words += load64(8, fb)
+        words += load64(11, blit_from)
+        words += load32(10, width * height)
+        loop = at + len(words) * 4
+        words.append(ldr_w_post(9, 11, 4))
+        words.append(str_w_post(9, 8, 4))
+        words.append(subs_imm32(10, 10, 1))
+        words.append(b_ne(at + len(words) * 4, loop))
+        return words
 
     # Paint the whole framebuffer. Black by default, because that is what a Mac
     # shows and the card no longer needs proving. Passing a colour turns this
@@ -207,4 +229,5 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
 

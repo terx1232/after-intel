@@ -83,6 +83,13 @@ def main(argv=None) -> int:
                          "comes up in that colour proves the BARs, the mode and "
                          "memory decode are all right, which black cannot prove "
                          "because it looks the same as nothing working.")
+    ap.add_argument("--boot-logo", metavar="PATH",
+                    help="a decoded iBootIm payload; the stub composites it "
+                         "over the fill colour and copies the result into the "
+                         "framebuffer before entering the kernel, which is what "
+                         "iBoot does on a real Mac")
+    ap.add_argument("--fg", default="0xffffff",
+                    help="colour the logo mask is composited in")
     ap.add_argument("--ecam", default="0x3f000000")
     ap.add_argument("--trampoline-at", default="0x41000000",
                     help="where the stub will be loaded, for the printed command")
@@ -243,14 +250,43 @@ def main(argv=None) -> int:
             # discarded -- which is why this project has only ever produced text
             # on a serial line.
             import bochs_fb
-            fb_words = bochs_fb.build(int(args.ecam, 0), args.fb_device,
-                                      fb_addr, int(args.fb_mmio, 0),
-                                      w, h, at=tramp_at_early,
-                                      fill=int(args.fb_fill, 0))
+            screen = None
+            if args.boot_logo:
+                # The picture iBoot would have left behind. It rides in the
+                # trampoline itself, after the code, and the stub copies it into
+                # the framebuffer before entering the kernel -- which is the
+                # order a Mac does it in, and why the kernel's progress bar ends
+                # up drawn on top of the logo rather than instead of it.
+                import bootscreen
+                screen = bootscreen.render(open(args.boot_logo, "rb").read(),
+                                           w, h, int(args.fg, 0),
+                                           int(args.fb_fill, 0))
+                # Size the code first. Every address load is a fixed four
+                # instructions, so the probe and the real build are the same
+                # length and the data offset computed here cannot go stale.
+                probe = bochs_fb.build(int(args.ecam, 0), args.fb_device,
+                                       fb_addr, int(args.fb_mmio, 0), w, h,
+                                       at=tramp_at_early, blit_from=0)
+                code_len = len(trampoline.build(ba_addr, entry_phys,
+                                                fb_init=probe))
+                data_at = (tramp_at_early + code_len + 15) & ~15
+                fb_words = bochs_fb.build(int(args.ecam, 0), args.fb_device,
+                                          fb_addr, int(args.fb_mmio, 0),
+                                          w, h, at=tramp_at_early,
+                                          blit_from=data_at)
+            else:
+                fb_words = bochs_fb.build(int(args.ecam, 0), args.fb_device,
+                                          fb_addr, int(args.fb_mmio, 0),
+                                          w, h, at=tramp_at_early,
+                                          fill=int(args.fb_fill, 0))
             print(f"\n  display bring-up: bochs-display at ECAM device "
                   f"{args.fb_device}, framebuffer {fb_addr:#x}, "
                   f"{len(fb_words)} instructions")
         blob = trampoline.build(ba_addr, entry_phys, fb_init=fb_words)
+        if args.fb_init and fb and args.boot_logo:
+            pad = (data_at - tramp_at_early) - len(blob)
+            blob = blob + b"\x00" * pad + screen
+            print(f"    boot screen at {data_at:#x}, {len(screen):,} bytes")
         open(args.trampoline, "wb").write(blob)
         tramp_at = int(args.trampoline_at, 0)
         print(f"\n  trampoline  {args.trampoline}  ({len(blob)} bytes)")
@@ -276,6 +312,7 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
 
 
 
