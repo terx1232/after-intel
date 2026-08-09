@@ -2590,3 +2590,34 @@ each site needs its own two-word thunk, or the sweep needs to run in batches
 small enough to bisect by hand.
 
 That is the next step, and it is mechanical rather than uncertain.
+
+### start is called, and the shim chain is decodable
+
+The sweep reached the driver's own code. Callers moved off the kext loader and
+onto IOKit's matching path at 0xfffffe000a651xxx, and three of the hits identify
+themselves:
+
+    0xfffffe0008a29cd8   getMetaClass, returns the metaclass at 0xac78020
+    0xfffffe0008a29ce8   the metaclass's alloc: operator new of 0x140 bytes
+    0xfffffe0008a29d50   start(provider) -- lr 0xfffffe000a651d44, IOKit
+
+So the object is allocated and **start is called**. That is now measured rather
+than inferred, and it rules out everything upstream of it for good.
+
+start is a shim. It allocates a helper into [this + 0x138] - the last field of a
+0x140-byte class - and tail-calls through a pointer at 0xfffffe0007c11368. That
+pointer is a chained fixup, and it decodes:
+
+    0x801143aa01a3a758
+      bit 63      auth
+      bits 47:32  0x43aa   the diversifier, matching `movk x17, #0x43aa, lsl #48`
+      bits 31:0   0x01a3a758  offset from the kernel base
+
+giving 0xfffffe0007004000 + 0x01a3a758 = **0xfffffe0008a3e758**, which is inside
+the kext and is another shim of the same shape, storing into [this + 0x88].
+
+Two things follow. The split-shim pattern means each class in the hierarchy
+contributes one, so start descends a chain rather than doing work directly - and
+the sweep will walk it. And decoding that pointer is the same decoding the vtable
+route needed, so the earlier blocker is no longer a blocker: a chained fixup
+here is `base + (value & 0xFFFFFFFF)` with the diversifier in bits 47:32.
