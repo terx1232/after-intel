@@ -2455,3 +2455,35 @@ The freeze at 0xfffffe0008a2b09c proved only that the code referencing
 OSMetaClass at 0xfffffe0008a2c69c, take the `start` slot, and freeze that. Then
 "never called" and "called and gave up" separate for good, and if it is the
 latter, the same padding trick reads out where inside start it turns back.
+
+### Finding start through the vtable: blocked by pointer signing
+
+Located a vtable slot for AppleVirtIOPCITransport by searching the image for the
+address of its known virtual method:
+
+    0xfffffe0008a2b09c  appears once, at 0xfffffe000afffd48
+
+and the same for a class whose start is known, to calibrate the slot index.
+`AppleARMGICv3::start` is at 0xfffffe0007f9c4e4 - walked back from the call site
+in its registration code - and appears at 0xfffffe000ae41948.
+
+Deriving the index from those fails. Scanning backwards for the table base while
+the preceding word looks like a kernel address stops immediately for both,
+reporting index 0, which cannot be true for either. The reason is that this is an
+arm64e collection: vtable entries are signed pointers, and in the file they are
+chained-fixup entries whose raw 64-bit value is not an address. Only the odd
+entry reads back as a plain pointer, which is why the two searches hit at all.
+
+So the slot index cannot be read off this way. Doing it properly means parsing
+LC_DYLD_CHAINED_FIXUPS and walking the chain in __DATA_CONST, which is a real
+piece of work but a reusable one - nothing else in this project has needed to
+read a vtable yet, and identifying any virtual method by name will need it.
+
+Two alternatives worth weighing first, both cheaper:
+
+* Freeze on the metaclass's `alloc`, reachable from the OSMetaClass constructed
+  at 0xfffffe0008a2c69c. If the driver is never allocated, start was never
+  called and the question is answered without a vtable at all.
+* Trap inside `IOService::probeCandidates` in the kernel proper, where the
+  candidate list is walked, and read which personality is in hand. That is
+  kernel code, not kext code, and its symbols are easier to pin down.
