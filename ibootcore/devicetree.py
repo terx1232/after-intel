@@ -265,13 +265,12 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
                          cpu_hz: int = 2_400_000_000,
                          bus_hz: int = 100_000_000,
                          soc_base: int = 0x0800_0000,
-                         soc_size: int = 0x3800_0000,
+                         soc_size: int = 0x3A00_0000,
                          random_seed: bytes | None = None,
                          nvram_data: bytes | None = None,
                          manifest_props: dict | None = None,
                          manifest_blob: bytes | None = None,
-                         gic_interrupts: bool = True,
-                         gic_ic_prop: bool = False) -> Node:
+                         gic_msi_frame: int = 0x4180_0000,) -> Node:
     root = Node("device-tree")
     root.set_str("compatible", "AppleVirtualPlatformARM")
     root.set_str("model", "VirtualMac2,1")
@@ -482,6 +481,18 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     # `AAPL,phandle`. `SecureDTFindNodeWithPhandle` looks it up by that value.
     defaults = root.add(Node("defaults"))
     defaults.set_u32("serial-device", UART_PHANDLE)
+    # The rest of Apple's /defaults for this platform, read out of
+    # DeviceTree.vma2macosap. vmm-present is the one that matters most: it tells
+    # the kernel it is a guest, which changes what it expects of the hardware.
+    defaults.set_u32("vmm-present", 1)
+    defaults.set_u32("pmap-max-asids", 0x4000)
+    defaults.set_u32("kern.vm_compressor", 4)
+    defaults.set_u32("has-xart", 1)
+    defaults.set_u32("force-sep-nonce", 1)
+    defaults.set_u32("sleep-disabled", 1)
+    defaults.set_u32("avp-encryption-version", 0)
+    defaults.props["no-effaceable-storage"] = b""
+    defaults.props["ean-storage-present"] = b""
 
     # "panic: failed to get product node" - read out of the guest at the point
     # of failure, not guessed. `pe_init.c:478` reads `unique-model` and
@@ -548,6 +559,23 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
                                              gic_redist + i * GICR_STRIDE,
                                              GICR_STRIDE)
 
+        # The interrupts live here, on the CPU, not on the controller - which is
+        # the answer to "Failed to register GIC to PassthruInterruptController."
+        # AppleARMGIC finishes by registering a handler through
+        # IOService::registerInterrupt, and that resolves through the
+        # IOInterruptControllers property IODTMapInterrupts derives from a node's
+        # `interrupts` and `interrupt-parent`. Putting them on the gic node makes
+        # IODeviceTreeSupport dereference a null parent; Apple puts them here.
+        #
+        # Three specifiers of (number, flags), matching #interrupt-cells = 2 on
+        # the controller. The values are Apple's own, read out of cpu0 in
+        # DeviceTree.vma2macosap: 1, 0x17 and 1 - the maintenance, PMU and
+        # timer PPIs this core answers.
+        c.set_u32("interrupt-parent", GIC_PHANDLE)
+        c.props["interrupts"] = struct.pack("<6I", 1, 1, 0x17, 1, 1, 1)
+        c.props["function-enable_core"] = b""
+        c.set_u32("cpu-version", 0)
+
     # This node gates the whole platform expert. pe_arm_get_soc_base_phys()
     # does, without checking either result:
     #
@@ -578,7 +606,11 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     # consumes the offset form.
     arm_io = root.add(Node("arm-io"))
     arm_io.set_str("compatible", "arm-io,vmapple1")
-    arm_io.set_str("device_type", "arm-io")
+    arm_io.set_str("device_type", "vmapple2-io")
+    # Apple's own value for this platform, alongside the SoC generation string
+    # its drivers look for. "arm-io" was a reasonable guess and is what the
+    # kernel copies into gPESoCDeviceTypeBuffer; this is what it should read.
+    arm_io.set_str("soc-generation", "VMApple2")
     arm_io.set_u32("#address-cells", 2)
     arm_io.set_u32("#size-cells", 2)
     arm_io.props["ranges"] = struct.pack("<QQQ", 0, soc_base, soc_size)
@@ -594,10 +626,26 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     # finding #31 records that AppleARMGIC yields zero property names from its
     # cstring sections, so this node cannot be reconstructed from the driver.
     gic = arm_io.add(Node("gic"))
-    gic.set_str("compatible", "ARM,gicv3")
-    gic.set_u32("#interrupt-cells", 3)
-    if gic_ic_prop:
-        gic.set_u32("interrupt-controller", 1)
+    # Apple's own tree for this platform, DeviceTree.vma2macosap.im4p, carries
+    # two entries here, and the first is the one its personality would prefer.
+    # A property holds a NUL-separated list, which is why this is one blob.
+    gic.props["compatible"] = b"gic,vmapple1\x00ARM,gicv3\x00"
+    # Two, not three. Apple's tree says #interrupt-cells = 2 and
+    # #address-cells = 0, so an interrupt specifier here is (number, flags).
+    gic.set_u32("#interrupt-cells", 2)
+    gic.set_u32("#address-cells", 0)
+    # A string, and specifically this string. SecureDTFindEntry takes a property
+    # name and a **value** to compare, and pe_arm_map_interrupt_controller's
+    # literal pool has the two sitting adjacent:
+    #
+    #     0xfffffe00070db077  interrupt-controller
+    #     0xfffffe00070db08c  master
+    #
+    # so the search is for a node whose `interrupt-controller` reads "master".
+    # A u32 1 was written here for a long time; it satisfied nothing, and the
+    # boot survived only because the GICv3 path finds this node by the literal
+    # path '/arm-io/gic' instead.
+    gic.set_str("interrupt-controller", "master")
     # No `interrupt-controller` **property**. The conventional DT marker is fatal
     # here: IODeviceTreeSupport tests for it while resolving a node's own
     # interrupt parent, and a node carrying both it and `interrupts` takes a
@@ -659,8 +707,10 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     # parent chain - arm-io and the root both lack it - and falls back to 1. The
     # #interrupt-cells = 3 above describes what *children* of this controller
     # write, not what this node's own `interrupts` means.
-    if gic_interrupts:
-        gic.props["interrupts"] = struct.pack("<I", 0)
+    # No `interrupts` property on this node. Apple's tree has none either, and
+    # adding one took a data abort inside IODeviceTreeSupport: the interrupt
+    # parent of a node that is itself a controller resolves to null and is then
+    # dereferenced. The CPU node carries the interrupts instead - see cpu0.
     # `reg` here is **relative to arm-io's ranges base**, not absolute.
     # `pe_arm_map_interrupt_controller` maps `soc_phys + offset`, and its own
     # log string says so: "pe_arm_map_interrupt_controller: soc_phys: 0x%l...".
@@ -676,6 +726,17 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     gic.props["reg"] = struct.pack("<QQQQ",
                                    gic_dist - soc_base, 0x10000,
                                    gic_redist - soc_base, 0xF60000)
+    if gic_msi_frame:
+        # A third region, and its only consumer is the PCIe MSI controller:
+        # /arm-io/pcie carries msi-frame-index = 2, which indexes this node's
+        # device memory, and index 2 is this pair. Without it the controller
+        # asserts `memory` at AppleVirtualPlatformPCIEMSIController.cpp:57.
+        #
+        # Apple's own tree has three pairs here for exactly this reason, the
+        # third being a 64 KiB window well above the redistributors. On QEMU the
+        # equivalent is the GICv3 ITS, which `virt` places at 0x08080000.
+        gic.props["reg"] += struct.pack("<QQ",
+                                        gic_msi_frame - soc_base, 0x20000)
     # The kernel checks this exactly: "incorrect reg property size in GIC DT
     # node; expecting 32 bytes but got %u bytes". Four 64-bit values, which is
     # what the two pairs above give.
@@ -752,6 +813,8 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     pcie.set_u32("#size-cells", 2)
     pcie.set_reg(PCIE_ECAM_BASE - soc_base, PCIE_ECAM_SIZE)
     pcie.props["bus-range"] = struct.pack("<II", 0, PCIE_ECAM_SIZE // 0x100000 - 1)
+    # Apple's own values for the two properties whose meaning is not guessable.
+    pcie.props["dev-range"] = struct.pack("<II", 0, 0xFF)
 
     # Standard PCI ranges: three cells of child address, then parent address and
     # size in this node's parent's cells. The parent is arm-io, so parent
@@ -759,13 +822,14 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     # one line above. Little-endian cells, because this is an Apple tree and not
     # an FDT - the values were read big-endian out of QEMU's dtb and are
     # re-packed here.
+    # Cell order matters and was wrong here. Apple''s tree packs each 64-bit
+    # value as a plain little-endian 64-bit field - low word first - so an entry
+    # is <u32 flags><u64 pci><u64 cpu><u64 size>, 28 bytes. Packing seven u32s
+    # high word first, which is the FDT convention, describes a different
+    # machine entirely.
     ranges = b""
     for flags, pci_addr, cpu_addr, size in PCIE_RANGES:
-        ranges += struct.pack("<7I", flags,
-                              pci_addr >> 32, pci_addr & 0xFFFFFFFF,
-                              (cpu_addr - soc_base) >> 32,
-                              (cpu_addr - soc_base) & 0xFFFFFFFF,
-                              size >> 32, size & 0xFFFFFFFF)
+        ranges += struct.pack("<IQQQ", flags, pci_addr, cpu_addr - soc_base, size)
     pcie.props["ranges"] = ranges
 
     # The bridge's own identity, read by the driver and reported for the root
@@ -774,8 +838,8 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     pcie.set_u32("vendor-id", 0x106B)
     pcie.set_u32("device-id", 0x0001)
     pcie.set_u32("device-interrupt-parent", GIC_PHANDLE)
-    pcie.set_u32("msi-frame-index", 0)
-    pcie.set_u32("interrupt-base", PCIE_INTX_SPI_BASE)
+    pcie.set_u32("msi-frame-index", 2)
+    pcie.set_u32("interrupt-base", 0x40)
     pcie.set_u32("AAPL,phandle", PCIE_PHANDLE)
 
     return root
@@ -953,6 +1017,11 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+
+
+
 
 
 

@@ -65,8 +65,6 @@ def main(argv=None) -> int:
                     help="framebuffer geometry for the boot console, e.g. 1024x768")
     ap.add_argument("--fb-addr", default="0x900000000")
     ap.add_argument("--ncpus", type=int, default=1)
-    ap.add_argument("--no-gic-irq", action="store_true")
-    ap.add_argument("--gic-ic-prop", action="store_true")
     ap.add_argument("--trampoline", metavar="PATH",
                     help="also emit the entry stub, with x0 and the entry point "
                          "taken from this image rather than typed in again")
@@ -104,9 +102,7 @@ def main(argv=None) -> int:
 
     tree = devicetree.minimal_vmapple_tree(ram_base=ram_base,
                                            ram_size=mem_size,
-                                           ncpus=args.ncpus,
-                                           gic_interrupts=not args.no_gic_irq,
-                                           gic_ic_prop=args.gic_ic_prop)
+                                           ncpus=args.ncpus)
     if fb:
         w, h = fb
         node = devicetree.Node("framebuffer")
@@ -248,6 +244,7 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
 
 
 
