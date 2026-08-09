@@ -2487,3 +2487,41 @@ Two alternatives worth weighing first, both cheaper:
 * Trap inside `IOService::probeCandidates` in the kernel proper, where the
   candidate list is walked, and read which personality is in hand. That is
   kernel code, not kext code, and its symbols are easier to pin down.
+
+### The driver was attached all along
+
+`io=0xffff` turns on kIOLogServiceTree, which dumps the registry. It shows:
+
+    pcie@37000000                     <AppleARMIODevice, busy 1>
+      AppleVirtualPlatformPCIE        <busy 2>
+        pci1b36,8@0                   <IOPCIDevice, busy 0>
+        ethernet@1                    <IOPCIDevice, busy 1>
+          AppleVirtIOPCITransport     <busy 0>
+        scsi@2                        <IOPCIDevice, busy 1>
+          AppleVirtIOPCITransport     <busy 0>
+
+**AppleVirtIOPCITransport is attached to both virtio devices, including the
+disk.** It matched, was instantiated, and started - a failed start detaches, and
+these are attached. Every conclusion in this file about matching failing was
+wrong, and the reason it took so long to see is that none of the flags tried
+before 0xffff dump the registry; absence of log lines was read as absence of the
+driver.
+
+So the gap is one link further on. AppleVirtIOBlock's provider is
+`AppleVirtIOTransport`, a nub the PCI transport is supposed to publish beneath
+itself. No such nub exists, and the code that would create it - the function at
+0xfffffe0008a2b09c that sets `IOVirtIOPrimaryMatch` - is still never reached, as
+the freeze showed. The transport starts, gets some way in, and returns without
+publishing.
+
+**And there is a strong candidate for why.** `info pci` after a full boot still
+reports every BAR of 0:2:0 as "not mapped": memory decode was never enabled.
+A transport that had successfully mapped the device's virtio structures would
+have turned it on. So it is failing while bringing the device up, before it has
+anything to publish.
+
+Next, and now well-posed: find where inside start it turns back. The padding
+stub at 0xfffffe00093a4140 is the tool - the same divert-test-return shape,
+placed on candidate points inside 0xfffffe0008a102e0..0x8a442fb. Start from the
+capability walk: modern virtio keeps its structures behind PCI capabilities, and
+if the transport cannot find them it has nothing to map.
