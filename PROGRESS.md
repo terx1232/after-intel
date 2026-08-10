@@ -3219,3 +3219,38 @@ handling. The Mach-O groundwork is done - machobase.py gives the __TEXT slide,
 0x100000000 here, and locates the strings at 0x100260de4, 0x100260ebf and
 0x100271f3c - but the kernel's adrp+add scan does not find their callers, so
 userland addressing needs its own pass.
+
+### AEA, narrowed: the C++ path is not it, the Swift path is
+
+Chased "crypto_format: Can't decrypt wrapped key" into diskimagesiod. uxrefs.py -
+which scans for the ADRP page and then looks a short way ahead for the matching
+ADD, finding what the kernel scanner misses in userland - puts its only
+reference at 0x1001eb160, and the call before it, 0x10020fb40, is a PLT stub
+through the GOT at 0x1002c87d0.
+
+**That is the wrong path, and the imports say so.** The whole binary imports only
+these corecrypto and CommonCrypto primitives:
+
+    _CCCrypt  _CCKeyDerivationPBKDF  _ccsha1_di
+    _ccaes_cbc_decrypt_mode  _ccaes_cbc_encrypt_mode
+    _ccaes_xts_decrypt_mode  _ccaes_xts_encrypt_mode
+
+No GCM anywhere, and PBKDF2 alongside CBC and XTS is the signature of encrypted
+*disk image* handling, not AEA. So `crypto_format` refers to the DMG's own
+crypto, and the AEA key never goes through this code.
+
+The AEA path is the Swift one, and its symbols are the evidence:
+`P256.KeyAgreement.PrivateKey` and `PublicKey` in `x963Representation`, with
+`convertPrivateKeyTox963WithPemPrivateKey:` converting the served PEM. CryptoKit
+inlines its derivation, so the salt and shared-info are not string literals and
+do not appear near the wkms strings - which were checked, 3 KiB either side, and
+carry only unrelated diagnostics.
+
+So the unwrap is HKDF or X9.63 inside CryptoKit with parameters that have to be
+read out of compiled Swift rather than found as data. That is a different kind of
+reading from everything this project has done so far, and it is where stage 9
+now sits.
+
+New tools, all reusable for any userland binary: machobase.py for the __TEXT
+slide and string addresses, uxrefs.py for references, and `--virt-base` on
+dis_range.py so the disassembler works outside the kernel.

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 dis_range.py -- disassemble a virtual address range out of a kernel collection,
 and find where a given instruction word occurs in __TEXT_EXEC.
@@ -77,7 +77,7 @@ def disassemble(data: bytes, vb: int, start: int, end: int) -> None:
 
 def find_word(data: bytes, m: dict, want: int, mask: int) -> list[int]:
     seg = text_exec(m)
-    vb = m["vm_low"]
+    vb = int(args.virt_base, 0) if getattr(args, "virt_base", None) else m["vm_low"]
     hits = []
     lo, hi = seg["fileoff"], seg["fileoff"] + seg["filesize"]
     for off in range(lo, hi, 4):
@@ -97,12 +97,15 @@ def main(argv=None) -> int:
     ap.add_argument("--find", help="instruction word to search for in __TEXT_EXEC")
     ap.add_argument("--mask", default="0xffffffff")
     ap.add_argument("--find-const", help="64-bit immediate; finds its MOVZ")
+    ap.add_argument("--virt-base",
+                    help="use this as the load base instead of the kernel load "
+                         "map, so a plain userland Mach-O can be read")
     ap.add_argument("--context", type=int, default=0,
                     help="instructions to disassemble around each hit")
     args = ap.parse_args(argv)
 
     m, data = load(args.kernel)
-    vb = m["vm_low"]
+    vb = int(args.virt_base, 0) if getattr(args, "virt_base", None) else m["vm_low"]
 
     if args.find_const:
         value = int(args.find_const, 0)
@@ -150,3 +153,4 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
