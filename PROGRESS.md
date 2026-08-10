@@ -3078,3 +3078,36 @@ rather than booting.
 
 **Next:** the ten kernel PCs seen while launchd is blocked say what the kernel is
 doing during the block. No new tooling needed.
+
+### 8.5 - the block is characterised; five hypotheses eliminated
+
+launchd is executed, runs dyld, prints the ignition arguments, and then no user
+code runs again. The kernel PCs during the block are the scheduler's deadline
+wait at 0xfffffe0009ecce8c - ten of sixteen samples - and a timer read at
+0xfffffe000a01bd08, `mrs x11, cntvct_el0` inside a delay loop, three more. The
+machine is idle and waiting, not spinning and not faulting.
+
+Eliminated, each by measurement:
+
+| hypothesis | how it died |
+|---|---|
+| the root's contents | three roots, including both Apple ramdisks with 410 and 528 entry trust caches, stop identically |
+| cryptex grafting | `ignition_level=0` is accepted - the guest prints `0x0` instead of `0x5` - and nothing changes |
+| single user mode | `-s` changes nothing; libignition runs before that decision |
+| slowness | fifteen minutes gives a log byte-identical to five |
+| launchd working silently | needed ruling out properly, since PID 1 logs to the system log not the console. EL0 never executes in sixteen samples |
+
+Also checked and absent: **the kernel has no override for the init program**.
+Four occurrences of `/sbin/launchd`, no `init_path`, no `launchdsuffix`, no
+`/bin/sh`. A shell cannot be substituted to prove userland another way.
+
+Both ramdisks carry only restore daemons - `restored_external`, `diskimagesiod`,
+`kernelmanagerd`, `syslogd`, `vsdbutil`. Even unblocked, neither produces a
+desktop; they are built to be driven by a host over USB.
+
+**Stage 9 needs the real system volume**, and that stays a supply problem: OS and
+BaseSystem in the IPSW are Apple Encrypted Archives.
+
+New capability, reusable: **7-Zip reads APFS**, so both ramdisks are directly
+inspectable. That is how libignition was found inside `usr/lib/dyld` rather than
+as a library, giving the whole stage list and its five boot arguments.
