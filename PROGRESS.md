@@ -3003,3 +3003,44 @@ work:
 That is a supply problem, not a boot problem. Everything the kernel side needed
 is now proven: the machine boots, mounts a real APFS root, and runs PID 1 out of
 it.
+
+### The IPSW, and why launchd stops in the same place regardless of the root
+
+`UniversalMac_27.0_26A5388g_Restore.ipsw`, 22.7 GB. Its BuildManifest gives the
+whole set for `vma2macosap`, variant "Customer Erase Install":
+
+| role | file | encrypted |
+|---|---|---|
+| RestoreRamDisk | 094-20137-168.dmg, 220 MB | no |
+| RestoreTrustCache | Firmware/094-20137-168.dmg.trustcache | no |
+| KernelCache | kernelcache.release.vma2 | no |
+| DeviceTree | Firmware/all_flash/DeviceTree.vma2macosap.im4p | no |
+| BaseSystem | 022-20879-148.dmg.aea, 1.3 GB | **yes** |
+| OS | 094-19942-102.dmg.aea, 10.2 GB | **yes** |
+| Cryptex1,SystemOS | 094-19967-108.dmg.aea, 2.4 GB | **yes** |
+| Cryptex1,RosettaOS | 094-86300-103.dmg, 7.7 GB | no |
+| Cryptex1,AppOS | 094-20071-170.dmg, 52 MB | no |
+
+The restore ramdisk is a real one - IM4P of type `rdsk` wrapping APFS, NXSB at
+offset 32, trust cache of 528 entries against the software-update ramdisk's 410,
+carrying `restored`, `configd` and `WindowServer`.
+
+**It boots exactly as far as the other one and no further**: 17,910 bytes, 265
+lines, stopping at `libignition: 1: ignition level : 0x5`. The same figures to
+the byte. `-s` for single user changes nothing; libignition runs before that.
+
+That is the finding worth having. Two roots, built for different jobs, with
+different trust caches and different contents, stop at the same instruction in
+the same library. **The obstacle is not on the disk.** It is something launchd
+asks of the machine.
+
+Candidates are already in the log from earlier stages:
+
+    AppleImage4: magazine[pdmg]: failed to read nonce slot data: 2  (and eleven more)
+    ACMTRM: isSEPAvailable: isSEPAvailable = NO
+    AppleImage4: root power domain not yet available: 19
+    Couldn't alloc class "AFKResource"
+
+libignition brings up the sealed system - it mounts and verifies cryptexes - and
+verification wants the keystore, which wants the SEP, which this machine does
+not have and has said so twice.
