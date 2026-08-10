@@ -3179,3 +3179,43 @@ the discriminator it looked like.
 What is verified and reusable regardless: the header parser, the auth-data
 walker, the served-key fetch, and the ECDH, whose shared secret computes because
 the served public key is demonstrably not the ephemeral point.
+
+### AEA: Apple's own implementation is on the ramdisk, and readable
+
+7-Zip's APFS support made the restore ramdisk extractable - 1900 files - and it
+carries the code that reads these archives:
+
+    usr/lib/libAppleArchive.dylib                                847,040
+    System/Library/PrivateFrameworks/DiskImages2.framework      5,371,872
+    usr/libexec/diskimagesiod                                   3,102,384
+    usr/local/bin/restored_external                             2,731,024
+
+diskimagesiod names the mechanism in its symbols: `AEAHelper::wkms_t`,
+`AEAHelper::kms_t`, `AEAHelper::saks_metadata_t`,
+`getAEAKeyFromSAKSWithMetadata:key:error:`, and the messages "attempting to
+authenticate with wkms", "crypto_format: Can't decrypt wrapped key", "Convert
+AEA key from hex failed".
+
+Three facts change the picture:
+
+* **The crypto is CryptoKit, not Security.** The imported SecKey algorithm
+  constants are RSA only; the P-256 work goes through Swift
+  `P256.KeyAgreement` in x963 representation, with
+  `convertPrivateKeyTox963WithPemPrivateKey:` turning the served PEM into that
+  form. The derivation after ECDH is Apple's own code, not the system's ECIES -
+  which is exactly why none of the standard combinations verify.
+* **There are three key sources.** wkms, kms and SAKS. wkms needs
+  `wkms.sd.apple.com`, which does not resolve. SAKS reads the `saksKey` auth
+  entry. Which one a customer IPSW takes is the open question, and the answer is
+  in this binary.
+* **The key is handled as hex.** "Convert AEA key from hex failed" sits beside a
+  64-character hex string in the auth-data protobuf,
+  `d3fdc97f...70b8e13`, with a key identifier `0010-0001-0002`. Thirty-two bytes,
+  the right size - though a public field is likelier its digest than the key.
+
+So the 133 failed combinations now have a reason rather than a mystery. Reading
+the real derivation means disassembling diskimagesiod around the wrapped-key
+handling. The Mach-O groundwork is done - machobase.py gives the __TEXT slide,
+0x100000000 here, and locates the strings at 0x100260de4, 0x100260ebf and
+0x100271f3c - but the kernel's adrp+add scan does not find their callers, so
+userland addressing needs its own pass.
