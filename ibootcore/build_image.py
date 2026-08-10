@@ -89,6 +89,13 @@ def main(argv=None) -> int:
                          "chosen/memory-map/RAMDisk, and covered by "
                          "topOfKernelData so the kernel does not allocate over "
                          "it. Boot with rd=md0 to select it.")
+    ap.add_argument("--tc-at", default="0x46000000",
+                    help="where the trust cache is loaded; it has to be below "
+                         "the kernel image")
+    ap.add_argument("--tc-key", default="TrustCache",
+                    help="name of the memory-map entry the trust cache is "
+                         "announced under; only for testing what the kernel "
+                         "will accept")
     ap.add_argument("--trustcache", metavar="PATH",
                     help="a trust cache module for the ramdisk. AMFI rejects "
                          "every platform binary whose cdhash is not in one.")
@@ -104,6 +111,7 @@ def main(argv=None) -> int:
                     help="where the stub will be loaded, for the printed command")
     args = ap.parse_args(argv)
 
+    devicetree.TRUSTCACHE_KEY = args.tc_key
     phys_base = int(args.phys_base, 0)
     mem_size = bootargs.human_size(args.mem_size)
 
@@ -181,16 +189,22 @@ def main(argv=None) -> int:
     tc_addr = tc_len = 0
     if args.trustcache:
         tc_len = os.path.getsize(args.trustcache)
-        tc_off = align(ba_off + bootargs.SIZEOF_BOOT_ARGS, 1 << 12)
-        tc_addr = phys_base + tc_off
-        total = align(tc_off + tc_len, 1 << 20)
-        top_of_kernel_data = phys_base + total
+        # Below the kernel image, not above it. The early consumer at
+        # 0xfffffe000a009304 converts the address and then compares it against a
+        # boundary, branching to a failure path when it is at or above:
+        #     ldr x8, [x20, #0x200] ; cmp x0, x8 ; b.hs <fail>
+        # which is what a copy placed after the image runs into. iBoot puts it
+        # before the kernel, and there is 112 MiB of room there.
+        tc_addr = int(args.tc_at, 0)
+        if not (ram_base <= tc_addr and tc_addr + tc_len <= phys_base):
+            ap.error(f"--tc-at {tc_addr:#x} does not fit between the start of "
+                     f"RAM {ram_base:#x} and the image {phys_base:#x}")
         if memmap is not None:
             # Physical. The kernel converts it at 0xfffffe000a008bb4, which is a
             # range check against the regions it knows about - so the value has
             # to be a physical address inside one of them, and it has to lie
             # below topOfKernelData or there is no such region.
-            memmap.props["TrustCache"] = struct.pack("<QQ", tc_addr, tc_len)
+            memmap.props[devicetree.TRUSTCACHE_KEY] = struct.pack("<QQ", tc_addr, tc_len)
             again = tree.serialise()
             if len(again) != len(dt_blob):
                 raise SystemExit("device tree changed size when the trust cache "
@@ -259,9 +273,7 @@ def main(argv=None) -> int:
     )
 
     image = bytearray(total)
-    if args.trustcache:
-        tc_blob = open(args.trustcache, "rb").read()
-        image[tc_off:tc_off + len(tc_blob)] = tc_blob
+
     image[0:len(kern)] = kern
     image[dt_off:dt_off + len(dt_blob)] = dt_blob
     image[ba_off:ba_off + len(ba)] = ba
@@ -368,6 +380,8 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
 
 
 

@@ -2894,3 +2894,46 @@ slots that iBoot renames in place - so the kernel may expect entries from that
 fixed set, or a particular count, or a particular order. Read the code that
 walks memory-map during bootstrap; it can be read statically, and a panic with
 no console cannot.
+
+## Stage 8.1 - 8.4 PASSED: launchd runs
+
+    attempting to load 1 external trust cache modules
+    loaded external trust cache module: 0
+    completed loading external trust cache modules
+    AMFI: Booted in a VM
+    AMFI: developer mode is force enabled on this platform
+    load_init_program: attempting to load /sbin/launchd
+    vm: shared_region: [1(launchd)] check_np(0x16d047918)
+    Darwin Ignition Sequence Version 1.0.0: root:libignition-64~11775
+    libignition: 1:   ignition level    : 0x5
+
+launchd's signature is accepted, dyld loads it, the shared region is created,
+and PID 1 reaches its own bootstrap library and prints its own arguments.
+
+**The answer was placement**, and two experiments found it.
+
+Renaming the entry to `MemoryMapReserved-0` - one of the sixteen slots Apple's
+tree carries - made the boot complete again with the same blob at the same
+address. So an extra memory-map entry is harmless; the name `TrustCache` starts
+a loader, and the loader is what died.
+
+The loader's early consumer at 0xfffffe000a009304 then says what it wants:
+
+    ldr x0, [x22]          ; address from the entry
+    bl  0xfffffe000a008bb4 ; convert
+    ldr x8, [x20, #0x200]  ; a boundary
+    cmp x0, x8
+    b.hs <failure>         ; at or above it is fatal
+
+**The trust cache must sit below the kernel image.** All eight earlier attempts
+put it after the image, and failed for that one reason. iBoot places it before
+the kernel; here there is 112 MiB between the start of RAM and the load address,
+and 0x46000000 works.
+
+Eight configurations of the same wrong idea produced zero bytes each and no
+information. One look at the branch produced the answer. When the failure is
+before serial init, read the code - there is nothing else to read.
+
+### 8.5 - open
+
+launchd stops after printing its ignition arguments. Userland now, not firmware.

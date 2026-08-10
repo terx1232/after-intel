@@ -84,6 +84,8 @@ NVRAM_BYTES = 0x2000
 
 # Phandles. Any distinct non-zero values work; they only have to agree between
 # the referring property and the referenced node's AAPL,phandle.
+TRUSTCACHE_KEY = "TrustCache"
+
 GIC_PHANDLE = 2
 PCIE_PHANDLE = 3
 
@@ -469,7 +471,7 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     #     "unexpected size for TrustCache property: %u != %zu"
     #     "no external trust caches found (segment length is zero)"
     if want_trustcache:
-        memmap.props["TrustCache"] = b"\x00" * 16
+        memmap.props[TRUSTCACHE_KEY] = b"\x00" * 16
 
     # pe_serial.c:831 does
     #
@@ -1046,6 +1048,7 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
 
 
 
