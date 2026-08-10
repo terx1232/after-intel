@@ -117,6 +117,27 @@ def _default_manifest_blob():
     return None
 
 
+def _apple_chosen_props() -> dict:
+    """Every property of /chosen in Apple's own tree for this platform.
+
+    Read from data/apple-vma2-devicetree.bin, which is
+    DeviceTree.vma2macosap.im4p out of the installer - Apple's values, not
+    reconstructions. Returns an empty dict if the file is not present, so the
+    tree can still be built without it.
+    """
+    import os
+    for p in (os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
+                           "data", "apple-vma2-devicetree.bin"),
+              r"D:\macos\ibootcore-build\apple-vma2.dt"):
+        if not os.path.exists(p):
+            continue
+        tree, _ = parse(open(p, "rb").read())
+        for _d, n in tree.walk():
+            if n.name == "chosen":
+                # Children are handled separately; only the leaf properties here.
+                return {k: v for k, v in n.props.items() if k != "name"}
+    return {}
+
 def _default_nvram(size: int) -> bytes:
     """A valid, empty CHRP store. Built by nvram_image.py, which reads the
     layout and checksum out of IONVRAMCHRPHandler.cpp."""
@@ -453,6 +474,18 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     chosen.props["use-ddi-secure-boot"] = b"\x00"
     chosen.props["allow-ecid-mismatch"] = b"\x01"
 
+    # Take Apple's own /chosen wholesale. Their tree for this platform carries 94
+    # properties; this one had reached about thirty by finding them one panic at
+    # a time. The rest are pure data - no addresses, nothing machine-specific -
+    # and they are what a sealed system reads while bringing itself up:
+    # os-environment, security-domain, the certificate-* and effective-* pairs,
+    # boot-type, and the rest of the security posture.
+    #
+    # Anything already set here wins: those were measured against this machine
+    # and Apple's values describe theirs.
+    for _k, _v in _apple_chosen_props().items():
+        if _k not in chosen.props:
+            chosen.props[_k] = _v
     memmap = chosen.add(Node("memory-map"))
     # Apple's own tree carries this, and its absence is the difference between
     # a tree the kernel walks and one it does not.
@@ -1048,6 +1081,7 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
 
 
 
