@@ -3111,3 +3111,41 @@ BaseSystem in the IPSW are Apple Encrypted Archives.
 New capability, reusable: **7-Zip reads APFS**, so both ramdisks are directly
 inspectable. That is how libignition was found inside `usr/lib/dyld` rather than
 as a library, giving the whole stage list and its five boot arguments.
+
+### Stage 9 groundwork: the AEA header is open, the key is not offline
+
+The encrypted images in the IPSW are Apple Encrypted Archives, and their headers
+parse cleanly. `022-20879-148.dmg.aea` - BaseSystem, 1.3 GB - has profile 1 and
+five auth-data entries:
+
+    com.apple.wkms.url            https://wkms.sd.apple.com
+    com.apple.wkms.auth-data      1040 bytes
+    saksKey                       1119 bytes
+    com.apple.wkms.fcs-response   190 bytes
+    com.apple.wkms.fcs-key-url    83 bytes
+
+The key URL is public and serves a PEM EC P-256 **private** key, 241 bytes,
+which fetches with a plain GET. The fcs-response is JSON:
+
+    {"enc-request": <base64>, "wrapped-key": <base64>}
+
+`enc-request` decodes to exactly 65 bytes - an uncompressed P-256 point - and
+`wrapped-key` to 48, which is 32 bytes of ciphertext and a 16-byte tag. The
+served public key is *not* that point, so ECDH between them is well formed and
+the shared secret computes.
+
+**It does not unwrap.** 118 combinations were tried and none verified:
+X9.63-SHA256 and HKDF-SHA256, shared info of the ephemeral point, the point
+without its 0x04 prefix, empty, and the auth-data; key lengths 16 and 32; IVs
+derived, all-zero, 12 and 16 bytes; and AES-GCM with five choices of additional
+authenticated data.
+
+The field name is the likely explanation. `enc-request` reads as an encrypted
+*request*, not as a bare ephemeral key, and `com.apple.wkms.url` names a service
+to send it to. If so the content key is issued by Apple's key service rather than
+derived locally, and getting it means posting that request - an outward
+interaction with an Apple service, which is a different kind of step from
+fetching a public file and is left for the user to decide on.
+
+Adds aea_key.py, which parses the header, fetches the served key and implements
+the ECIES unwrap. Everything in it is verified except the final derivation.
