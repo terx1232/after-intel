@@ -3044,3 +3044,37 @@ Candidates are already in the log from earlier stages:
 libignition brings up the sealed system - it mounts and verifies cryptexes - and
 verification wants the keystore, which wants the SEP, which this machine does
 not have and has said so twice.
+
+### 8.5 - launchd is genuinely blocked, and the ramdisk is now readable
+
+**launchd is blocked, not quietly working.** The distinction matters: PID 1's own
+logging goes to the system log, not the kernel console, so a working launchd and
+a stuck one look identical from the serial line. Twenty PSTATE samples through
+the monitor across a boot: **EL0 zero times, EL1 twenty**, ten distinct kernel
+PCs. User code never runs. Fifteen minutes of patience changes nothing - the log
+is byte-identical at 320 seconds and at 900.
+
+**It is not the ignition stages.** 7-Zip reads APFS, so the ramdisk is directly
+inspectable, and libignition turns out to be built into `usr/lib/dyld` rather
+than shipped separately. Its strings give the sequence:
+
+    __stage_hello  __stage_preboot  __stage_cryptex1_sniff
+    __stage_graft  __stage_graft_fetch  __stage_graft_select
+    __stage_dylib_cache  __stage_rosetta  __stage_goodbye
+
+and the boot arguments: `ignition_level`, `ignition_halt_after`,
+`ignition_force_dylib_root`, `ignition_live_app_graft`,
+`ignition_prereboot_graft`.
+
+`ignition_level=0` is read - the guest prints `ignition level : 0x0` instead of
+`0x5` - and the boot stops in exactly the same place. **Cryptex grafting is
+eliminated**; it was the leading hypothesis.
+
+Three roots, two ignition levels, single-user mode and fifteen minutes: the same
+result every time. Both ramdisks carry only restore daemons -
+`restored_external`, `diskimagesiod`, `kernelmanagerd`, `syslogd`, `vsdbutil` -
+and no general-purpose services, which is another guess ruled out by reading
+rather than booting.
+
+**Next:** the ten kernel PCs seen while launchd is blocked say what the kernel is
+doing during the block. No new tooling needed.
