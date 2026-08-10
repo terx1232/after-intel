@@ -3149,3 +3149,33 @@ fetching a public file and is left for the user to decide on.
 
 Adds aea_key.py, which parses the header, fetches the served key and implements
 the ECIES unwrap. Everything in it is verified except the final derivation.
+
+### AEA, further: the service route is closed, so the unwrap is offline
+
+`com.apple.wkms.url` is `https://wkms.sd.apple.com`, and that host **does not
+resolve** - `.sd.` is an Apple-internal domain, unreachable from outside. So the
+content key cannot be requested from a service; it has to come out of the
+material already in hand. Which is consistent with why the private key is served
+publicly at all: a Mac has to read these images with no credential.
+
+`com.apple.wkms.auth-data` and `saksKey` decode to protobuf - first byte 0x0a,
+field 1, wire type 2 - carrying a key identifier `0010-0001-0002` and a 32-byte
+hex digest `d3fdc97fa0f316d8...`. They describe the key rather than contain it.
+
+So the wrapping of `wrapped-key` is the whole problem, and 133 combinations have
+now failed:
+
+* KDFs: X9.63-SHA256, HKDF-SHA256
+* shared info: the ephemeral point, the point without its 0x04 prefix, empty,
+  the auth-data
+* key lengths 16 and 32; IVs derived, all-zero, 12 and 16 bytes
+* AES-GCM with five choices of AAD
+* AES-CBC, checked by PKCS7 padding validity rather than by a tag
+
+The 48-byte length reads either way - 32 of ciphertext plus a 16-byte GCM tag,
+or 32 padded to a block under CBC - and neither verifies, so the length is not
+the discriminator it looked like.
+
+What is verified and reusable regardless: the header parser, the auth-data
+walker, the served-key fetch, and the ECDH, whose shared secret computes because
+the served public key is demonstrably not the ephemeral point.
