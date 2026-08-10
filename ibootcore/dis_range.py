@@ -143,6 +143,11 @@ def main(argv=None) -> int:
 
     if not args.at:
         ap.error("--at is required unless --find/--find-const is used")
+    # With an explicit base the addresses are already whole: full_va exists to
+    # expand the kernel's short forms and would push a userland address into
+    # kernel space.
+    if getattr(args, "virt_base", None):
+        full_va = lambda a: a
     start = full_va(int(args.at, 0))
     end = full_va(int(args.to, 0)) if args.to else start + 4 * args.count
     print(f"\n  {short(start)} .. {short(end)}   (file offset "
@@ -153,4 +158,5 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
 
