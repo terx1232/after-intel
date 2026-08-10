@@ -3254,3 +3254,42 @@ now sits.
 New tools, all reusable for any userland binary: machobase.py for the __TEXT
 slide and string addresses, uxrefs.py for references, and `--virt-base` on
 dis_range.py so the disassembler works outside the kernel.
+
+## The AEA content key is recovered
+
+    aa1f972bfa7116a8247b576c66d420ce8e4a37aa9fdda0dd9113a0979a565c97
+
+for `022-20879-148.dmg.aea`, the BaseSystem of macOS 27.0 26A5388g.
+
+The scheme is **HPKE**, RFC 9180, and Apple's binary names it outright.
+`usr/libexec/diskimagesiod` imports:
+
+    CryptoKit.HPKE.Ciphersuite.P256_SHA256_AES_GCM_256
+    CryptoKit.HPKE.Recipient(privateKey:ciphersuite:info:encapsulatedKey:)
+    CryptoKit.HPKE.Recipient.open(_:)
+
+So the archive's `enc-request` is the encapsulated key, `wrapped-key` is the
+sealed ciphertext, the key served at `com.apple.wkms.fcs-key-url` is the
+recipient key, the mode is base and the info is empty.
+
+**Why 133 sweeps failed.** HPKE is not ECIES, and no amount of sweeping over
+ECIES would have found it. Its KEM hashes the encapsulated key *and* the
+recipient's public key into the shared secret; the key schedule then mixes a mode
+byte, a PSK-id hash and an info hash before deriving the AEAD key and nonce.
+Neither of those steps exists in X9.63 or plain HKDF. The answer came from
+reading the imports, not from trying harder.
+
+hpke.py implements it standalone: DHKEM(P-256, HKDF-SHA256), HKDF-SHA256,
+AES-256-GCM, labelled extract and expand, base-mode key schedule.
+
+### Still to do for stage 9
+
+The container itself. libAppleArchive names the parts - `aeaDeriveMainKeyExisting`,
+`aeaRootHeaderInit`, `aeaContainerParamsInitWithRootHeader`, "derivating RHEK",
+"Cluster header encryption", "generating last cluster random MAC" - so the layout
+is a root header, then clusters, each with its own header and segments. The HKDF
+labels `RHEK` and `SK` appear as strings; the rest are inline constants and will
+have to be read from code.
+
+With that, BaseSystem decrypts to an APFS image and goes to the kernel exactly
+the way the two restore ramdisks already do - that path is built and proven.
