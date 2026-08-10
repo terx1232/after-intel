@@ -2967,3 +2967,39 @@ Encrypted Archive. That, or the system volume inside the installer application,
 is what carries notifyd, configd, WindowServer and the rest. Getting one of them
 onto a disk the kernel can mount is the next piece of work, and it is
 placement - the same shape as the ramdisk, at a larger size.
+
+### What the installer actually contains, and where stages 9-11 stand
+
+Looked for a full system to boot instead of the restore ramdisk. The largest
+members are:
+
+    4,294,967,295  payloadv2/image_patches/cryptex-system-rosetta   (zip64 marker)
+    1,525,685,858  payloadv2/image_patches/cryptex-system-arm64e
+    1,186,686,256  payloadv2/basesystem_patches/arm64eBaseSystem.dmg
+      285,212,672  boot/094-19975-168.dmg.aea
+      213,909,531  usr/standalone/update/ramdisk/arm64eSURamDisk.dmg
+
+`arm64eBaseSystem.dmg` is not an image. Its first bytes are `BXDIFF50` - a
+binary patch against an existing BaseSystem, which this machine does not have.
+The `.aea` is an Apple Encrypted Archive. So there is no ready-made bootable
+system in the package.
+
+The system itself is there, as 52 chunks in `payloadv2/`, 7.9 GB compressed,
+which the installer assembles. Their container is decodable: magic `pbzm`, an
+8 MiB chunk size, then repeating (uint64 uncompressed, uint64 compressed,
+block) - written down in pbzx.py, and the framing parses correctly.
+
+**The blocks do not.** Each begins `2b 00 ca ec`, which read little-endian is
+0xECCA002B - LZBITMAP, Apple's own compression. Not XZ, not LZFSE, not in any
+standard library, and not something to guess at.
+
+So stages 9 to 11 need one of three things, and none of them is more device tree
+work:
+
+* an implementation of LZBITMAP, to assemble the system from the payload
+* a full arm64e BaseSystem or recovery image obtained separately
+* the AEA payload's key, which is not in the package
+
+That is a supply problem, not a boot problem. Everything the kernel side needed
+is now proven: the machine boots, mounts a real APFS root, and runs PID 1 out of
+it.
