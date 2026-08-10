@@ -2937,3 +2937,33 @@ before serial init, read the code - there is nothing else to read.
 ### 8.5 - open
 
 launchd stops after printing its ignition arguments. Userland now, not firmware.
+
+### 8.5 - launchd is alive and idle, and the ramdisk is why
+
+launchd does not crash: PID 1 dying panics the kernel and no panic occurs. The
+CPU sits at 0xfffffe0009ecce8c in EL1t, the scheduler's deadline wait, so the
+kernel is idle and launchd is blocked rather than spinning.
+
+What it is blocked on is a property of this root, not a fault. The image is
+Apple's software-update ramdisk, and its contents say what it is for:
+
+    restored          2        SoftwareUpdate    17
+    notifyd           0        configd            0
+    diskarbitrationd  0        softwareupdated    0
+
+No general-purpose daemons at all. `restored` is the restore daemon, and a
+restore environment waits to be driven by an external host over USB - it is
+built to sit still until something talks to it. There is nothing here for
+launchd to start on its own.
+
+So 8.5 is not blocked by a defect in this project. It is blocked by the choice
+of root, which was made because this image is unencrypted, self-contained and
+needs no partition map - exactly the right choice for proving 7 and 8, and the
+wrong one for 9 onward.
+
+**For stages 9 to 11 the root has to change.** The installer carries the real
+system as `AssetData/boot/094-19975-168.dmg.aea`, 285 MB, and `.aea` is Apple
+Encrypted Archive. That, or the system volume inside the installer application,
+is what carries notifyd, configd, WindowServer and the rest. Getting one of them
+onto a disk the kernel can mount is the next piece of work, and it is
+placement - the same shape as the ramdisk, at a larger size.
