@@ -3293,3 +3293,23 @@ have to be read from code.
 
 With that, BaseSystem decrypts to an APFS image and goes to the kernel exactly
 the way the two restore ramdisks already do - that path is built and proven.
+
+### AEA container: the root header's shape, read from libAppleArchive
+
+`aeaContainerParamsInitWithRootHeader` at 0xf1e8 validates the decrypted root
+header, and its field offsets are plain:
+
+    +0x18  compression algorithm, an ASCII character
+           '-' none, '4' lz4 (block 0x100), 'a' and 'e' further cases
+    +0x19  checksum mode: 0 none, 1 gives 8 bytes, 2 gives 32
+
+and the raw container after the auth data - at offset 0xa24 here, which is
+12 + 2584 - is high-entropy from the first byte, so the root header is encrypted
+from the start rather than having a plaintext prologue.
+
+What remains for stage 9 is the derivation of RHEK from the content key and the
+cluster walk. libAppleArchive names every part - `aeaDeriveMainKeyExisting`,
+"derivating RHEK", "Cluster header encryption", "generating last cluster random
+MAC" - and it is now readable: dis_range works on userland Mach-O with
+--virt-base, machobase.py gives the slide, uxrefs.py finds the references. The
+same three tools that carried stages 6, 7 and 8.
