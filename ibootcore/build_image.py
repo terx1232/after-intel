@@ -96,6 +96,11 @@ def main(argv=None) -> int:
                     help="name of the memory-map entry the trust cache is "
                          "announced under; only for testing what the kernel "
                          "will accept")
+    ap.add_argument("--root-hash", metavar="PATH",
+                    help="the unwrapped `csys` Image4 payload shipped beside a "
+                         "sealed volume in the IPSW. APFS reads it as "
+                         "/chosen/root-hash and cannot mount a sealed Base "
+                         "System without it.")
     ap.add_argument("--trustcache", metavar="PATH",
                     help="a trust cache module for the ramdisk. AMFI rejects "
                          "every platform binary whose cdhash is not in one.")
@@ -140,10 +145,13 @@ def main(argv=None) -> int:
     if ram_base > phys_base:
         ap.error("--ram-base cannot be above the load address")
 
+    root_hash = open(args.root_hash, "rb").read() if args.root_hash else None
     tree = devicetree.minimal_vmapple_tree(ram_base=ram_base,
                                            ram_size=mem_size,
                                            ncpus=args.ncpus,
-                                           want_trustcache=bool(args.trustcache))
+                                           want_trustcache=bool(args.trustcache),
+                                           want_ramdisk=bool(args.ramdisk),
+                                           root_hash=root_hash)
     if fb:
         w, h = fb
         node = devicetree.Node("framebuffer")

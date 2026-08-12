@@ -294,7 +294,9 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
                          manifest_props: dict | None = None,
                          manifest_blob: bytes | None = None,
                          gic_msi_frame: int = 0x0802_0000,
-                         want_trustcache: bool = False,) -> Node:
+                         want_trustcache: bool = False,
+                         want_ramdisk: bool = True,
+                         root_hash: bytes | None = None,) -> Node:
     root = Node("device-tree")
     root.set_str("compatible", "AppleVirtualPlatformARM")
     root.set_str("model", "VirtualMac2,1")
@@ -461,6 +463,26 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     # sha2-384 is the modern choice and the first one the code tests for.
     chosen.set_str("crypto-hash-method", "sha2-384")
 
+    # The root hash of a sealed Base System volume. APFS names both the property
+    # and the node it reads them from:
+    #
+    #     "Failed to extract root-hash for BS dmg from /chosen - error %s(%d)"
+    #     "BASESYSTEM IS NOT SEALED!"
+    #
+    # Without it, mounting the decrypted Base System panics before it gets that
+    # far - the volume is sealed and carries no snapshot, so the mount falls
+    # through to the authenticated path and dies on a null payload:
+    #
+    #     apfs_vfsop_mount: md0s1 failed to find named root snapshot:
+    #                       Need authenticator (81)
+    #     panic: "The global payload bytes pointer is NULL" @apfs_vfsops.c:2921
+    #
+    # The value is not invented. Apple ships it beside the container in the
+    # IPSW as 022-20879-148.dmg.aea.root_hash, an Image4 payload of type `csys`
+    # whose 208 bytes are a version, a hash type, a length and the digest.
+    if root_hash:
+        chosen.props["root-hash"] = root_hash
+
     # Read by the same routine, immediately after, and by AppleImage4. Each is
     # fetched as a single byte and skipped if absent, so unlike the above these
     # cannot panic - they are set because leaving them out means accepting
@@ -495,7 +517,13 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     # Reserved at full size so filling it in later cannot move anything. XNU
     # reads this entry by name when the command line says rd=md0, and says so
     # when it is absent: "Unable to retrieve range for root memory device".
-    memmap.props["RAMDisk"] = b"\x00" * 16
+    # Only when there is one. A zero-filled entry is not an empty entry: the
+    # kernel converts the address before it looks at the length, so an absent
+    # ramdisk announced as address 0 panics in phystokv rather than being
+    # ignored - "illegal PA: 0x0; phys base 0x40000000" at arm_vm_init.c:411.
+    # This is the same defect the TrustCache entry had, in the same table.
+    if want_ramdisk:
+        memmap.props["RAMDisk"] = b"\x00" * 16
     # AMFI refuses every platform binary on the root volume unless their code
     # directory hashes are in a trust cache the kernel was handed. It looks for
     # one here and names the entry itself:
