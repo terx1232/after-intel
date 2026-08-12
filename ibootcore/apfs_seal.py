@@ -72,6 +72,11 @@ def main(argv=None) -> int:
     ap.add_argument("image")
     ap.add_argument("--write", action="store_true",
                     help="actually clear the flag; without it, report only")
+    ap.add_argument("--block", type=int, action="append", default=[],
+                    help="restrict the edit to these blocks. A volume has "
+                         "several superblocks at different transaction ids, and "
+                         "unsealing all of them does not say which one APFS "
+                         "actually mounts; unsealing one does.")
     args = ap.parse_args(argv)
 
     fh = open(args.image, "r+b" if args.write else "rb")
@@ -107,7 +112,7 @@ def main(argv=None) -> int:
             if not flags & SEALED:
                 continue
             found += 1
-            if not args.write:
+            if not args.write or (args.block and block_no not in args.block):
                 continue
             new = bytearray(blk)
             struct.pack_into("<Q", new, INCOMPAT_OFF, flags & ~SEALED)
