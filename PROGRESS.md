@@ -3569,3 +3569,39 @@ not more measurement of the same kind. What would move it is reading the wait
 condition in vm_pageout.c properly - which value it tests, who is supposed to
 set it, and whether that writer ever runs on this machine - rather than another
 round of patch-and-boot.
+
+### The gate is closed once by AppleImage4 and never opened - and removing it does not help
+
+_darwin_el2_boot, the Image4 boot path, runs early - freezing an instruction
+inside it stops the boot at 2,480 bytes of log - and its shape is now read out
+in full:
+
+    nonce_magazine_read_slots      the three "failed to read nonce slot data"
+    lck_mtx_lock
+    lck_mtx_gate_close             the only gate close in the whole boot
+    lck_mtx_unlock
+    activator_init_images
+    ...
+    epilogue: restore frame, return
+
+There is no gate open anywhere in that function, and lck_mtx_gate_open is called
+zero times in the entire boot. So the barrier is closed early and stays closed;
+whatever finalises Image4 activation and opens it never runs here.
+
+That reads as the cause, and it is not. Three patches aimed straight at it leave
+the boot at the same 17,410 bytes:
+
+    stub activator_init_images to return success
+    lift the physical range constraint on the contiguous allocation the wake
+      path performs (mov x2, #0 / mov x3, #0x1000000)
+    NOP the gate close itself, so nothing is ever closed to wait on
+
+The last one should make launchd's lck_mtx_gate_wait return immediately and does
+not, which means either launchd waits on a different gate than the one closed
+here, or the wait is not what holds it.
+
+Twenty-two candidates eliminated. The log stops within three bytes of the same
+place every single time, whatever is patched, which is itself the most useful
+remaining clue: the block is deterministic and immediately after libignition
+prints its arguments, not somewhere that varies with memory, timing or
+configuration.
