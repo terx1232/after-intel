@@ -98,7 +98,10 @@ def emit(cave_va: int, scratch_va: int, orig_word: int, resume_va: int):
     # through svc and has taken no nested exception since, so a value up in the
     # shared cache marks the one thread that came from EL0 - which is the whole
     # question here, since every other blocker is a kernel worker.
-    words.append(0xD538402B)                                       # mrs x11, elr_el1
+    # x0 rather than elr_el1: elr never carries a userland address by the time a
+    # thread blocks, while the first argument is what identifies the call - for
+    # sysctl_handle_string it is the oid, and symbols name those outright.
+    words.append(0xAA0003EB)                                       # mov x11, x0
     words.append(0x8B081529)                                       # add x9, x9, x8, lsl #5
     words.append(0xF9001129)                                       # str x9, [x9, #32] placeholder
     words[-1] = 0xF900112A                                         # str x10, [x9, #32]
