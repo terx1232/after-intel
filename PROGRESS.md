@@ -3439,3 +3439,22 @@ than about the system.
 Also settled here: 8 GB of guest memory, vm_compressor=2 and vm_compressor=1 all
 take effect and change nothing, so it is neither page exhaustion, nor swap, nor
 the compressor.
+
+### Memory is not the constraint
+
+The 8 GB run was checked rather than assumed this time. The kernel reports
+
+    vm_page_bootstrap: 397526 free pages, 126762 wired pages
+
+which is 6.4 GB free against 2.0 GB wired for the ramdisk, and the block is
+unchanged. So the thread holding the gate is not waiting for free pages.
+
+Its continuation is a compare-and-swap loop over two globals, keyed on a
+per-thread word at +0x4e8 - a one-at-a-time admission gate rather than an I/O
+wait. Neither global carries a symbol.
+
+One correction to the earlier note: lck_mtx_gate_close and lck_mtx_gate_wait
+take the mutex in x0 and the gate in x1, so the address recorded by the
+instrument was the mutex, not the gate. The three counts are unaffected - they
+count calls - and the acquirer's state was read from the acquiring thread
+itself, which is what matters: WAIT | UNINT, asleep under its own gate.
