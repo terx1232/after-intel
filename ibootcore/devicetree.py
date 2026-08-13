@@ -86,6 +86,7 @@ NVRAM_BYTES = 0x2000
 # the referring property and the referenced node's AAPL,phandle.
 TRUSTCACHE_KEY = "TrustCache"
 
+UTIL_PHANDLE = 0x49          # Apple's own value for /product/util
 GIC_PHANDLE = 2
 PCIE_PHANDLE = 3
 
@@ -584,6 +585,43 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     product.set_str("sub-product-type", "VirtualMac2,1")
     product.set_str("product-description", "Apple Virtual Machine")
     product.set_str("product-id", "VirtualMac2,1")
+
+    # AppleVirtualPlatformUtilStorage asserts on this node by name. Its own
+    # strings give the path and the fields it wants, in order:
+    #
+    #     IODeviceTree:/product/util
+    #     entry
+    #     regions
+    #     regionData->getLength() % sizeof(regionEDTEntry) == 0
+    #     regionEntries[i].regionID < kBlockDeviceIDMax
+    #
+    # and without the node the driver fails at AppleVirtualPlatformUtilStorage.cpp
+    # line 139 with `entry` null, taking the util block devices with it - the
+    # backing for NVRAM, panic logs and the firmware regions.
+    #
+    # The values are Apple's, read out of data/apple-vma2-devicetree.bin rather
+    # than invented: seven 12-byte entries of (regionID, offset, size) tiling
+    # 0 .. 0x2000000 without gaps, which is what makes the length check pass and
+    # every id land under the maximum.
+    util = product.add(Node("util"))
+    util.props["reg"] = b""
+    util.set_u32("low-level-fw-device-info", 1)
+    util.props["regions"] = b"".join(
+        struct.pack("<III", region, offset, size) for region, offset, size in (
+            (1, 0x0000_0000, 0x00A0_0000),
+            (2, 0x00A0_0000, 0x0010_0000),
+            (3, 0x00B0_0000, 0x0050_0000),
+            (7, 0x0100_0000, 0x0000_1000),
+            (4, 0x0100_1000, 0x004F_F000),
+            (5, 0x0150_0000, 0x0050_0000),
+            (6, 0x01A0_0000, 0x0060_0000),
+        ))
+    util.props["fw-regions"] = b"".join(
+        struct.pack("<III", a, b, c) for a, b, c in (
+            (0x0000_0000, 0x0002_0000, 0x0002_0000),
+            (0x0020_0000, 0x0022_0000, 0x0020_0000),
+        ))
+    util.set_u32("AAPL,phandle", UTIL_PHANDLE)
 
     memory = root.add(Node("memory"))
     memory.set_str("device_type", "memory")
