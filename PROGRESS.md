@@ -3313,3 +3313,61 @@ cluster walk. libAppleArchive names every part - `aeaDeriveMainKeyExisting`,
 MAC" - and it is now readable: dis_range works on userland Mach-O with
 --virt-base, machobase.py gives the slide, uxrefs.py finds the references. The
 same three tools that carried stages 6, 7 and 8.
+
+
+## Stage 9 done, and stage 8's block found
+
+The AEA container is decrypted and macOS 27's own Base System boots from it.
+`aea.py` walks the container, `udif.py` flattens the UDIF map, `gpt.py` reads the
+partition. All 1,730 segments verify against their recorded SHA-256. The volume
+is macOS 27.0 build 26A5388g, 42,484 files, carrying Install macOS 27 Golden
+Gate Beta.app, and the kernel mounts it as root and runs its `/sbin/launchd`.
+
+Three boot faults were fixed to get there and one kernel patch:
+
+    boot_args needs a framebuffer   without --fb the kernel stops at IOKit, and
+                                    that - not ramdisk size - explains every
+                                    stalled boot that was blamed on size
+    the trust cache is a segment    eight bytes of header before the module; the
+                                    panic arithmetic proves the layout exactly
+    an empty RAMDisk entry panics   phystokv(0); made conditional, as TrustCache
+                                    already was
+    one NOP at 0x9b48d14            a sealed volume with no snapshot cannot take
+                                    the snapshot path; the live path works and
+                                    keeps NOHEADER honoured because the volume
+                                    stays sealed
+
+Kernel modification is 85 bytes of 80,871,424.
+
+Stage 8's block is now traced end to end rather than guessed:
+
+    launchd's single thread   state WAIT
+    blocks in                 lck_mtx_gate_wait - the only gate wait the guest
+                              performs in the whole boot
+    reached from              the sole caller, a static VM routine beside
+                              upl_phys_page, entered through a pager operation
+    the gate's first word     names a thread of the kernel task, itself
+                              WAIT|UNINT, whose continuation lands in the VM
+                              pressure monitor
+
+So a page fault in launchd waits on a paging gate held by a kernel thread that
+is itself asleep. Whether that first word is really the owner is the one link
+not independently confirmed, and it is the next thing to check.
+
+Getting there needed three fixes to the instrument itself, each of which had
+produced a confident wrong answer first: thread_block is a three-instruction
+wrapper around thread_block_reason; assert_wait is a wrapper that hashes the
+event and tail-calls waitq_assert_wait64, which is where every other wait path
+enters; and the trace ring lived in a zero run inside __DATA, which is BSS, so
+it was overwriting the kernel data it was meant to observe.
+
+Excluded by measurement, not argument: the sealed volume, the trust cache, the
+ignition sysctls (sysctl_handle_string is never called), ignition_level, the
+cryptex graft options, /product/util, QEMU's default NIC, a second CPU, the
+timer frequency, the debug boot-arg, swap (vm_compressor=2 takes effect and
+changes nothing), scheduler starvation, and a quiet death - panic and
+panic_with_options are instrumented and never called.
+
+New tools: symbols.py (212,222 names out of the collection's 216 nested
+Mach-Os), trace_wait.py, guest.py, syscalls.py, constscan.py, findlabel.py,
+tcseg.py, apfs_seal.py, apfs_omap.py.
