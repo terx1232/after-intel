@@ -476,8 +476,12 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     # which restricts the VM to a single processor and parks the pageout thread.
     # That thread holds an Image4 gate, so launchd's first page fault waits
     # behind it and the boot stops there.
+    # The name is one word. platformMatchOSEnvironment loads the string at
+    # 0x76dd4c2, which is "osenvironment", and complains "Image4: unable to read
+    # osenvironment from /chosen" when it is absent - the hyphenated spelling is
+    # a different property and setting it changes nothing.
     if os_environment is not None:
-        chosen.set_u32("os-environment", os_environment)
+        chosen.set_u32("osenvironment", os_environment)
 
     # The root hash of a sealed Base System volume. APFS names both the property
     # and the node it reads them from:
