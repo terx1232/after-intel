@@ -3406,3 +3406,36 @@ first attempt to test the restore ramdisk reused a scratch address computed for
 the 1.85 GB ramdisk. With a 210 MB ramdisk that address is not mapped, the
 instrument took a data abort on its first store, and the "zero gate waits" it
 reported was the instrument dying rather than the guest behaving differently.
+
+### Stage 8's block, closed as a diagnosis
+
+Three counts, each from its own instrumented boot, and together they are
+conclusive:
+
+    gate acquisitions   1     from AppleImage4's _darwin_el2_boot
+    gate releases       0     lck_mtx_gate_open is never called, ever
+    gate waits          1     launchd, and it never returns
+
+So one gate is taken once during the entire boot and never given back, and
+launchd's page fault is the single thing waiting on it.
+
+The acquirer is named by its own strings - boot-type, boot-command,
+osenvironment, darwinos-ramdisk, image4-allow-magazine-updates, entangle-nonce,
+BATS_NVRAM_REINITIALIZED - and immediately under the gate it calls
+activator_init_images, whose strings are "failed to parse manifest", "failed to
+impose manifest for activation", "failed to execute object". This is Image4
+secure-boot activation, and it matches the complaint the kernel already prints
+early on: "AppleImage4: magazine[pdmg]: failed to read nonce slot data: 2".
+
+The holder does not return from under the gate. Its saved continuation lands in
+vm_pageout.c, so it is asleep in the VM while holding an Image4 gate, and
+launchd is behind it.
+
+Stubbing activator_init_images to return success immediately does not move the
+boot, so the holder blocks either before that call or in the loop after it. That
+is the remaining question, and it is now a question about one function rather
+than about the system.
+
+Also settled here: 8 GB of guest memory, vm_compressor=2 and vm_compressor=1 all
+take effect and change nothing, so it is neither page exhaustion, nor swap, nor
+the compressor.
