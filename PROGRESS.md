@@ -3545,3 +3545,27 @@ the tail of the continuation itself.
 
 Eighteen candidates have now been tested and eliminated for this block. The
 diagnosis is precise and the fix is not in it.
+
+### Memory is not exhausted at the moment of the hang either
+
+vm_page_wire_count is the one page counter with a symbol. Read from the guest
+while it is stuck rather than from the boot log:
+
+    vm_page_wire_count   121,569 pages   1.9 GB, the ramdisk
+    neighbouring counter 140,415 pages   2.2 GB, tracking the boot-time free
+                                         figure of 136,345
+
+So the machine is not short of pages when the gate holder is waiting on a page
+event. Whatever it is waiting for is more specific than "free memory", and the
+straightforward readings of that wait are now exhausted.
+
+Four processors declared in the tree and given to QEMU changes nothing either,
+which was worth trying because the restriction the holder trips over is about
+processor count.
+
+Twenty candidates tested and eliminated. Stopping here rather than continuing to
+sample: the diagnosis is exact down to the instruction and the remaining work is
+not more measurement of the same kind. What would move it is reading the wait
+condition in vm_pageout.c properly - which value it tests, who is supposed to
+set it, and whether that writer ever runs on this machine - rather than another
+round of patch-and-boot.
