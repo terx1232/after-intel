@@ -96,6 +96,14 @@ def main(argv=None) -> int:
                     help="name of the memory-map entry the trust cache is "
                          "announced under; only for testing what the kernel "
                          "will accept")
+    ap.add_argument("--reserve", metavar="BYTES", default="0",
+                    help="raise topOfKernelData by this much and print the "
+                         "address of the gap. The kernel maps that range as "
+                         "part of its own image and never allocates from it, "
+                         "which makes it the one place instrumentation can "
+                         "safely write. A run of zeros inside __DATA is not "
+                         "such a place: it is BSS, and writing there corrupts "
+                         "live reference counts.")
     ap.add_argument("--root-hash", metavar="PATH",
                     help="the unwrapped `csys` Image4 payload shipped beside a "
                          "sealed volume in the IPSW. APFS reads it as "
@@ -237,6 +245,16 @@ def main(argv=None) -> int:
                                  "entry was filled in")
             dt_blob = again
         print(f"  ramdisk           {rd_addr:>#20x}{"":>14}{rd_len:>14,}")
+
+    reserve = int(args.reserve, 0)
+    if reserve:
+        scratch_phys = top_of_kernel_data
+        top_of_kernel_data = align(top_of_kernel_data + reserve, 1 << 20)
+        # virt_base is where the *image* lands, which corresponds to phys_base,
+        # not to ram_base. The kernel's window starts one shift earlier.
+        scratch_virt = virt_base - phys_base + scratch_phys
+        print(f"  reserved scratch  {scratch_phys:>#20x}{"":>14}{reserve:>14,}")
+        print(f"                    virtual {scratch_virt:#x}")
 
     video = (fb_addr, 1, w * 4, w, h, 32) if fb else (0, 0, 0, 0, 0, 0)
 

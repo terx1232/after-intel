@@ -96,6 +96,12 @@ def main(argv=None) -> int:
     ap.add_argument("kernel")
     ap.add_argument("--out", required=True)
     ap.add_argument("--func", default="assert_wait")
+    ap.add_argument("--scratch",
+                    help="virtual address to write the ring to. Use the address "
+                         "build_image --reserve prints: a zero run inside __DATA "
+                         "looks free and is not - it is BSS, and writing there "
+                         "panics the kernel with an os_refcnt overflow whose "
+                         "counter address lands inside the ring.")
     args = ap.parse_args(argv)
 
     m = loadmap.parse(args.kernel)
@@ -116,16 +122,20 @@ def main(argv=None) -> int:
         return 1
     cave_va = vb + cave_off
 
-    dseg = seg(m, "__DATA")
-    scratch_off = find_run(bytes(data), dseg["fileoff"],
-                           dseg["fileoff"] + dseg["filesize"], 16 + RING * 16)
-    if scratch_off is None:
-        print("  no scratch run in __DATA")
-        return 1
-    # A 64-bit store needs its offset to be a multiple of eight, and a run of
-    # zeros starts wherever it starts.
-    scratch_off = (scratch_off + 7) & ~7
-    scratch_va = vb + scratch_off
+    if args.scratch:
+        scratch_va = int(args.scratch, 0)
+        scratch_off = None
+    else:
+        dseg = seg(m, "__DATA")
+        scratch_off = find_run(bytes(data), dseg["fileoff"],
+                               dseg["fileoff"] + dseg["filesize"], 16 + RING * 16)
+        if scratch_off is None:
+            print("  no scratch run in __DATA")
+            return 1
+        # A 64-bit store needs its offset to be a multiple of eight, and a run
+        # of zeros starts wherever it starts.
+        scratch_off = (scratch_off + 7) & ~7
+        scratch_va = vb + scratch_off
 
     orig_word, = struct.unpack_from("<I", data, target - vb)
     words = emit(cave_va, scratch_va, orig_word, target + 4)
@@ -144,10 +154,15 @@ def main(argv=None) -> int:
 
     print(f"\n  {args.func} at {short(target)}, first word {orig_word:#010x}")
     print(f"  cave    {short(cave_va)}  ({len(words)} instructions)")
-    print(f"  scratch {short(scratch_va)}  "
-          f"physical {scratch_va - vb + int(m['vm_low'] and 0) :#x} + load base")
-    print(f"\n  read it back with the monitor once the guest is stuck:")
-    print(f"    xp /2gx <load_base + {scratch_off:#x}>")
+    print(f"  scratch {scratch_va:#x}  ({RING} entries, "
+          f"{16 + RING * 16:,} bytes)")
+    if scratch_off is None:
+        print(f"\n  reserved range - read it with the monitor once stuck:")
+        print(f"    pmemsave <physical of {scratch_va:#x}> "
+              f"{16 + RING * 16} ring.bin")
+    else:
+        print(f"\n  WARNING: this is a zero run inside __DATA, which is BSS. "
+              f"Prefer build_image --reserve.")
     print(f"\n  wrote {args.out}")
     return 0
 
