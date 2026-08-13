@@ -3515,3 +3515,33 @@ inventing cryptographic material to satisfy a path that is already satisfied.
 
 Recorded because the trail looked promising and the negative is worth keeping:
 it removes the last obvious candidate reachable from the gate holder's strings.
+
+### The holder waits for pages, and three patches at that wait do not move it
+
+The thread that closes the Image4 gate ends up in a VM loop whose tail is:
+
+    adrp x0, 0xab27c10
+    bl   assert_wait(event, THREAD_UNINT)
+    ...
+    b    thread_block_reason          ; with itself as the continuation
+
+so it waits, uninterruptibly, on event 0xab27c10 - an address referenced from
+twelve places across memory_object_page_op, mach_vm_pressure_monitor,
+mach_vm_pressure_level_monitor and upl_phys_page. That is a page-availability
+event, and the thread is holding an Image4 gate while it waits on it.
+
+Which is strange, because the guest has 6.4 GB free.
+
+Three patches aimed at that wait change nothing:
+
+    force vm_restricted_to_single_processor to zero at its store site
+    NOP the admission-token branch in the continuation
+    replace the tail `b thread_block_reason` with `ret`
+
+The last of those should prevent the re-block outright, and does not, which says
+the thread's first descent into this wait comes through a path that sets the
+same continuation some other way - the only site that materialises it in code is
+the tail of the continuation itself.
+
+Eighteen candidates have now been tested and eliminated for this block. The
+diagnosis is precise and the fix is not in it.
