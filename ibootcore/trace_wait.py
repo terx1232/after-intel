@@ -50,8 +50,13 @@ def seg(m: dict, name: str):
 # idle workloops block every few milliseconds, so 64 slots are overwritten long
 # before the guest can be inspected, and all that survives is the idling. The
 # mask below must stay in step with this.
-RING = 16384
-RING_MASK_WORD = 0x92403508        # and x8, x8, #0x3fff
+RING = 65536
+RING_LIMIT_WORD = 0xF140411F       # cmp x8, #16, lsl #12   (= RING)
+RING_SKIP_WORD = 0x54000082        # b.hs +4 instructions
+# One-shot keeps the first RING blocks, which is right when the interesting wait
+# is early. Wrapping keeps the last RING, which is right when it is late - and
+# the wait that never returns is by definition the last thing that happened.
+WRAP = True
 
 
 def emit(cave_va: int, scratch_va: int, orig_word: int, resume_va: int):
@@ -77,8 +82,13 @@ def emit(cave_va: int, scratch_va: int, orig_word: int, resume_va: int):
     words.append(0x91000000 | (off << 10) | (9 << 5) | 9)          # add x9, x9, #off
     words.append(0xF9400128)                                       # ldr x8, [x9]
     words.append(0x91000508)                                       # add x8, x8, #1
-    words.append(RING_MASK_WORD)                                   # and x8, x8, #RING-1
     words.append(0xF9000128)                                       # str x8, [x9]
+    if WRAP:
+        words.append(0x92403D08)                                   # and x8, x8, #0xffff
+        words.append(0xD503201F)                                   # nop
+    else:
+        words.append(RING_LIMIT_WORD)                              # cmp x8, #RING
+        words.append(RING_SKIP_WORD)                               # b.hs past the stores
     words.append(0x8B081129)                                       # add x9, x9, x8, lsl #4
     words.append(0xF9000920)                                       # str x0,  [x9, #16]
     words.append(0xF9000D3E)                                       # str x30, [x9, #24]
@@ -96,6 +106,12 @@ def main(argv=None) -> int:
     ap.add_argument("kernel")
     ap.add_argument("--out", required=True)
     ap.add_argument("--func", default="assert_wait")
+    ap.add_argument("--at",
+                    help="instrument this address instead of a named function. "
+                         "thread_block is three instructions that tail-call "
+                         "thread_block_reason, which has no symbol, and every "
+                         "caller that goes straight to the latter is invisible "
+                         "from the former.")
     ap.add_argument("--scratch",
                     help="virtual address to write the ring to. Use the address "
                          "build_image --reserve prints: a zero run inside __DATA "
@@ -109,10 +125,15 @@ def main(argv=None) -> int:
     data = bytearray(open(args.kernel, "rb").read())
     _, by_name, _ = symbols.collect(args.kernel)
 
-    if args.func not in by_name:
+    if args.at:
+        target = int(args.at, 0)
+        if target < 0xFFFFFFFF:
+            target |= KV_HIGH
+    elif args.func not in by_name:
         print(f"  {args.func}: no such symbol")
         return 1
-    target = by_name[args.func]
+    else:
+        target = by_name[args.func]
 
     text = seg(m, "__TEXT_EXEC")
     cave_off = find_run(bytes(data), text["fileoff"],
