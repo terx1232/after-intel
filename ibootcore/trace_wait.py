@@ -50,7 +50,7 @@ def seg(m: dict, name: str):
 # idle workloops block every few milliseconds, so 64 slots are overwritten long
 # before the guest can be inspected, and all that survives is the idling. The
 # mask below must stay in step with this.
-RING = 65536
+RING = 32768                       # entries are 32 bytes now, so half as many
 RING_LIMIT_WORD = 0xF140411F       # cmp x8, #16, lsl #12   (= RING)
 RING_SKIP_WORD = 0x54000082        # b.hs +4 instructions
 # One-shot keeps the first RING blocks, which is right when the interesting wait
@@ -84,14 +84,26 @@ def emit(cave_va: int, scratch_va: int, orig_word: int, resume_va: int):
     words.append(0x91000508)                                       # add x8, x8, #1
     words.append(0xF9000128)                                       # str x8, [x9]
     if WRAP:
-        words.append(0x92403D08)                                   # and x8, x8, #0xffff
+        words.append(0x92403908)                                   # and x8, x8, #0x7fff
         words.append(0xD503201F)                                   # nop
     else:
         words.append(RING_LIMIT_WORD)                              # cmp x8, #RING
         words.append(RING_SKIP_WORD)                               # b.hs past the stores
-    words.append(0x8B081129)                                       # add x9, x9, x8, lsl #4
-    words.append(0xF9000920)                                       # str x0,  [x9, #16]
-    words.append(0xF9000D3E)                                       # str x30, [x9, #24]
+    # The wait event says little; the thread says everything. A thread that
+    # blocks and is never woken appears once and never again, while every
+    # working thread keeps reappearing, so recording tpidr_el1 turns "which of
+    # these 47 sites never returns" into a question the data answers by itself.
+    words.append(0xD538D08A)                                       # mrs x10, tpidr_el1
+    # elr_el1 still holds the userland return address for a thread that entered
+    # through svc and has taken no nested exception since, so a value up in the
+    # shared cache marks the one thread that came from EL0 - which is the whole
+    # question here, since every other blocker is a kernel worker.
+    words.append(0xD538402B)                                       # mrs x11, elr_el1
+    words.append(0x8B081529)                                       # add x9, x9, x8, lsl #5
+    words.append(0xF9001129)                                       # str x9, [x9, #32] placeholder
+    words[-1] = 0xF900112A                                         # str x10, [x9, #32]
+    words.append(0xF900152B)                                       # str x11, [x9, #40]
+    words.append(0xF900193E)                                       # str x30, [x9, #48]
 
     words.append(orig_word)
 
