@@ -297,7 +297,8 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
                          gic_msi_frame: int = 0x0802_0000,
                          want_trustcache: bool = False,
                          want_ramdisk: bool = True,
-                         root_hash: bytes | None = None,) -> Node:
+                         root_hash: bytes | None = None,
+                         os_environment: int | None = None,) -> Node:
     root = Node("device-tree")
     root.set_str("compatible", "AppleVirtualPlatformARM")
     root.set_str("model", "VirtualMac2,1")
@@ -463,6 +464,20 @@ def minimal_vmapple_tree(*, ram_base: int = 0x4000_0000,
     #
     # sha2-384 is the modern choice and the first one the code tests for.
     chosen.set_str("crypto-hash-method", "sha2-384")
+
+    # The kernel reads this as a plain number and says so: "osenvironment from
+    # /chosen: %u". Absent, it reads as zero, and vm_pageout.c treats anything
+    # below four as a diagnostics or device-recovery environment:
+    #
+    #     vm: osenvironment == "diagnostics or device-recovery". Setting
+    #         "vm_compressor..."
+    #     Overriding vm_restricted_to_single_processor to %d
+    #
+    # which restricts the VM to a single processor and parks the pageout thread.
+    # That thread holds an Image4 gate, so launchd's first page fault waits
+    # behind it and the boot stops there.
+    if os_environment is not None:
+        chosen.set_u32("os-environment", os_environment)
 
     # The root hash of a sealed Base System volume. APFS names both the property
     # and the node it reads them from:

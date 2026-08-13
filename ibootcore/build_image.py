@@ -104,6 +104,12 @@ def main(argv=None) -> int:
                          "safely write. A run of zeros inside __DATA is not "
                          "such a place: it is BSS, and writing there corrupts "
                          "live reference counts.")
+    ap.add_argument("--os-environment", type=lambda v: int(v, 0),
+                    help="value for /chosen/os-environment. The kernel reads it "
+                         "as a number - it logs \"osenvironment from /chosen: "
+                         "%%u\" - and vm_pageout.c treats anything below four as "
+                         "a diagnostics or device-recovery environment, which "
+                         "restricts the VM to a single processor.")
     ap.add_argument("--root-hash", metavar="PATH",
                     help="the unwrapped `csys` Image4 payload shipped beside a "
                          "sealed volume in the IPSW. APFS reads it as "
@@ -159,7 +165,8 @@ def main(argv=None) -> int:
                                            ncpus=args.ncpus,
                                            want_trustcache=bool(args.trustcache),
                                            want_ramdisk=bool(args.ramdisk),
-                                           root_hash=root_hash)
+                                           root_hash=root_hash,
+                                           os_environment=args.os_environment)
     if fb:
         w, h = fb
         node = devicetree.Node("framebuffer")

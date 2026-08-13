@@ -3458,3 +3458,36 @@ take the mutex in x0 and the gate in x1, so the address recorded by the
 instrument was the mutex, not the gate. The three counts are unaffected - they
 count calls - and the acquirer's state was read from the acquiring thread
 itself, which is what matters: WAIT | UNINT, asleep under its own gate.
+
+### What parks the gate holder: a single-processor VM restriction
+
+The thread that closes the Image4 gate blocks a few instructions later, and the
+branch that sends it to sleep is guarded by a global:
+
+    ldr  w8, [x8, #0xba8]
+    cmp  w8, #1
+    b.ne skip
+    bl   <block>
+
+and that global is written from a value the kernel derives itself:
+
+    vm_restricted_to_single_processor
+    "Overriding vm_restricted_to_single_processor to %d"
+    vm: osenvironment == "diagnostics or device-recovery". Setting "vm_compre...
+    osenvironment from /chosen: %u
+
+So the VM restricts itself to a single processor when it believes it is running
+in a diagnostics or device-recovery environment, and in that mode the pageout
+thread parks - while holding the gate that launchd's first page fault needs.
+The comparison is `cmp w19, #4; cset w8, lo`, so anything below four selects the
+restricted mode, and an absent property reads as zero.
+
+build_image now has --os-environment, and devicetree sets /chosen/os-environment
+from it. Setting it to 4 does not move the boot and the kernel does not print
+"osenvironment from /chosen", so either the property is spelled differently in
+the tree or the value is taken from somewhere else. The boot-arg
+vm_restricted_to_single_processor=0 is likewise not picked up - no override line
+appears - so the argument is parsed by something other than the usual boot-arg
+reader.
+
+The mechanism is identified; which input feeds it is not.
