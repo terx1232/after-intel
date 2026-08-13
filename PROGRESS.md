@@ -3371,3 +3371,38 @@ panic_with_options are instrumented and never called.
 New tools: symbols.py (212,222 names out of the collection's 216 nested
 Mach-Os), trace_wait.py, guest.py, syscalls.py, constscan.py, findlabel.py,
 tcseg.py, apfs_seal.py, apfs_omap.py.
+
+### The gate finding, confirmed and narrowed
+
+Two things that were provisional are now settled.
+
+The owner field is real. `lck_mtx_gate_close` does
+
+    casa x8, x19, [x1]        ; x19 is tpidr_el1, the current thread
+    ands x8, x8, #-4          ; the low two bits are flags
+    orr  x8, x19, #1          ; and get set when there are waiters
+
+so the gate's first word holds the owning thread with two flag bits, and reading
+it masked was correct.
+
+It is not the sealed volume. Running the same instrumentation against the
+unsealed restore ramdisk produces the identical single gate wait, from the same
+caller, so the deadlock belongs to the machine rather than to the decrypted
+Base System or to the NOP that lets a sealed volume mount live.
+
+The holder is in vm_pageout.c. The strings reachable from its continuation name
+it: VM_pageout_scan, VM_pageout_external_iothread, vm_pressure_thread. So a page
+fault in launchd waits on a paging gate held by a pageout thread that is itself
+asleep.
+
+Three fixes suggested by that reading were tried and none of them moves it:
+8 GB of guest memory rather than 4 - the earlier 8 GB test predated the
+framebuffer fix and measured nothing; vm_compressor=2, which takes effect (the
+kernel logs mode 2) and disables swap; and vm_compressor=1, which disables the
+compressor outright.
+
+One measurement of this stretch was invalid and is worth recording as such: the
+first attempt to test the restore ramdisk reused a scratch address computed for
+the 1.85 GB ramdisk. With a 210 MB ramdisk that address is not mapped, the
+instrument took a data abort on its first store, and the "zero gate waits" it
+reported was the instrument dying rather than the guest behaving differently.
