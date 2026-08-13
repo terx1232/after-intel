@@ -3491,3 +3491,27 @@ appears - so the argument is parsed by something other than the usual boot-arg
 reader.
 
 The mechanism is identified; which input feeds it is not.
+
+### The nonce blob is a dead end, and the code says so
+
+The three "magazine[...]: failed to read nonce slot data: 2" lines trace to
+nonce_blob_read, which reads an NVRAM variable named
+
+    40A0DDD2-77F8-4392-B4A3-1E7304206516:nonce-seeds
+
+into a 0x253-byte buffer and requires at least 0x16f bytes back. Our NVRAM proxy
+is emitted empty, so the read returns 2.
+
+That is not the blocker. The reader tests for exactly that code and branches to
+its own message:
+
+    bl   <read variable>
+    cmp  w0, #2
+    b.eq -> "no legacy blob present"
+
+so an absent blob is a state the kernel expects from a machine that has never
+been booted, prints about, and continues past. Fabricating a blob would be
+inventing cryptographic material to satisfy a path that is already satisfied.
+
+Recorded because the trail looked promising and the negative is worth keeping:
+it removes the last obvious candidate reachable from the gate holder's strings.
